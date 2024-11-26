@@ -1,0 +1,8 @@
+# Ignore all files in the 'src/data/results' folder
+src/data/results/
+
+# Ignore all files in the 'src/wandb' folder
+src/wandb/
+
+
+src/scratch/output/brain-age-mri/tensorboard
