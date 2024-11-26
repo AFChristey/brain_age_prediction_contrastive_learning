@@ -40,7 +40,6 @@ def read_data(path, dataset, fast):
     x_arr = np.load("data/results/x_arr.npy", mmap_mode="r")
     
     print("- y size [original]:", y_arr.shape)
-    print('test')
     print("- x size [original]:", x_arr.shape)
     return x_arr, y_arr
 
