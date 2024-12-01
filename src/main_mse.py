@@ -9,7 +9,7 @@ import argparse
 import models
 import losses
 import time
-import wandb
+# import wandb
 import torch.utils.tensorboard
 
 from torchvision import transforms
@@ -412,7 +412,7 @@ if __name__ == '__main__':
     # project = Specifies the name of the W&B project, which organizes runs under a specific project (in this case, "brain-age-prediction")
     # sync_tensorboard = Ensures that TensorBoard logs are synchronized with W&B so that you can visualize them on the W&B dashboard
     # tags = Adds a tag to the run, which can help categorize or filter the runs later in W&B
-    wandb.init(project="brain-age-prediction", config=opts, name=run_name, sync_tensorboard=True, tags=['to test'])
+    # wandb.init(project="brain-age-prediction", config=opts, name=run_name, sync_tensorboard=True, tags=['to test'])
     print('Config:', opts)
     print('Model:', model.__class__.__name__)
     print('Criterion:', opts.criterion)

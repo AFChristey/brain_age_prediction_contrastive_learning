@@ -11,7 +11,7 @@ import argparse
 import models
 import losses
 import time
-import wandb
+# import wandb
 import torch.utils.tensorboard
 
 from torch import nn
@@ -24,6 +24,12 @@ from data import FeatureExtractor, OpenBHB, bin_age
 from data.transforms import Crop, Pad, Cutout
 #from main_mse import get_transforms
 from util import get_transforms
+
+import os
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+
+# import os
+# os.environ["WANDB_MODE"] = "disabled"
 
 
 def parse_arguments():
@@ -212,6 +218,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
     t1 = time.time()
     # print(train_loader)
+    print()
 
 
     for idx, (images, labels, _) in enumerate(train_loader):
@@ -224,16 +231,26 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         # images = torch.cat(images, dim=0).to(opts.device)
         images = torch.cat(images, dim=0).to(device)
         bsz = labels.shape[0]
+        labels = labels.float().to(device)
+
+        # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
+        images = images.unsqueeze(1)  # Add channel dimension at index 1
 
         warmup_learning_rate(opts, epoch, idx, len(train_loader), optimizer)
 
         with torch.cuda.amp.autocast(scaler is not None):
+            print("hELLO")            
             print(images.shape)
+
             projected = model(images)
             projected = torch.split(projected, [bsz]*opts.n_views, dim=0)
             projected = torch.cat([f.unsqueeze(1) for f in projected], dim=1)
             # running_loss = infonce(projected, labels.to(opts.device))
-            running_loss = infonce(projected, labels.to(device))
+            # running_loss = infonce(projected, labels.to(device))
+            print("Images dtype:", images.dtype)
+            print("Labels dtype:", labels.dtype)
+            running_loss = infonce(projected, labels.to(device).float())
+
         
         optimizer.zero_grad()
         if scaler is None:
@@ -253,6 +270,12 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         batch_time.update(time.time() - t1)
         t1 = time.time()
         eta = batch_time.avg * (len(train_loader) - idx)
+
+
+        print(f"Train: [{epoch}][{idx + 1}/{len(train_loader)}]:\t"
+                f"BT {batch_time.avg:.3f}\t"
+                f"ETA {datetime.timedelta(seconds=eta)}\t"
+                f"loss {loss.avg:.3f}\t")
 
         if (idx + 1) % opts.print_freq == 0:
             print(f"Train: [{epoch}][{idx + 1}/{len(train_loader)}]:\t"
@@ -323,9 +346,9 @@ if __name__ == '__main__':
     opts.criterion = infonce.__class__.__name__
     opts.optimizer_class = optimizer.__class__.__name__
 
-    wandb.init(project="brain-age-prediction", config=opts, name=run_name, sync_tensorboard=True,
-              settings=wandb.Settings(code_dir="/src"), tags=['to test'])
-    wandb.run.log_code(root="/src", include_fn=lambda path: path.endswith(".py"))
+    # wandb.init(project="brain-age-prediction", config=opts, name=run_name, sync_tensorboard=True,
+    #           settings=wandb.Settings(code_dir="/src"), tags=['to test'])
+    # wandb.run.log_code(root="/src", include_fn=lambda path: path.endswith(".py"))
 
     print('Config:', opts)
     print('Model:', model.__class__.__name__)

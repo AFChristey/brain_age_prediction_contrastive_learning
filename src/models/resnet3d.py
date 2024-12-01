@@ -185,6 +185,7 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        print(x.shape)
         # THIS FUNCTION IS CAUSING AN ERROR
         x = self.conv1(x)
         # print('TEST2')
