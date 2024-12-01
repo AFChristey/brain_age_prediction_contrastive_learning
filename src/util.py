@@ -3,7 +3,7 @@ import torch
 import random
 import numpy as np
 import os
-import wandb
+# import wandb
 import torch.nn.functional as F
 import models
 from pathlib import Path
@@ -363,8 +363,8 @@ def save_model(model, optimizer, opt, epoch, save_file):
         'opts': opt,
         'model': state_dict,
         'optimizer': optimizer.state_dict(),
-        'epoch': epoch,
-        'run_id': wandb.run.id
+        'epoch': epoch
+        # 'run_id': wandb.run.id
     }
     torch.save(state, save_file)
     del state
