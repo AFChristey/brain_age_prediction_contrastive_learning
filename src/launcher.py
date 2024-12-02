@@ -17,6 +17,8 @@ if __name__ == '__main__':
     # The SafeLoader is used to ensure safe loading (i.e., without executing any arbitrary code embedded in the YAML).
     with open(sys.argv[1]) as f:
         data = yaml.load(f, Loader=SafeLoader)
+
+    # print(sys.argv[2])
     
     # Recieves the program from yaml file - in this case 'main_mse.py'
     program = data['program']
@@ -25,6 +27,7 @@ if __name__ == '__main__':
     del data['program']
 
     skip = False
+
     # allows the user to override values from the YAML file via command-line arguments
     # sys.argv[2:] represents all command-line arguments after the script name and YAML file path.
     for idx, override in enumerate(sys.argv[2:]):
@@ -39,6 +42,13 @@ if __name__ == '__main__':
             v = sys.argv[2+idx+1]
             skip = True
         data[k] = v
+
+    # print(os.path.join(os.getcwd(), program))
+    if data["path"] == "cluster":
+        program = "/home/afc53/contrastive_learning_mri_images/src/" + program
+
+    # print(os.path.join(os.getcwd(), program))
+        
 
     # builds the command to run the Python program
         # 'os.getcwd()' returns the current working directory, and 'program' is the path to the script specified in the YAML file.

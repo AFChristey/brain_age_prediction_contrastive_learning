@@ -65,6 +65,7 @@ def parse_arguments():
     # Data
     parser.add_argument('--train_all', type=arg2bool, help='train on all dataset including validation (int+ext)', default=True)
     parser.add_argument('--tf', type=str, help='data augmentation', choices=['none', 'crop', 'cutout', 'all'], default='none')
+    parser.add_argument('--path', type=str, help='model ran on cluster or locally', choices=['local', 'cluster'], default='local')
     
     # Loss 
     parser.add_argument('--method', type=str, help='loss function', choices=['supcon', 'yaware', 'threshold', 'expw'], default='supcon')
@@ -118,7 +119,9 @@ def parse_arguments():
     
     if opts.model == 'densenet121':
         opts.n_views = 1
-        
+    
+    print(opts.path)     
+
     return opts
 
 def load_data(opts):
@@ -127,8 +130,11 @@ def load_data(opts):
 
     # train_dataset = OpenBHB(opts.data_dir, train=True, internal=True, transform=T_train, label=opts.label,
     #                         load_feats=opts.biased_features)
+
+    print(opts.data_dir)
+    print('DATATATATTAT')
     
-    train_dataset = OpenBHB(opts.data_dir, train=True, internal=True, transform=T_train, label=opts.label)
+    train_dataset = OpenBHB(opts.data_dir, train=True, internal=True, transform=T_train, label=opts.label, path=opts.path)
     if opts.train_all:
 
         valint_feats, valext_feats = None, None
@@ -137,18 +143,18 @@ def load_data(opts):
         #     valext_feats = opts.biased_features.replace('.pth', '_valext.pth')
 
         valint = OpenBHB(opts.data_dir, train=False, internal=True, transform=T_train,
-                         label=opts.label, load_feats=valint_feats)
+                         label=opts.label, load_feats=valint_feats, path=opts.path)
         valext = OpenBHB(opts.data_dir, train=False, internal=False, transform=T_train,
-                         label=opts.label, load_feats=valext_feats)
+                         label=opts.label, load_feats=valext_feats, path=opts.path)
         train_dataset = torch.utils.data.ConcatDataset([train_dataset, valint, valext])
         print("Total dataset length:", len(train_dataset))
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opts.batch_size, shuffle=True)
-    train_loader_score = torch.utils.data.DataLoader(OpenBHB(opts.data_dir, train=True, internal=True, transform=T_train, label=opts.label),
+    train_loader_score = torch.utils.data.DataLoader(OpenBHB(opts.data_dir, train=True, internal=True, transform=T_train, label=opts.label, path=opts.path),
                                                      batch_size=opts.batch_size, shuffle=True)
-    test_internal = torch.utils.data.DataLoader(OpenBHB(opts.data_dir, train=False, internal=True, transform=T_test), 
+    test_internal = torch.utils.data.DataLoader(OpenBHB(opts.data_dir, train=False, internal=True, transform=T_test, path=opts.path), 
                                                 batch_size=opts.batch_size, shuffle=False)
-    test_external = torch.utils.data.DataLoader(OpenBHB(opts.data_dir, train=False, internal=False, transform=T_test), 
+    test_external = torch.utils.data.DataLoader(OpenBHB(opts.data_dir, train=False, internal=False, transform=T_test, path=opts.path), 
                                                 batch_size=opts.batch_size, shuffle=False)
     return train_loader, train_loader_score, test_internal, test_external
 
@@ -167,9 +173,14 @@ def load_model(opts):
         print(f"Using multiple CUDA devices ({torch.cuda.device_count()})")
         model = torch.nn.DataParallel(model)
     # print(opts.device)
-    device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
 
-    model = model.to(device)
+    if opts.path == "local":
+        device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+        model = model.to(device)
+    # CHANGED Al   
+    else: 
+        model = model.to(opts.device)
+
 
 
     def gaussian_kernel(x):
@@ -225,13 +236,18 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         # print('hi')
         data_time.update(time.time() - t1)
         # print(images[0])
+        if opts.path == "local":
+            device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
 
-        device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
-
-        # images = torch.cat(images, dim=0).to(opts.device)
-        images = torch.cat(images, dim=0).to(device)
-        bsz = labels.shape[0]
-        labels = labels.float().to(device)
+            # images = torch.cat(images, dim=0).to(opts.device)
+            images = torch.cat(images, dim=0).to(device)
+            bsz = labels.shape[0]
+            labels = labels.float().to(device)
+        else:
+            # images = torch.cat(images, dim=0).to(opts.device)
+            images = torch.cat(images, dim=0).to(opts.device)
+            bsz = labels.shape[0]
+            labels = labels.float().to(opts.device)
 
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
         images = images.unsqueeze(1)  # Add channel dimension at index 1
@@ -249,7 +265,11 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             # running_loss = infonce(projected, labels.to(device))
             print("Images dtype:", images.dtype)
             print("Labels dtype:", labels.dtype)
-            running_loss = infonce(projected, labels.to(device).float())
+            if opts.path == "local":
+                running_loss = infonce(projected, labels.to(device).float())
+            else:
+                running_loss = infonce(projected, labels.to(opts.device).float())
+
 
         
         optimizer.zero_grad()
@@ -291,9 +311,10 @@ if __name__ == '__main__':
     set_seed(opts.trial)
 
     train_loader, train_loader_score, test_loader_int, test_loader_ext = load_data(opts)
-    # Check if MPS is available
-    device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
-    print("Using device:", device)
+    if opts.path == "local":
+        # Check if MPS is available
+        device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+        print("Using device:", device)
     # print(train_loader)
     print("CUDA available:", torch.cuda.is_available())
     model, infonce = load_model(opts)

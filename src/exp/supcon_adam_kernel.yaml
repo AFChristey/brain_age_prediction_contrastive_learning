@@ -17,4 +17,4 @@ kernel: gaussian
 sigma: 1
 trial: 0
 tf: none
-
+path: local

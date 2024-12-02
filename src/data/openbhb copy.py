@@ -20,22 +20,11 @@ def bin_age(age_real: torch.Tensor):
 
 # reads both the imaging data (.npy file) and metadata (.tsv file)
 # dataset specifies the dataset name (train, internal_test, or external_test)
-def read_data(root, dataset, fast, path):
+def read_data(path, dataset, fast):
     # print(f"Read {dataset.upper()}")
     # The sep="\t" argument specifies that the values in the .tsv file are separated by tabs.
-    # print(root)
-
-
-    if path == "local":
-        df = pd.read_csv("data/results/labels_with_sites.csv")
-        x_arr = np.load("data/results/x_arr.npy", mmap_mode="r")
-    else:
-        df = pd.read_csv("/home/afc53/contrastive_learning_mri_images/src/data/results/labels_with_sites.csv")
-        x_arr = np.load("/home/afc53/contrastive_learning_mri_images/src/data/results/x_arr.npy", mmap_mode="r")
-
-        
-
-    
+    # print(path)
+    df = pd.read_csv("data/results/labels_with_sites.csv")
     # "site" column is set to NaN for rows in the "external_test" split, possibly because the "site" information is not available or relevant for external test data
     # df.loc[df["split"] == "external_test", "site"] = np.nan
 
@@ -48,6 +37,7 @@ def read_data(root, dataset, fast, path):
     # If fast is False, the actual MRI data (.npy file) is loaded into memory; 
     # otherwise, the array is initialized but not fully loaded into memory (mmap_mode="r")
     # if not fast:
+    x_arr = np.load("data/results/x_arr.npy", mmap_mode="r")
     
     print("- y size [original]:", y_arr.shape)
     print("- x size [original]:", x_arr.shape)
@@ -60,7 +50,7 @@ class OpenBHB(torch.utils.data.Dataset):
     # label = specifies whether the labels should be continuous ("cont") or binned ("bin"). Defaults to "cont"
     # load_feats = If provided, it specifies a file to load additional biased features
     def __init__(self, root, train=True, internal=True, transform=None, 
-                 label="cont", fast=False, load_feats=None, path="local"):
+                 label="cont", fast=False, load_feats=None):
         # Stores the root path where the data is located as an instance variable self.root. 
         # This will be used to locate the files later
         self.root = root
@@ -75,16 +65,25 @@ class OpenBHB(torch.utils.data.Dataset):
         
         # This way, the class knows whether to load the training data, the internal test data, or the external test data
         dataset = "train"
-
+        if not train:
+            if internal:
+                dataset = "internal_test"
+            else:
+                dataset = "external_test"
+        
         # load the data from the disk.
-        self.X, self.y = read_data(root, dataset, fast, path)
+        self.X, self.y = read_data(root, dataset, fast)
         # stores the transformation function (if provided) in self.T
         self.T = transform
         self.label = label
         self.fast = fast
 
         self.bias_feats = None
-
+        if load_feats:
+            print("Loading biased features", load_feats)
+            # It loads the additional biased features from the specified file (load_feats) using torch.load
+            self.bias_feats = torch.load(load_feats, map_location="cpu")
+        
         # prints the number of records (data samples) in self.X, which is the feature set
         print(f"Read {len(self.X)} records")
 
