@@ -597,7 +597,6 @@ if __name__ == '__main__':
         # Check if MPS is available
         device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
         print("Using device:", device)
-    # print(train_loader)
     print("CUDA available:", torch.cuda.is_available())
     model, infonce = load_model(opts)
     optimizer = load_optimizer(model, opts)
@@ -634,15 +633,10 @@ if __name__ == '__main__':
                 # f"f{opts.alpha}_lambd{opts.lambd}_"
                 f"trial{opts.trial}")
     
-    tb_dir = os.path.join(opts.save_dir, "tensorboard", run_name)
-
-    save_dir = os.path.join(opts.save_dir, f"openbhb_models", run_name)
-    ensure_dir("scratch/output/brain-age-mri/tensorboard/experiment_001")
-    # print('hi')
-
-    ensure_dir("scratch/output/brain-age-mri/openbhb_models/experiment_001")
-
-    # ensure_dir(save_dir)
+    # tb_dir = os.path.join(opts.save_dir, "tensorboard", run_name)
+    # save_dir = os.path.join(opts.save_dir, f"openbhb_models", run_name)
+    # ensure_dir("scratch/output/brain-age-mri/tensorboard/experiment_001")
+    # ensure_dir("scratch/output/brain-age-mri/openbhb_models/experiment_001")
 
 
     opts.model_class = model.__class__.__name__
@@ -687,40 +681,41 @@ if __name__ == '__main__':
         print(f"epoch {epoch}, total time {t2-start_time:.2f}, epoch time {t2-t1:.3f} loss {loss_train:.4f}")
 
         if epoch % opts.save_freq == 0:
+            # WAS ALREADY COMMENTED OUT 
             # save_file = os.path.join(save_dir, f"ckpt_epoch_{epoch}.pth")
             # save_model(model, optimizer, opts, epoch, save_file)
 
             mae_train, mae_int, mae_ext = compute_age_mae(model, train_loader_score, test_loader_int, test_loader_ext, opts)
-            writer.add_scalar("train/mae", mae_train, epoch)
-            writer.add_scalar("test/mae_int", mae_int, epoch)
-            writer.add_scalar("test/mae_ext", mae_ext, epoch)
+            # writer.add_scalar("train/mae", mae_train, epoch)
+            # writer.add_scalar("test/mae_int", mae_int, epoch)
+            # writer.add_scalar("test/mae_ext", mae_ext, epoch)
             print("Age MAE:", mae_train, mae_int, mae_ext)
 
             ba_train, ba_int, ba_ext = compute_site_ba(model, train_loader_score, test_loader_int, test_loader_ext, opts)
-            writer.add_scalar("train/site_ba", ba_train, epoch)
-            writer.add_scalar("test/ba_int", ba_int, epoch)
-            writer.add_scalar("test/ba_ext", ba_ext, epoch)
+            # writer.add_scalar("train/site_ba", ba_train, epoch)
+            # writer.add_scalar("test/ba_int", ba_int, epoch)
+            # writer.add_scalar("test/ba_ext", ba_ext, epoch)
             print("Site BA:", ba_train, ba_int, ba_ext)
 
             challenge_metric = ba_int**0.3 * mae_ext
-            writer.add_scalar("test/score", challenge_metric, epoch)
+            # writer.add_scalar("test/score", challenge_metric, epoch)
             print("Challenge score", challenge_metric)
     
-        save_file = os.path.join(save_dir, f"weights.pth")
-        save_model(model, optimizer, opts, epoch, save_file)
+        # save_file = os.path.join(save_dir, f"weights.pth")
+        # save_model(model, optimizer, opts, epoch, save_file)
     
     mae_train, mae_int, mae_ext = compute_age_mae(model, train_loader_score, test_loader_int, test_loader_ext, opts)
-    writer.add_scalar("train/mae", mae_train, epoch)
-    writer.add_scalar("test/mae_int", mae_int, epoch)
-    writer.add_scalar("test/mae_ext", mae_ext, epoch)
+    # writer.add_scalar("train/mae", mae_train, epoch)
+    # writer.add_scalar("test/mae_int", mae_int, epoch)
+    # writer.add_scalar("test/mae_ext", mae_ext, epoch)
     print("Age MAE:", mae_train, mae_int, mae_ext)
 
     ba_train, ba_int, ba_ext = compute_site_ba(model, train_loader_score, test_loader_int, test_loader_ext, opts)
-    writer.add_scalar("train/site_ba", ba_train, epoch)
-    writer.add_scalar("test/ba_int", ba_int, epoch)
-    writer.add_scalar("test/ba_ext", ba_ext, epoch)
+    # writer.add_scalar("train/site_ba", ba_train, epoch)
+    # writer.add_scalar("test/ba_int", ba_int, epoch)
+    # writer.add_scalar("test/ba_ext", ba_ext, epoch)
     print("Site BA:", ba_train, ba_int, ba_ext)
     
     challenge_metric = ba_int**0.3 * mae_ext
-    writer.add_scalar("test/score", challenge_metric, epoch)
+    # writer.add_scalar("test/score", challenge_metric, epoch)
     print("Challenge score", challenge_metric)
