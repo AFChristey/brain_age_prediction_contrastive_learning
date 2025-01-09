@@ -460,13 +460,16 @@ def extract_features_for_umap(train_loader, model, opts, max_features=192):
             # Extract features from the model
             features = model.features(images)  # Get features from the model
 
-            # Calculate how many samples to extract based on max_features
-            remaining_samples = max_features - total_samples
-            batch_size = features.size(0)
-            # If the batch has more features than required, slice to get only the required number
-            if batch_size > remaining_samples:
-                features = features[:remaining_samples]
-                labels = labels[:remaining_samples]
+
+            if opts.path == "local":
+                # Calculate how many samples to extract based on max_features
+                remaining_samples = max_features - total_samples
+                batch_size = features.size(0)
+                # If the batch has more features than required, slice to get only the required number
+                if batch_size > remaining_samples:
+                    features = features[:remaining_samples]
+                    labels = labels[:remaining_samples]
+
 
             # Repeat the labels for each view (n_views=2)
             repeated_labels = labels.unsqueeze(1).expand(-1, opts.n_views).contiguous().view(-1)
@@ -488,9 +491,10 @@ def extract_features_for_umap(train_loader, model, opts, max_features=192):
 
             total_samples += features.size(0)  # Update the total number of processed samples
 
-            # Stop processing if we've reached the desired number of samples
-            if total_samples >= max_features:
-                break
+            if opts.path == "local":
+                # Stop processing if we've reached the desired number of samples
+                if total_samples >= max_features:
+                    break
             print(total_samples)
 
         # Concatenate all features and labels into single arrays

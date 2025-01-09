@@ -118,6 +118,9 @@ class OpenBHB(torch.utils.data.Dataset):
         #  If so, it means the task is to classify age into bins instead of predicting the exact age.
         if self.label == "bin":
             age = bin_age(torch.tensor(age))
+
+
+        # HERE NEEDS TO INCLUDE OTHER META DATA (such as site)
         
         # checks if any biased features (self.bias_feats) are available. 
         # If so, it returns the transformed feature data (x), the binned or continuous age, and the corresponding biased feature for the sample at the given index.
