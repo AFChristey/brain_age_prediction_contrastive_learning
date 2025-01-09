@@ -139,8 +139,8 @@ def load_data(opts):
     # train_dataset = OpenBHB(opts.data_dir, train=True, internal=True, transform=T_train, label=opts.label,
     #                         load_feats=opts.biased_features)
 
-    print(opts.data_dir)
-    print('DATATATATTAT')
+    # print(opts.data_dir)
+    # print('DATATATATTAT')
     
     train_dataset = OpenBHB(opts.data_dir, train=True, internal=True, transform=T_train, label=opts.label, path=opts.path)
     if opts.train_all:
@@ -237,7 +237,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
     t1 = time.time()
     # print(train_loader)
-    print()
+    # print()
 
 
     for idx, (images, labels, _) in enumerate(train_loader):
@@ -260,9 +260,9 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
         images = images.unsqueeze(1)  # Add channel dimension at index 1
 
-        print('Length of labels')
-        print(len(labels))
-        print(len(images))
+        # print('Length of labels')
+        # print(len(labels))
+        # print(len(images))
 
         # # TESTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # features = model.features(images)
@@ -271,16 +271,16 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         warmup_learning_rate(opts, epoch, idx, len(train_loader), optimizer)
 
         with torch.cuda.amp.autocast(scaler is not None):
-            print("hELLO")            
-            print(images.shape)
+            # print("hELLO")            
+            # print(images.shape)
 
             projected = model(images)
             projected = torch.split(projected, [bsz]*opts.n_views, dim=0)
             projected = torch.cat([f.unsqueeze(1) for f in projected], dim=1)
             # running_loss = infonce(projected, labels.to(opts.device))
             # running_loss = infonce(projected, labels.to(device))
-            print("Images dtype:", images.dtype)
-            print("Labels dtype:", labels.dtype)
+            # print("Images dtype:", images.dtype)
+            # print("Labels dtype:", labels.dtype)
             if opts.path == "local":
                 running_loss = infonce(projected, labels.to(device).float())
             else:
@@ -431,8 +431,8 @@ def extract_features_for_umap(train_loader, model, opts, max_features=192):
     features_list = []
     labels_list = []
     metadata_list = []
-    print('THIS IS TBHE TOTAL NUMBER OF SAMPLES')
-    print(len(train_loader.dataset))
+    # print('THIS IS TBHE TOTAL NUMBER OF SAMPLES')
+    # print(len(train_loader.dataset))
 
     model.eval()  # Set the model to evaluation mode
 
@@ -495,7 +495,7 @@ def extract_features_for_umap(train_loader, model, opts, max_features=192):
                 # Stop processing if we've reached the desired number of samples
                 if total_samples >= max_features:
                     break
-            print(total_samples)
+            # print(total_samples)
 
         # Concatenate all features and labels into single arrays
         all_features = np.concatenate(features_list, axis=0)
@@ -682,9 +682,9 @@ if __name__ == '__main__':
     visualise_umap(train_loader, model, opts)
 
     for epoch in range(1, opts.epochs + 1):
-        if epoch == 10:
+        if epoch == 3:
             visualise_umap(train_loader, model, opts, epoch)
-        if epoch == 20:
+        if epoch == 8:
             visualise_umap(train_loader, model, opts, epoch)
 
         adjust_learning_rate(opts, optimizer, epoch)
