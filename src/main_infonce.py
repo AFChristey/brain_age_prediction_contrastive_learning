@@ -430,6 +430,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 def extract_features_for_umap(train_loader, model, opts, max_features=192):
     features_list = []
     labels_list = []
+    metadata_list = []
     print('THIS IS TBHE TOTAL NUMBER OF SAMPLES')
     print(len(train_loader.dataset))
 
@@ -438,7 +439,7 @@ def extract_features_for_umap(train_loader, model, opts, max_features=192):
     total_samples = 0  # Counter for how many samples we have processed
 
     with torch.no_grad():  # No need to track gradients during feature extraction
-        for idx, (images, labels, _) in enumerate(train_loader):
+        for idx, (images, labels, metadata) in enumerate(train_loader):
             print(f"Processing batch {idx}, total samples: {total_samples}")
 
             # Move images and labels to the appropriate device
@@ -446,9 +447,12 @@ def extract_features_for_umap(train_loader, model, opts, max_features=192):
                 device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
                 images = torch.cat(images, dim=0).to(device)
                 labels = labels.float().to(device)
+                # metadata = metadata.to(device)
             else:
                 images = torch.cat(images, dim=0).to(opts.device)
                 labels = labels.float().to(opts.device)
+                # metadata = metadata.to(opts.device)
+
 
             # Add the channel dimension if it's not there (for grayscale images, etc.)
             images = images.unsqueeze(1)  # Add channel dimension at index 1
@@ -456,33 +460,43 @@ def extract_features_for_umap(train_loader, model, opts, max_features=192):
             # Extract features from the model
             features = model.features(images)  # Get features from the model
 
-            # # Calculate how many samples to extract based on max_features
-            # remaining_samples = max_features - total_samples
-            # batch_size = features.size(0)
-
-            # # If the batch has more features than required, slice to get only the required number
-            # if batch_size > remaining_samples:
-            #     features = features[:remaining_samples]
-            #     labels = labels[:remaining_samples]
+            # Calculate how many samples to extract based on max_features
+            remaining_samples = max_features - total_samples
+            batch_size = features.size(0)
+            # If the batch has more features than required, slice to get only the required number
+            if batch_size > remaining_samples:
+                features = features[:remaining_samples]
+                labels = labels[:remaining_samples]
 
             # Repeat the labels for each view (n_views=2)
             repeated_labels = labels.unsqueeze(1).expand(-1, opts.n_views).contiguous().view(-1)
+            # repeated_metadata = metadata.unsqueeze(1).expand(-1, opts.n_views).contiguous().view(-1)
 
+
+            # # Append features and labels to lists (convert to numpy for UMAP)
+            # features_list.append(features.cpu().numpy())  # Convert features to numpy
+            # labels_list.append(repeated_labels.cpu().numpy())  # Convert repeated labels to numpy
+            # metadata_list.append(repeated_metadata.cpu().numpy())  # Convert repeated labels to numpy (NUMPY IF STRINGS???)
 
             # Append features and labels to lists (convert to numpy for UMAP)
-            features_list.append(features.cpu().numpy())  # Convert features to numpy
-            labels_list.append(repeated_labels.cpu().numpy())  # Convert repeated labels to numpy
+            features_list.append(features.cpu())  # Convert features to numpy
+            labels_list.append(repeated_labels.cpu())  # Convert repeated labels to numpy
+            # metadata_list.append(repeated_metadata.cpu())  # Convert repeated labels to numpy (NUMPY IF STRINGS???)
+
+
+
 
             total_samples += features.size(0)  # Update the total number of processed samples
 
-            # # Stop processing if we've reached the desired number of samples
-            # if total_samples >= max_features:
-            #     break
+            # Stop processing if we've reached the desired number of samples
+            if total_samples >= max_features:
+                break
             print(total_samples)
 
         # Concatenate all features and labels into single arrays
         all_features = np.concatenate(features_list, axis=0)
         all_labels = np.concatenate(labels_list, axis=0)
+        # all_metadata = np.concatenate(metadata_list, axis=0)
 
     print(f"Extracted {len(all_features)} features and {len(all_labels)} labels")
     
@@ -490,7 +504,7 @@ def extract_features_for_umap(train_loader, model, opts, max_features=192):
     if len(all_features) != len(all_labels):
         raise ValueError(f"Mismatch: {len(all_features)} features vs {len(all_labels)} labels!")
 
-    return all_features, all_labels
+    return all_features, all_labels, metadata
 
 
 def visualise_umap(train_loader, model, opts, epoch=0):
@@ -517,9 +531,10 @@ def visualise_umap(train_loader, model, opts, epoch=0):
     # plt.close()  # Close the figure to free memory
 
     # Main script to run UMAP and plot the results
-    features, labels = extract_features_for_umap(train_loader, model, opts)
+    features, labels, metadata = extract_features_for_umap(train_loader, model, opts)
     print(f"Features shape: {features.shape}")
     print(f"Labels shape: {labels.shape}")
+    # print(f"Metadata shape: {metadata.shape}")
 
     # Perform UMAP dimensionality reduction
     umap_model = umap.UMAP(random_state=42)
@@ -551,7 +566,7 @@ def visualise_umap(train_loader, model, opts, epoch=0):
         sizes=(20, 200),  # Define size range for the points
         hue='Label',  # Use labels for color coding (optional)
         palette='Spectral',  # Use the Spectral color palette
-        alpha=0.8  # Transparency of points
+        alpha=0.5  # Transparency of points
     )
 
 
