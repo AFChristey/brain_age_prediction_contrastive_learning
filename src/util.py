@@ -402,10 +402,11 @@ def gather_age_feats(model, dataloader, opts):
     for idx, (images, labels, _) in enumerate(dataloader):
         if isinstance(images, list):
             images = images[0]
+        images = images.unsqueeze(1)  # Add channel dimension at index 1
         images = images.to(opts.device)
         features.append(model.features(images))
         age_labels.append(labels)
-    
+
     return torch.cat(features, 0).cpu().numpy(), torch.cat(age_labels, 0).cpu().numpy()
 
 @torch.no_grad()
@@ -434,6 +435,7 @@ def gather_site_feats(model, dataloader, opts):
         if isinstance(images, list):
             images = images[0]
         images = images.to(opts.device)
+        images = images.unsqueeze(1)  # Add channel dimension at index 1
         features.append(model.features(images))
         site_labels.append(sites)
     
