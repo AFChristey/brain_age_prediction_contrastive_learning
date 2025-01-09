@@ -3,7 +3,7 @@ data_dir: /scratch/data-registry/medical/openbhb
 save_dir:  /scratch/output/brain-age-mri
 model: resnet18
 # change back to 300
-epochs: 20
+epochs: 1
 batch_size: 32
 lr: 1e-4
 lr_decay: step
