@@ -164,6 +164,10 @@ def load_data(opts):
                                                 batch_size=opts.batch_size, shuffle=False)
     test_external = torch.utils.data.DataLoader(OpenBHB(opts.data_dir, train=False, internal=False, transform=T_test, path=opts.path), 
                                                 batch_size=opts.batch_size, shuffle=False)
+    
+    print('TEST LOADER SIZE')
+    # print(test_internal)
+    print(len(test_external.dataset))
     return train_loader, train_loader_score, test_internal, test_external
 
 def load_model(opts):
@@ -427,7 +431,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 #     print(len(all_features))
 #     print(len(all_labels))
 #     return all_features, all_labels
-def extract_features_for_umap(train_loader, model, opts, max_features=192):
+def extract_features_for_umap(test_internal, model, opts, max_features=192):
     features_list = []
     labels_list = []
     metadata_list = []
@@ -439,18 +443,21 @@ def extract_features_for_umap(train_loader, model, opts, max_features=192):
     total_samples = 0  # Counter for how many samples we have processed
 
     with torch.no_grad():  # No need to track gradients during feature extraction
-        for idx, (images, labels, metadata) in enumerate(train_loader):
+        for idx, (images, labels, metadata) in enumerate(test_internal):
             print(f"Processing batch {idx}, total samples: {total_samples}")
 
             # Move images and labels to the appropriate device
             if opts.path == "local":
                 device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
-                images = torch.cat(images, dim=0).to(device)
+                # images = torch.cat(images, dim=0).to(device)
                 labels = labels.float().to(device)
+                images = images.to(device)
                 # metadata = metadata.to(device)
             else:
-                images = torch.cat(images, dim=0).to(opts.device)
+                # images = torch.cat(images, dim=0).to(opts.device)
                 labels = labels.float().to(opts.device)
+                images = images.to(opts.device)
+
                 # metadata = metadata.to(opts.device)
 
 
@@ -472,7 +479,7 @@ def extract_features_for_umap(train_loader, model, opts, max_features=192):
 
 
             # Repeat the labels for each view (n_views=2)
-            repeated_labels = labels.unsqueeze(1).expand(-1, opts.n_views).contiguous().view(-1)
+            # repeated_labels = labels.unsqueeze(1).expand(-1, opts.n_views).contiguous().view(-1)
             # repeated_metadata = metadata.unsqueeze(1).expand(-1, opts.n_views).contiguous().view(-1)
 
 
@@ -483,7 +490,7 @@ def extract_features_for_umap(train_loader, model, opts, max_features=192):
 
             # Append features and labels to lists (convert to numpy for UMAP)
             features_list.append(features.cpu())  # Convert features to numpy
-            labels_list.append(repeated_labels.cpu())  # Convert repeated labels to numpy
+            labels_list.append(labels.cpu())  # Convert repeated labels to numpy
             # metadata_list.append(repeated_metadata.cpu())  # Convert repeated labels to numpy (NUMPY IF STRINGS???)
 
 
@@ -511,7 +518,7 @@ def extract_features_for_umap(train_loader, model, opts, max_features=192):
     return all_features, all_labels, metadata
 
 
-def visualise_umap(train_loader, model, opts, epoch=0):
+def visualise_umap(test_internal, model, opts, epoch=0):
 
     # # Extract features and labels from your dataset
     # features, labels = extract_features_for_umap(train_loader, model, opts)
@@ -535,14 +542,14 @@ def visualise_umap(train_loader, model, opts, epoch=0):
     # plt.close()  # Close the figure to free memory
 
     # Main script to run UMAP and plot the results
-    features, labels, metadata = extract_features_for_umap(train_loader, model, opts)
+    features, labels, metadata = extract_features_for_umap(test_internal, model, opts)
     print(f"Features shape: {features.shape}")
     print(f"Labels shape: {labels.shape}")
     # print(f"Metadata shape: {metadata.shape}")
 
     # Perform UMAP dimensionality reduction
     umap_model = umap.UMAP(random_state=42)
-    reduced_features = umap_model.fit_transform(features)
+    embedding = umap_model.fit_transform(features)
 
 
     ages = labels  # Assuming 'labels' represents ages
@@ -551,24 +558,28 @@ def visualise_umap(train_loader, model, opts, epoch=0):
     sizes = (ages - ages.min()) + 10  # Shift to avoid zero sizes
     sizes = (sizes / sizes.max()) * 100  # Normalize to range [10, 100]
 
-    # Convert features, labels, and sizes into a Pandas DataFrame for Seaborn
-    umap_df = pd.DataFrame({
-        'UMAP1': reduced_features[:, 0],
-        'UMAP2': reduced_features[:, 1],
-        'Label': labels,  # Optional, for hue if needed
-        'Size': sizes  # Point sizes based on age
-    })
+    # # Convert features, labels, and sizes into a Pandas DataFrame for Seaborn
+    # umap_df = pd.DataFrame({
+    #     'UMAP1': reduced_features[:, 0],
+    #     'UMAP2': reduced_features[:, 1],
+    #     'Label': labels,  # Optional, for hue if needed
+    #     'Size': sizes  # Point sizes based on age
+    # })
+
+
+    umap_df = pd.DataFrame(embedding, columns=['UMAP 1', 'UMAP 2'])
+    # umap_df['age_labels'] = df
 
 
     # Create a scatter plot using Seaborn
     plt.figure(figsize=(10, 8))
     sns.scatterplot(
         data=umap_df,
-        x='UMAP1',
-        y='UMAP2',
-        size='Size',  # Scale point size based on age
+        x='UMAP 1',
+        y='UMAP 2',
+        size=sizes,  # Scale point size based on age
         sizes=(20, 200),  # Define size range for the points
-        hue='Label',  # Use labels for color coding (optional)
+        # hue='Label',  # Use labels for color coding (optional)
         palette='Spectral',  # Use the Spectral color palette
         alpha=0.5  # Transparency of points
     )
@@ -679,13 +690,13 @@ if __name__ == '__main__':
     start_time = time.time()
     best_acc = 0.
 
-    visualise_umap(train_loader, model, opts)
+    visualise_umap(test_loader_int, model, opts)
 
     for epoch in range(1, opts.epochs + 1):
         if epoch == 50:
-            visualise_umap(train_loader, model, opts, epoch)
+            visualise_umap(test_loader_int, model, opts, epoch)
         if epoch == 140:
-            visualise_umap(train_loader, model, opts, epoch)
+            visualise_umap(test_loader_int, model, opts, epoch)
 
         adjust_learning_rate(opts, optimizer, epoch)
 
@@ -710,15 +721,15 @@ if __name__ == '__main__':
             # writer.add_scalar("test/mae_ext", mae_ext, epoch)
             print("Age MAE:", mae_train, mae_int, mae_ext)
 
-            ba_train, ba_int, ba_ext = compute_site_ba(model, train_loader_score, test_loader_int, test_loader_ext, opts)
-            # writer.add_scalar("train/site_ba", ba_train, epoch)
-            # writer.add_scalar("test/ba_int", ba_int, epoch)
-            # writer.add_scalar("test/ba_ext", ba_ext, epoch)
-            print("Site BA:", ba_train, ba_int, ba_ext)
+            # ba_train, ba_int, ba_ext = compute_site_ba(model, train_loader_score, test_loader_int, test_loader_ext, opts)
+            # # writer.add_scalar("train/site_ba", ba_train, epoch)
+            # # writer.add_scalar("test/ba_int", ba_int, epoch)
+            # # writer.add_scalar("test/ba_ext", ba_ext, epoch)
+            # print("Site BA:", ba_train, ba_int, ba_ext)
 
-            challenge_metric = ba_int**0.3 * mae_ext
+            # challenge_metric = ba_int**0.3 * mae_ext
             # writer.add_scalar("test/score", challenge_metric, epoch)
-            print("Challenge score", challenge_metric)
+            # print("Challenge score", challenge_metric)
     
         # save_file = os.path.join(save_dir, f"weights.pth")
         # save_model(model, optimizer, opts, epoch, save_file)
