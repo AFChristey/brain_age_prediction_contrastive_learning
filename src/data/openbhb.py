@@ -59,19 +59,15 @@ class OpenBHB(torch.utils.data.Dataset):
     # root = root directory where the data is stored
     # label = specifies whether the labels should be continuous ("cont") or binned ("bin"). Defaults to "cont"
     # load_feats = If provided, it specifies a file to load additional biased features
-    def __init__(self, root, train=True, internal=True, transform=None, 
+    def __init__(self, root, train=True, transform=None, 
                  label="cont", fast=False, load_feats=None, path="local"):
         # Stores the root path where the data is located as an instance variable self.root. 
         # This will be used to locate the files later
         self.root = root
 
-        # checks for an invalid configuration
-        if train and not internal:
-            raise ValueError("Invalid configuration train=True and internal=False")
-        
+
         # store the train and internal flags as instance variables
         self.train = train
-        self.internal = internal
         
         # This way, the class knows whether to load the training data, the internal test data, or the external test data
         dataset = "train"
@@ -129,160 +125,160 @@ class OpenBHB(torch.utils.data.Dataset):
         else:
             return x, age, site
 
-class FeatureExtractor(BaseEstimator, TransformerMixin):
-    """ Select only the requested data associatedd features from the the
-    input buffered data.
-    """
-    # OrderedDict where each key corresponds to a type of MRI data (or modality), 
-    # and the value contains information about its shape and size.
-    MODALITIES = OrderedDict([
-        ("vbm", {
-            "shape": (1, 121, 145, 121),
-            "size": 519945}),
-        ("quasiraw", {
-            "shape": (1, 182, 218, 182),
-            "size": 1827095}),
-        ("xhemi", {
-            "shape": (8, 163842),
-            "size": 1310736}),
-        ("vbm_roi", {
-            "shape": (1, 284),
-            "size": 284}),
-        ("desikan_roi", {
-            "shape": (7, 68),
-            "size": 476}),
-        ("destrieux_roi", {
-            "shape": (7, 148),
-            "size": 1036})
-    ])
-    # This dictionary defines the mask settings for each modality
-    # path = The path to the mask file (this can be None if no mask is needed).
-    # thr = The threshold for the mask. Values below this threshold will be masked out (set to 0).
-    MASKS = {
-        "vbm": {
-            "path": None,
-            "thr": 0.05},
-        "quasiraw": {
-            "path": None,
-            "thr": 0}
-    }
+# class FeatureExtractor(BaseEstimator, TransformerMixin):
+#     """ Select only the requested data associatedd features from the the
+#     input buffered data.
+#     """
+#     # OrderedDict where each key corresponds to a type of MRI data (or modality), 
+#     # and the value contains information about its shape and size.
+#     MODALITIES = OrderedDict([
+#         ("vbm", {
+#             "shape": (1, 121, 145, 121),
+#             "size": 519945}),
+#         ("quasiraw", {
+#             "shape": (1, 182, 218, 182),
+#             "size": 1827095}),
+#         ("xhemi", {
+#             "shape": (8, 163842),
+#             "size": 1310736}),
+#         ("vbm_roi", {
+#             "shape": (1, 284),
+#             "size": 284}),
+#         ("desikan_roi", {
+#             "shape": (7, 68),
+#             "size": 476}),
+#         ("destrieux_roi", {
+#             "shape": (7, 148),
+#             "size": 1036})
+#     ])
+#     # This dictionary defines the mask settings for each modality
+#     # path = The path to the mask file (this can be None if no mask is needed).
+#     # thr = The threshold for the mask. Values below this threshold will be masked out (set to 0).
+#     MASKS = {
+#         "vbm": {
+#             "path": None,
+#             "thr": 0.05},
+#         "quasiraw": {
+#             "path": None,
+#             "thr": 0}
+#     }
 
-    # initializes the FeatureExtractor object
-    # dtype = The data type (modality) to work with, e.g., "vbm", "quasiraw", etc.
-    # mock: A flag to simulate the transformation without actually loading the data (useful for debugging).
-    def __init__(self, dtype, mock=False):
-        """ Init class.
-        Parameters
-        ----------
-        dtype: str
-            the requested data: 'vbm', 'quasiraw', 'vbm_roi', 'desikan_roi',
-            'destrieux_roi' or 'xhemi'.
-        """
-        if dtype not in self.MODALITIES:
-            raise ValueError("Invalid input data type.")
-        self.dtype = dtype
+#     # initializes the FeatureExtractor object
+#     # dtype = The data type (modality) to work with, e.g., "vbm", "quasiraw", etc.
+#     # mock: A flag to simulate the transformation without actually loading the data (useful for debugging).
+#     def __init__(self, dtype, mock=False):
+#         """ Init class.
+#         Parameters
+#         ----------
+#         dtype: str
+#             the requested data: 'vbm', 'quasiraw', 'vbm_roi', 'desikan_roi',
+#             'destrieux_roi' or 'xhemi'.
+#         """
+#         if dtype not in self.MODALITIES:
+#             raise ValueError("Invalid input data type.")
+#         self.dtype = dtype
 
-        data_types = list(self.MODALITIES.keys())
-        index = data_types.index(dtype)
+#         data_types = list(self.MODALITIES.keys())
+#         index = data_types.index(dtype)
         
-        # calculates the cumulative sum of sizes for each modality. 
-        # This helps determine where the current modality starts and stops in the input data
-        cumsum = np.cumsum([item["size"] for item in self.MODALITIES.values()])
+#         # calculates the cumulative sum of sizes for each modality. 
+#         # This helps determine where the current modality starts and stops in the input data
+#         cumsum = np.cumsum([item["size"] for item in self.MODALITIES.values()])
         
-        # slice the data corresponding to the selected modality
-        if index > 0:
-            self.start = cumsum[index - 1]
-        else:
-            self.start = 0
-        self.stop = cumsum[index]
+#         # slice the data corresponding to the selected modality
+#         if index > 0:
+#             self.start = cumsum[index - 1]
+#         else:
+#             self.start = 0
+#         self.stop = cumsum[index]
         
-        # creates a dictionary of masks with paths for each modality. For "vbm" and "quasiraw", paths to specific mask files are assigned
-        # mask files are used to filter the MRI data (i.e., zeroing out areas of the brain that are not of interest)
-        self.masks = dict((key, val["path"]) for key, val in self.MASKS.items())
-        self.masks["vbm"] = "./data/masks/cat12vbm_space-MNI152_desc-gm_TPM.nii.gz"
-        self.masks["quasiraw"] = "./data/masks/quasiraw_space-MNI152_desc-brain_T1w.nii.gz"
+#         # creates a dictionary of masks with paths for each modality. For "vbm" and "quasiraw", paths to specific mask files are assigned
+#         # mask files are used to filter the MRI data (i.e., zeroing out areas of the brain that are not of interest)
+#         self.masks = dict((key, val["path"]) for key, val in self.MASKS.items())
+#         self.masks["vbm"] = "./data/masks/cat12vbm_space-MNI152_desc-gm_TPM.nii.gz"
+#         self.masks["quasiraw"] = "./data/masks/quasiraw_space-MNI152_desc-brain_T1w.nii.gz"
 
-        # If mock is True, the method exits early and skips further processing, 
-        # which means no actual loading or transformation of data occurs.
-        # (useful for debugging or testing)
-        self.mock = mock
-        if mock:
-            return
+#         # If mock is True, the method exits early and skips further processing, 
+#         # which means no actual loading or transformation of data occurs.
+#         # (useful for debugging or testing)
+#         self.mock = mock
+#         if mock:
+#             return
 
-        # iterates over the defined mask paths. For each mask:
-        for key in self.masks:
-            # It checks if the mask file exists.
-            if self.masks[key] is None or not os.path.isfile(self.masks[key]):
-                raise ValueError("Impossible to find mask:", key, self.masks[key])
-            # Loads the mask using nibabel.load() and gets the mask data with .get_fdata().
-            arr = nibabel.load(self.masks[key]).get_fdata()
-            # Applies the threshold (thr): values below the threshold are set to 0, and values above the threshold are set to 1, essentially creating a binary mask.
-            thr = self.MASKS[key]["thr"]
-            arr[arr <= thr] = 0
-            arr[arr > thr] = 1
-            # self.masks[key] = nibabel.Nifti1Image(arr.astype(int), np.eye(4))
-            # The mask is then stored as a Nifti1Image object, which is used to apply the mask to the MRI data later.
-            self.masks[key] = nibabel.Nifti1Image(arr.astype(np.int32), np.eye(4))
+#         # iterates over the defined mask paths. For each mask:
+#         for key in self.masks:
+#             # It checks if the mask file exists.
+#             if self.masks[key] is None or not os.path.isfile(self.masks[key]):
+#                 raise ValueError("Impossible to find mask:", key, self.masks[key])
+#             # Loads the mask using nibabel.load() and gets the mask data with .get_fdata().
+#             arr = nibabel.load(self.masks[key]).get_fdata()
+#             # Applies the threshold (thr): values below the threshold are set to 0, and values above the threshold are set to 1, essentially creating a binary mask.
+#             thr = self.MASKS[key]["thr"]
+#             arr[arr <= thr] = 0
+#             arr[arr > thr] = 1
+#             # self.masks[key] = nibabel.Nifti1Image(arr.astype(int), np.eye(4))
+#             # The mask is then stored as a Nifti1Image object, which is used to apply the mask to the MRI data later.
+#             self.masks[key] = nibabel.Nifti1Image(arr.astype(np.int32), np.eye(4))
 
 
-    def fit(self, X, y):
-        return self
+#     def fit(self, X, y):
+#         return self
 
-    # transform() method performs the actual transformation of the input data (X).
-    def transform(self, X):
-        # If mock is True, it reshapes the data to match the specified shape for the selected modality. 
-        # This is used for testing or simulation without applying real transformations.
-        if self.mock:
-            #print("transforming", X.shape)
-            data = X.reshape(self.MODALITIES[self.dtype]["shape"])
-            #print("mock data:", data.shape)
-            return data
+#     # transform() method performs the actual transformation of the input data (X).
+#     def transform(self, X):
+#         # If mock is True, it reshapes the data to match the specified shape for the selected modality. 
+#         # This is used for testing or simulation without applying real transformations.
+#         if self.mock:
+#             #print("transforming", X.shape)
+#             data = X.reshape(self.MODALITIES[self.dtype]["shape"])
+#             #print("mock data:", data.shape)
+#             return data
         
-        # print(X.shape)
-        # slices the input data X according to the modality’s start and stop indices
-        select_X = X[self.start:self.stop]
-        # specific modalities ("vbm", "quasiraw"), it applies the mask using the unmask() function, 
-        # which masks out the irrelevant parts of the MRI data based on the binary mask.
-        if self.dtype in ("vbm", "quasiraw"):
-            im = unmask(select_X, self.masks[self.dtype])
-            # get_fdata() method of a Nifti1Image object retrieves the image data as a numpy array. 
-            # This data contains the intensity values of the MRI image, with the mask applied, 
-            # which means irrelevant or unimportant regions (those masked out) will have been set to 0 or removed.
-            select_X = im.get_fdata()
-            # data is transposed to ensure it matches the required shape (depth, height, width) for the MRI data
-            select_X = select_X.transpose(2, 0, 1)
-        # after unmasking and transposing, the data is reshaped to match the required shape for the selected modality.
-        select_X = select_X.reshape(self.MODALITIES[self.dtype]["shape"])
-        # print('transformed.shape', select_X.shape)
-        return select_X
+#         # print(X.shape)
+#         # slices the input data X according to the modality’s start and stop indices
+#         select_X = X[self.start:self.stop]
+#         # specific modalities ("vbm", "quasiraw"), it applies the mask using the unmask() function, 
+#         # which masks out the irrelevant parts of the MRI data based on the binary mask.
+#         if self.dtype in ("vbm", "quasiraw"):
+#             im = unmask(select_X, self.masks[self.dtype])
+#             # get_fdata() method of a Nifti1Image object retrieves the image data as a numpy array. 
+#             # This data contains the intensity values of the MRI image, with the mask applied, 
+#             # which means irrelevant or unimportant regions (those masked out) will have been set to 0 or removed.
+#             select_X = im.get_fdata()
+#             # data is transposed to ensure it matches the required shape (depth, height, width) for the MRI data
+#             select_X = select_X.transpose(2, 0, 1)
+#         # after unmasking and transposing, the data is reshaped to match the required shape for the selected modality.
+#         select_X = select_X.reshape(self.MODALITIES[self.dtype]["shape"])
+#         # print('transformed.shape', select_X.shape)
+#         return select_X
 
 
-if __name__ == '__main__':
-    import sys
-    from torchvision import transforms
-    # Imports custom transformations Crop and Pad from a local module called transforms. 
-    # These transformations are defined in transforms.py
-    from .transforms import Crop, Pad
+# if __name__ == '__main__':
+#     import sys
+#     from torchvision import transforms
+#     # Imports custom transformations Crop and Pad from a local module called transforms. 
+#     # These transformations are defined in transforms.py
+#     from .transforms import Crop, Pad
 
-    # This initializes an instance of the FeatureExtractor class with the modality "vbm". 
-    # The FeatureExtractor class is responsible for selecting and transforming the relevant features from the MRI data based on the modality (in this case, "vbm").
-    selector = FeatureExtractor("vbm")
+#     # This initializes an instance of the FeatureExtractor class with the modality "vbm". 
+#     # The FeatureExtractor class is responsible for selecting and transforming the relevant features from the MRI data based on the modality (in this case, "vbm").
+#     selector = FeatureExtractor("vbm")
 
-    # This method processes the input x (MRI data), likely extracting relevant features and transforming it according to the vbm modality.
-    T_pre = transforms.Lambda(lambda x: selector.transform(x))
-    # used to chain multiple transformations together into a single transformation pipeline
-    T_train = transforms.Compose([
-        T_pre,
-        Crop((1, 121, 128, 121), type="random"),
-        Pad((1, 128, 128, 128)),
-        transforms.Lambda(lambda x: torch.from_numpy(x)),
-        transforms.Normalize(mean=0.0, std=1.0)
-    ])
+#     # This method processes the input x (MRI data), likely extracting relevant features and transforming it according to the vbm modality.
+#     T_pre = transforms.Lambda(lambda x: selector.transform(x))
+#     # used to chain multiple transformations together into a single transformation pipeline
+#     T_train = transforms.Compose([
+#         T_pre,
+#         Crop((1, 121, 128, 121), type="random"),
+#         Pad((1, 128, 128, 128)),
+#         transforms.Lambda(lambda x: torch.from_numpy(x)),
+#         transforms.Normalize(mean=0.0, std=1.0)
+#     ])
 
-    train_loader = torch.utils.data.DataLoader(OpenBHB(sys.argv[1], train=True, internal=True, transform=T_train),
-                                               batch_size=3, shuffle=True, num_workers=1,
-                                               persistent_workers=True)
+#     train_loader = torch.utils.data.DataLoader(OpenBHB(sys.argv[1], train=True, internal=True, transform=T_train),
+#                                                batch_size=3, shuffle=True, num_workers=1,
+#                                                persistent_workers=True)
     
-    # reates an iterator over the train_loader DataLoader object, and next() fetches the next batch of data from the iterator.
-    x, y1, y2 = next(iter(train_loader))
-    print(x.shape, y1, y2)
+#     # reates an iterator over the train_loader DataLoader object, and next() fetches the next batch of data from the iterator.
+#     x, y1, y2 = next(iter(train_loader))
+#     print(x.shape, y1, y2)

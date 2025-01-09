@@ -20,7 +20,8 @@ from torchvision import datasets
 from util import AverageMeter, NViewTransform, ensure_dir, set_seed, arg2bool, save_model
 from util import warmup_learning_rate, adjust_learning_rate
 from util import compute_age_mae, compute_site_ba
-from data import FeatureExtractor, OpenBHB, bin_age
+# from data import FeatureExtractor, OpenBHB, bin_age
+from data import OpenBHB, bin_age
 from data.transforms import Crop, Pad, Cutout
 #from main_mse import get_transforms
 from util import get_transforms
@@ -136,39 +137,30 @@ def load_data(opts):
     T_train, T_test = get_transforms(opts)
     T_train = NViewTransform(T_train, opts.n_views)
 
-    # train_dataset = OpenBHB(opts.data_dir, train=True, internal=True, transform=T_train, label=opts.label,
-    #                         load_feats=opts.biased_features)
-
-    # print(opts.data_dir)
-    # print('DATATATATTAT')
     
-    train_dataset = OpenBHB(opts.data_dir, train=True, internal=True, transform=T_train, label=opts.label, path=opts.path)
-    if opts.train_all:
+    train_dataset = OpenBHB(opts.data_dir, train=True, transform=T_train, label=opts.label, path=opts.path)
 
-        valint_feats, valext_feats = None, None
-        # if opts.biased_features is not None:
-        #     valint_feats = opts.biased_features.replace('.pth', '_valint.pth')
-        #     valext_feats = opts.biased_features.replace('.pth', '_valext.pth')
-
-        valint = OpenBHB(opts.data_dir, train=False, internal=True, transform=T_train,
-                         label=opts.label, load_feats=valint_feats, path=opts.path)
-        valext = OpenBHB(opts.data_dir, train=False, internal=False, transform=T_train,
-                         label=opts.label, load_feats=valext_feats, path=opts.path)
-        train_dataset = torch.utils.data.ConcatDataset([train_dataset, valint, valext])
-        print("Total dataset length:", len(train_dataset))
+    # train_dataset.norm()
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opts.batch_size, shuffle=True)
-    train_loader_score = torch.utils.data.DataLoader(OpenBHB(opts.data_dir, train=True, internal=True, transform=T_train, label=opts.label, path=opts.path),
-                                                     batch_size=opts.batch_size, shuffle=True)
-    test_internal = torch.utils.data.DataLoader(OpenBHB(opts.data_dir, train=False, internal=True, transform=T_test, path=opts.path), 
-                                                batch_size=opts.batch_size, shuffle=False)
-    test_external = torch.utils.data.DataLoader(OpenBHB(opts.data_dir, train=False, internal=False, transform=T_test, path=opts.path), 
-                                                batch_size=opts.batch_size, shuffle=False)
+
+    train_dataset_score = OpenBHB(opts.data_dir, train=True, transform=T_train, label=opts.label, path=opts.path)
+
+    # train_dataset_score.norm()
+
+    train_loader_score = torch.utils.data.DataLoader(train_dataset_score, batch_size=opts.batch_size, shuffle=False)
+
+    test_dataset = OpenBHB(opts.data_dir, train=False, transform=T_test, path=opts.path)
+
+    # test_dataset.norm()
+
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=opts.batch_size, shuffle=False)
+
     
     print('TEST LOADER SIZE')
     # print(test_internal)
-    print(len(test_external.dataset))
-    return train_loader, train_loader_score, test_internal, test_external
+    print(len(test_loader.dataset))
+    return train_loader, train_loader_score, test_loader
 
 def load_model(opts):
     if 'resnet' in opts.model:
@@ -431,7 +423,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 #     print(len(all_features))
 #     print(len(all_labels))
 #     return all_features, all_labels
-def extract_features_for_umap(test_internal, model, opts, max_features=192):
+def extract_features_for_umap(test_loader, model, opts, max_features=192):
     features_list = []
     labels_list = []
     metadata_list = []
@@ -443,7 +435,7 @@ def extract_features_for_umap(test_internal, model, opts, max_features=192):
     total_samples = 0  # Counter for how many samples we have processed
 
     with torch.no_grad():  # No need to track gradients during feature extraction
-        for idx, (images, labels, metadata) in enumerate(test_internal):
+        for idx, (images, labels, metadata) in enumerate(test_loader):
             print(f"Processing batch {idx}, total samples: {total_samples}")
 
             # Move images and labels to the appropriate device
@@ -476,6 +468,7 @@ def extract_features_for_umap(test_internal, model, opts, max_features=192):
                 if batch_size > remaining_samples:
                     features = features[:remaining_samples]
                     labels = labels[:remaining_samples]
+                    metadata = metadata[:remaining_samples]
 
 
             # Repeat the labels for each view (n_views=2)
@@ -491,7 +484,7 @@ def extract_features_for_umap(test_internal, model, opts, max_features=192):
             # Append features and labels to lists (convert to numpy for UMAP)
             features_list.append(features.cpu())  # Convert features to numpy
             labels_list.append(labels.cpu())  # Convert repeated labels to numpy
-            # metadata_list.append(repeated_metadata.cpu())  # Convert repeated labels to numpy (NUMPY IF STRINGS???)
+            metadata_list.append(metadata) 
 
 
 
@@ -507,7 +500,7 @@ def extract_features_for_umap(test_internal, model, opts, max_features=192):
         # Concatenate all features and labels into single arrays
         all_features = np.concatenate(features_list, axis=0)
         all_labels = np.concatenate(labels_list, axis=0)
-        # all_metadata = np.concatenate(metadata_list, axis=0)
+        all_metadata = np.concatenate(metadata_list, axis=0)
 
     print(f"Extracted {len(all_features)} features and {len(all_labels)} labels")
     
@@ -515,10 +508,10 @@ def extract_features_for_umap(test_internal, model, opts, max_features=192):
     if len(all_features) != len(all_labels):
         raise ValueError(f"Mismatch: {len(all_features)} features vs {len(all_labels)} labels!")
 
-    return all_features, all_labels, metadata
+    return all_features, all_labels, all_metadata
 
 
-def visualise_umap(test_internal, model, opts, epoch=0):
+def visualise_umap(test_loader, model, opts, epoch=0):
 
     # # Extract features and labels from your dataset
     # features, labels = extract_features_for_umap(train_loader, model, opts)
@@ -542,7 +535,7 @@ def visualise_umap(test_internal, model, opts, epoch=0):
     # plt.close()  # Close the figure to free memory
 
     # Main script to run UMAP and plot the results
-    features, labels, metadata = extract_features_for_umap(test_internal, model, opts)
+    features, labels, metadata = extract_features_for_umap(test_loader, model, opts)
     print(f"Features shape: {features.shape}")
     print(f"Labels shape: {labels.shape}")
     # print(f"Metadata shape: {metadata.shape}")
@@ -566,9 +559,15 @@ def visualise_umap(test_internal, model, opts, epoch=0):
     #     'Size': sizes  # Point sizes based on age
     # })
 
+    variable_of_interest = 'sites'
 
     umap_df = pd.DataFrame(embedding, columns=['UMAP 1', 'UMAP 2'])
-    # umap_df['age_labels'] = df
+    umap_df['sites'] = metadata
+
+    col_pal_str = 'hsv'
+    order = 1
+    color_palette = sns.color_palette(col_pal_str, len(umap_df[variable_of_interest].unique()))[::order]
+    print(umap_df[variable_of_interest].unique())
 
 
     # Create a scatter plot using Seaborn
@@ -577,10 +576,11 @@ def visualise_umap(test_internal, model, opts, epoch=0):
         data=umap_df,
         x='UMAP 1',
         y='UMAP 2',
+        hue=variable_of_interest,
+        palette=color_palette,
         size=sizes,  # Scale point size based on age
         sizes=(20, 200),  # Define size range for the points
         # hue='Label',  # Use labels for color coding (optional)
-        palette='Spectral',  # Use the Spectral color palette
         alpha=0.5  # Transparency of points
     )
 
@@ -622,7 +622,7 @@ if __name__ == '__main__':
     
     set_seed(opts.trial)
 
-    train_loader, train_loader_score, test_loader_int, test_loader_ext = load_data(opts)
+    train_loader, train_loader_score, test_loader = load_data(opts)
     if opts.path == "local":
         # Check if MPS is available
         device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
@@ -690,13 +690,13 @@ if __name__ == '__main__':
     start_time = time.time()
     best_acc = 0.
 
-    visualise_umap(test_loader_int, model, opts)
+    visualise_umap(test_loader, model, opts)
 
     for epoch in range(1, opts.epochs + 1):
         if epoch == 50:
-            visualise_umap(test_loader_int, model, opts, epoch)
+            visualise_umap(test_loader, model, opts, epoch)
         if epoch == 140:
-            visualise_umap(test_loader_int, model, opts, epoch)
+            visualise_umap(test_loader, model, opts, epoch)
 
         adjust_learning_rate(opts, optimizer, epoch)
 
@@ -715,11 +715,11 @@ if __name__ == '__main__':
             # save_file = os.path.join(save_dir, f"ckpt_epoch_{epoch}.pth")
             # save_model(model, optimizer, opts, epoch, save_file)
 
-            mae_train, mae_int, mae_ext = compute_age_mae(model, train_loader_score, test_loader_int, test_loader_ext, opts)
+            mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
             # writer.add_scalar("train/mae", mae_train, epoch)
             # writer.add_scalar("test/mae_int", mae_int, epoch)
             # writer.add_scalar("test/mae_ext", mae_ext, epoch)
-            print("Age MAE:", mae_train, mae_int, mae_ext)
+            print("Age MAE:", mae_train, mae_test)
 
             # ba_train, ba_int, ba_ext = compute_site_ba(model, train_loader_score, test_loader_int, test_loader_ext, opts)
             # # writer.add_scalar("train/site_ba", ba_train, epoch)
@@ -734,18 +734,18 @@ if __name__ == '__main__':
         # save_file = os.path.join(save_dir, f"weights.pth")
         # save_model(model, optimizer, opts, epoch, save_file)
     
-    mae_train, mae_int, mae_ext = compute_age_mae(model, train_loader_score, test_loader_int, test_loader_ext, opts)
+    mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
     # writer.add_scalar("train/mae", mae_train, epoch)
     # writer.add_scalar("test/mae_int", mae_int, epoch)
     # writer.add_scalar("test/mae_ext", mae_ext, epoch)
-    print("Age MAE:", mae_train, mae_int, mae_ext)
+    print("Age MAE:", mae_train, mae_test)
 
-    ba_train, ba_int, ba_ext = compute_site_ba(model, train_loader_score, test_loader_int, test_loader_ext, opts)
+    ba_train, ba_test, ba_ext = compute_site_ba(model, train_loader_score, test_loader, opts)
     # writer.add_scalar("train/site_ba", ba_train, epoch)
     # writer.add_scalar("test/ba_int", ba_int, epoch)
     # writer.add_scalar("test/ba_ext", ba_ext, epoch)
-    print("Site BA:", ba_train, ba_int, ba_ext)
+    print("Site BA:", ba_train, ba_test)
     
-    challenge_metric = ba_int**0.3 * mae_ext
+    # challenge_metric = ba_int**0.3 * mae_ext
     # writer.add_scalar("test/score", challenge_metric, epoch)
-    print("Challenge score", challenge_metric)
+    # print("Challenge score", challenge_metric)

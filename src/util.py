@@ -410,7 +410,7 @@ def gather_age_feats(model, dataloader, opts):
     return torch.cat(features, 0).cpu().numpy(), torch.cat(age_labels, 0).cpu().numpy()
 
 @torch.no_grad()
-def compute_age_mae(model, train_loader, test_int, test_ext, opts):
+def compute_age_mae(model, train_loader, test_loader, opts):
     site_estimator = models.AgeEstimator()
 
     print("Training age estimator")
@@ -418,12 +418,12 @@ def compute_age_mae(model, train_loader, test_int, test_ext, opts):
     mae_train = site_estimator.fit(train_X, train_y)
 
     print("Computing BA")
-    int_X, int_y = gather_age_feats(model, test_int, opts)
-    ext_X, ext_y = gather_age_feats(model, test_ext, opts)
-    mae_int = site_estimator.score(int_X, int_y)
-    mae_ext = site_estimator.score(ext_X, ext_y)
+    test_X, test_y = gather_age_feats(model, test_loader, opts)
+    # ext_X, ext_y = gather_age_feats(model, test_ext, opts)
+    mae_test = site_estimator.score(test_X, test_y)
+    # mae_ext = site_estimator.score(ext_X, ext_y)
 
-    return mae_train, mae_int, mae_ext
+    return mae_train, mae_test
 
 @torch.no_grad()
 def gather_site_feats(model, dataloader, opts):
@@ -442,7 +442,7 @@ def gather_site_feats(model, dataloader, opts):
     return torch.cat(features, 0).cpu().numpy(), torch.cat(site_labels, 0).cpu().numpy()
 
 @torch.no_grad()
-def compute_site_ba(model, train_loader, test_int, test_ext, opts):
+def compute_site_ba(model, train_loader, test_loader, opts):
     site_estimator = models.SiteEstimator()
 
     print("Training site estimator")
@@ -450,9 +450,9 @@ def compute_site_ba(model, train_loader, test_int, test_ext, opts):
     ba_train = site_estimator.fit(train_X, train_y)
 
     print("Computing BA")
-    int_X, int_y = gather_site_feats(model, test_int, opts)
-    ext_X, ext_y = gather_site_feats(model, test_ext, opts)
-    ba_int = site_estimator.score(int_X, int_y)
-    ba_ext = site_estimator.score(ext_X, ext_y)
+    test_X, test_y = gather_site_feats(model, test_loader, opts)
+    # ext_X, ext_y = gather_site_feats(model, test_ext, opts)
+    ba_test = site_estimator.score(test_X, test_y)
+    # ba_ext = site_estimator.score(ext_X, ext_y)
 
-    return ba_train, ba_int, ba_ext
+    return ba_train, ba_test
