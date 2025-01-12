@@ -5,6 +5,8 @@ import torch
 import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.base import TransformerMixin
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold
 from collections import OrderedDict
 # A utility for processing masked brain imaging data
 from nilearn.masking import unmask
@@ -24,6 +26,7 @@ def read_data(root, dataset, fast, path):
     # print(f"Read {dataset.upper()}")
     # The sep="\t" argument specifies that the values in the .tsv file are separated by tabs.
     # print(root)
+
 
 
     if path == "local":
@@ -59,71 +62,371 @@ class OpenBHB(torch.utils.data.Dataset):
     # root = root directory where the data is stored
     # label = specifies whether the labels should be continuous ("cont") or binned ("bin"). Defaults to "cont"
     # load_feats = If provided, it specifies a file to load additional biased features
-    def __init__(self, root, train=True, transform=None, 
-                 label="cont", fast=False, load_feats=None, path="local"):
+    def __init__(self, modality, train=True, transform=None, 
+                 label="cont", fast=False, load_feats=None, path="local", fold=0):
         # Stores the root path where the data is located as an instance variable self.root. 
         # This will be used to locate the files later
-        self.root = root
 
 
-        # store the train and internal flags as instance variables
-        self.train = train
-        
-        # This way, the class knows whether to load the training data, the internal test data, or the external test data
-        dataset = "train"
+        (stiffness, dr, T1, age, sex, study,
+         id, imbalance_percentages) = load_samples(path=path)
 
-        # load the data from the disk.
-        self.X, self.y = read_data(root, dataset, fast, path)
-        # print(len(self.X))
-        # print(len(self.y))
-        # print('GNEGNGJGJEJGJJ')
-        # stores the transformation function (if provided) in self.T
+        if modality == 'stiffness':
+            _, mu_stiff, sigma_stiff = normalize_mean_0_std_1(stiffness, default_value=0, mu_nonzero=None,
+                                                              sigma_nonzero=None)
+            [self.mu, self.sigma] = mu_stiff, sigma_stiff
+
+        elif modality == 'dr':
+            _, mu_dr, sigma_dr = normalize_mean_0_std_1(dr, default_value=0, mu_nonzero=None, sigma_nonzero=None)
+            [self.mu, self.sigma] = mu_dr, sigma_dr
+
+        kfold = KFold(n_splits=5, shuffle=True, random_state=42)
+
+        assert fold in range(5) or fold is None
+
+        if fold in range(5):
+            for fold_iter, (train_ids, test_ids) in enumerate(kfold.split(stiffness)):
+
+                if fold_iter == fold:
+                    stiffness_train, stiffness_test = stiffness[train_ids], stiffness[test_ids]
+                    dr_train, dr_test = dr[train_ids], dr[test_ids]
+                    T1_train, T1_test = T1[train_ids], T1[test_ids]
+                    sex_train, sex_test = sex[train_ids], sex[test_ids]
+                    age_train, age_test = age[train_ids], age[test_ids]
+                    study_train, study_test = study[train_ids], study[test_ids]
+                    imbalance_train, imbalance_test = imbalance_percentages[train_ids], imbalance_percentages[test_ids]
+                    # MRE_coverage_train, MRE_coverage_test = MRE_coverage[train_ids], MRE_coverage[test_ids]
+
+                else:
+                    continue
+        else:
+            stiffness_train, stiffness_test, \
+                dr_train, dr_test, \
+                T1_train, T1_test, \
+                age_train, age_test, \
+                sex_train, sex_test, \
+                study_train, study_test, \
+                imbalance_train, imbalance_test = train_test_split(stiffness, dr, T1, age, sex, study,
+                                                                         imbalance_percentages,
+                                                                         test_size=0.2,
+                                                                         random_state=42)
+
+        if train:
+            self.y = age_train
+            self.sex = sex_train
+            self.site = study_train
+            self.imbalance = imbalance_train
+            # self.MRE_coverage = MRE_coverage_train
+
+            if modality == 'stiffness':
+                self.x = stiffness_train
+            elif modality == 'dr':
+                self.x = dr_train
+            elif modality == 'T1':
+                self.x = T1_train
+
+        else:
+            self.y = age_test
+            self.sex = sex_test
+            self.site = study_test
+            self.imbalance = imbalance_test
+            # self.MRE_coverage = MRE_coverage_test
+
+            if modality == 'stiffness':
+                self.x = stiffness_test
+            elif modality == 'dr':
+                self.x = dr_test
+            elif modality == 'T1':
+                self.x = T1_test
+
+        self.modality = modality
         self.T = transform
-        self.label = label
-        self.fast = fast
 
-        self.bias_feats = None
+    def norm(self):
 
-        # prints the number of records (data samples) in self.X, which is the feature set
-        print(f"Read {len(self.X)} records")
+        default_value = 0
 
-    # len(self.y) is returned, which is the length of the labels array self.y. 
-    # This corresponds to the number of samples in the dataset.
+        if self.modality == 'T1':
+            self.x = norm_whole_batch(self.x, 'mean_std', default_value)
+
+        elif self.modality == 'dr' or self.modality == 'stiffness':
+            self.x, _, _ = normalize_mean_0_std_1(self.x,
+                                                  default_value=default_value,
+                                                  mu_nonzero=self.mu,
+                                                  sigma_nonzero=self.sigma)
+
+        else:
+            raise ValueError('Invalid modality')
+
     def __len__(self):
         return len(self.y)
 
-    # method defines how to access an individual item from the dataset (i.e., a single sample) given its index
     def __getitem__(self, index):
-        # If fast is False, the feature data (self.X) is indexed using the provided index, which fetches the corresponding feature vector (MRI data) for that sample.
-        # self.X[0]: If fast is True, instead of fetching a specific sample from the dataset, it always fetches the first sample (self.X[0])
-        if not self.fast:
-            x = self.X[index]
-        else:
-            x = self.X[0]
 
-        # y will contain two values: age and site
+        x = self.x[index]
         y = self.y[index]
 
-        # Checks if a transformation (self.T) has been provided for the features.
-        # If a transformation exists, it is applied to the feature data (x).
+        sex = self.sex[index]
+        site = self.site[index]
+        imbalance = self.imbalance[index]
+        # MRE_coverage = self.MRE_coverage[index]
+
         if self.T is not None:
             x = self.T(x)
-        
-        # This unpacks the y array into two variables: age and site.
-        age, site = y[0], y[1] 
-        #  If so, it means the task is to classify age into bins instead of predicting the exact age.
-        if self.label == "bin":
-            age = bin_age(torch.tensor(age))
-
-
-        # HERE NEEDS TO INCLUDE OTHER META DATA (such as site)
-        
-        # checks if any biased features (self.bias_feats) are available. 
-        # If so, it returns the transformed feature data (x), the binned or continuous age, and the corresponding biased feature for the sample at the given index.
-        if self.bias_feats is not None:
-            return x, age, self.bias_feats[index]
         else:
-            return x, age, site
+            x = torch.from_numpy(x).float()
+
+        return x, y, (sex, site, imbalance)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #     self.root = root
+
+    #     # store the train and internal flags as instance variables
+    #     self.train = train
+        
+    #     # This way, the class knows whether to load the training data, the internal test data, or the external test data
+    #     dataset = "train"
+
+
+    #     stiffness, dr, T1, age, sex, study, id, imbalance_percentages = load_samples(path)
+
+    #     print(age)
+
+
+    #     kfold = KFold(n_splits=5, shuffle=True, random_state=42)
+
+
+
+    #     # # load the data from the disk.
+    #     # self.X, self.y = read_data(root, dataset, fast, path)
+    #     # # print(len(self.X))
+    #     # # print(len(self.y))
+    #     # # print('GNEGNGJGJEJGJJ')
+    #     # # stores the transformation function (if provided) in self.T
+    #     self.T = transform
+    #     self.label = label
+    #     self.fast = fast
+
+    #     self.bias_feats = None
+
+    #     # prints the number of records (data samples) in self.X, which is the feature set
+    #     print(f"Read {len(self.X)} records")
+
+
+
+    # # len(self.y) is returned, which is the length of the labels array self.y. 
+    # # This corresponds to the number of samples in the dataset.
+    # def __len__(self):
+    #     return len(self.y)
+
+    # # method defines how to access an individual item from the dataset (i.e., a single sample) given its index
+    # def __getitem__(self, index):
+    #     # If fast is False, the feature data (self.X) is indexed using the provided index, which fetches the corresponding feature vector (MRI data) for that sample.
+    #     # self.X[0]: If fast is True, instead of fetching a specific sample from the dataset, it always fetches the first sample (self.X[0])
+    #     if not self.fast:
+    #         x = self.X[index]
+    #     else:
+    #         x = self.X[0]
+
+    #     # y will contain two values: age and site
+    #     y = self.y[index]
+
+    #     # Checks if a transformation (self.T) has been provided for the features.
+    #     # If a transformation exists, it is applied to the feature data (x).
+    #     if self.T is not None:
+    #         x = self.T(x)
+        
+    #     # This unpacks the y array into two variables: age and site.
+    #     age, site = y[0], y[1] 
+    #     #  If so, it means the task is to classify age into bins instead of predicting the exact age.
+    #     if self.label == "bin":
+    #         age = bin_age(torch.tensor(age))
+
+
+    #     # HERE NEEDS TO INCLUDE OTHER META DATA (such as site)
+        
+    #     # checks if any biased features (self.bias_feats) are available. 
+    #     # If so, it returns the transformed feature data (x), the binned or continuous age, and the corresponding biased feature for the sample at the given index.
+    #     if self.bias_feats is not None:
+    #         return x, age, self.bias_feats[index]
+    #     else:
+    #         return x, age, site
+
+
+def norm_whole_batch(batch, norm, default_value):
+    batch_normed = np.zeros_like(batch)
+
+    for i in range(batch.shape[0]):
+        if norm == 'mean_std':
+            batch_normed[i], _, _ = normalize_mean_0_std_1(batch[i], default_value, None, None)
+
+        else:
+            raise ValueError('norm has to be min_max or mean_std')
+
+    return batch_normed
+
+
+def normalize_mean_0_std_1(arr, default_value, mu_nonzero, sigma_nonzero):
+    arr_nonzero = arr[np.nonzero(arr)]
+
+    if mu_nonzero is None and sigma_nonzero is None:
+        mu_nonzero = np.mean(arr_nonzero)
+        sigma_nonzero = np.std(arr_nonzero)
+
+    if default_value == 0:
+        arr_pp = np.zeros_like(arr)
+
+    elif default_value == -1:
+        arr_pp = np.ones_like(arr) * -1
+
+    else:
+        raise ValueError('default_value has to be 0 or -1')
+
+    arr_pp[np.nonzero(arr)] = (arr[np.nonzero(arr)] - mu_nonzero) / sigma_nonzero
+
+    return arr_pp, mu_nonzero, sigma_nonzero
+
+
+
+def load_samples(path):
+
+    if path == 'local':
+        prefix_path = 'data/results/Studies_healthy'
+    else:
+        prefix_path = '/home/afc53/contrastive_learning_mri_images/src/data/results/Studies_healthy'
+
+
+    stiffness_ATLAS = np.load(prefix_path + '/ATLAS/stiffness_134.npy', allow_pickle=True)
+    dr_ATLAS = np.load(prefix_path + '/ATLAS/dr_134.npy', allow_pickle=True)
+    T1_ATLAS = np.load(prefix_path + '/ATLAS/T1_masked_ATLAS_cluster.npy', allow_pickle=True)  # T1_ATLAS.npy
+    age_ATLAS = np.load(prefix_path + '/ATLAS/age_ATLAS.npy', allow_pickle=True)
+    sex_ATLAS = np.load(prefix_path + '/ATLAS/sex_ATLAS.npy', allow_pickle=True)
+    id_ATLAS = np.load(prefix_path + '/ATLAS/id_ATLAS.npy', allow_pickle=True)
+    # MRE_coverage_ATLAS = np.load(prefix_path + '/ATLAS/MRE_coverage_ATLAS.npy', allow_pickle=True)
+    study_ATLAS = np.array(['ATLAS'] * len(age_ATLAS))
+
+    # stiffness_OA = np.load(prefix_path + '/Lucy_Hiscox/AD_CN/stiffness_OA.npy', allow_pickle=True)
+    # dr_OA = np.load(prefix_path + '/Lucy_Hiscox/AD_CN/dr_OA.npy', allow_pickle=True)
+    # T1_OA = np.load(prefix_path + '/Lucy_Hiscox/AD_CN/T1_masked_OA.npy', allow_pickle=True)  # T1_OA.npy
+    # age_OA = np.load(prefix_path + '/Lucy_Hiscox/AD_CN/age_OA.npy', allow_pickle=True)
+    # sex_OA = np.load(prefix_path + '/Lucy_Hiscox/AD_CN/sex_OA.npy', allow_pickle=True)
+    # id_OA = np.load(prefix_path + '/Lucy_Hiscox/AD_CN/id_OA.npy', allow_pickle=True)
+    # MRE_coverage_OA = np.load(prefix_path + '/Lucy_Hiscox/AD_CN/MRE_coverage_OA.npy', allow_pickle=True)
+    # study_OA = np.array(['CN'] * len(age_OA))
+
+    stiffness_BMI = np.load(prefix_path + '/BMI/stiffness_BMI.npy', allow_pickle=True)
+    dr_BMI = np.load(prefix_path + '/BMI/dr_BMI.npy', allow_pickle=True)
+    T1_BMI = np.load(prefix_path + '/BMI/T1_masked_BMI.npy', allow_pickle=True)  # T1_MIMS.npy
+    age_BMI = np.load(prefix_path + '/BMI/age_BMI.npy', allow_pickle=True)
+    sex_BMI = np.load(prefix_path + '/BMI/sex_BMI.npy', allow_pickle=True)
+    id_BMI = np.load(prefix_path + '/BMI/id_BMI.npy', allow_pickle=True)
+    # MRE_coverage_BMI = np.load(prefix_path + '/Curtis_Johnson/BMI/MRE_coverage_BMI.npy', allow_pickle=True)
+    study_BMI = np.array(['BMI'] * len(age_BMI))
+
+    stiffness_NOVA = np.load(prefix_path + '/NOVA/stiffness_NOVA.npy', allow_pickle=True)
+    dr_NOVA = np.load(prefix_path + '/NOVA/dr_NOVA.npy', allow_pickle=True)
+    T1_NOVA = np.load(prefix_path + '/NOVA/T1_masked_NOVA.npy', allow_pickle=True)  # T1_MIMS.npy
+    age_NOVA = np.load(prefix_path + '/NOVA/age_NOVA.npy', allow_pickle=True)
+    sex_NOVA = np.load(prefix_path + '/NOVA/sex_NOVA.npy', allow_pickle=True)
+    id_NOVA = np.load(prefix_path + '/NOVA/id_NOVA.npy', allow_pickle=True)
+    # MRE_coverage_NOVA = np.load(prefix_path + '/Curtis_Johnson/NOVA/MRE_coverage_NOVA.npy', allow_pickle=True)
+    study_NOVA = np.array(['NOVA'] * len(age_NOVA))
+
+    stiffness_NITRC_batch_1 = np.load(prefix_path + '/NITRC_batch_1/stiffness_NITRC_batch_1.npy',
+                                      allow_pickle=True)
+    dr_NITRC_batch_1 = np.load(prefix_path + '/NITRC_batch_1/dr_NITRC_batch_1.npy', allow_pickle=True)
+    T1_NITRC_batch_1 = np.load(prefix_path + '/NITRC_batch_1/T1_masked_NITRC_batch_1.npy',
+                               allow_pickle=True)  # T1_NITRC_batch_1.npy
+    age_NITRC_batch_1 = np.load(prefix_path + '/NITRC_batch_1/age_NITRC_batch_1.npy', allow_pickle=True)
+    sex_NITRC_batch_1 = np.load(prefix_path + '/NITRC_batch_1/sex_NITRC_batch_1.npy', allow_pickle=True)
+    id_NITRC_batch_1 = np.load(prefix_path + '/NITRC_batch_1/id_NITRC_batch_1.npy', allow_pickle=True)
+    # MRE_coverage_NITRC_batch_1 = np.load(prefix_path + '/Curtis_Johnson/NITRC_batch_1/MRE_coverage_NITRC_batch_1.npy',
+    #                                      allow_pickle=True)
+    study_NITRC_batch_1 = np.array(['NITRC_batch_1'] * len(age_NITRC_batch_1))
+
+    stiffness_NITRC_batch_2 = np.load(prefix_path + '/NITRC_batch_2/stiffness_NITRC_batch_2.npy',
+                                      allow_pickle=True)
+    dr_NITRC_batch_2 = np.load(prefix_path + '/NITRC_batch_2/dr_NITRC_batch_2.npy', allow_pickle=True)
+    T1_NITRC_batch_2 = np.load(prefix_path + '/NITRC_batch_2/T1_masked_NITRC_batch_2.npy',
+                               allow_pickle=True)  # T1_NITRC_batch_2.npy
+    age_NITRC_batch_2 = np.load(prefix_path + '/NITRC_batch_2/age_NITRC_batch_2.npy', allow_pickle=True)
+    sex_NITRC_batch_2 = np.load(prefix_path + '/NITRC_batch_2/sex_NITRC_batch_2.npy', allow_pickle=True)
+    id_NITRC_batch_2 = np.load(prefix_path + '/NITRC_batch_2/id_NITRC_batch_2.npy', allow_pickle=True)
+    # MRE_coverage_NITRC_batch_2 = np.load(prefix_path + '/Curtis_Johnson/NITRC_batch_2/MRE_coverage_NITRC_batch_2.npy',
+    #                                      allow_pickle=True)
+    study_NITRC_batch_2 = np.array(['NITRC_batch_2'] * len(age_NITRC_batch_2))
+
+    stiffness_MIMS = np.load(prefix_path + '/MIMS/stiffness_MIMS.npy', allow_pickle=True)
+    dr_MIMS = np.load(prefix_path + '/MIMS/dr_MIMS.npy', allow_pickle=True)
+    T1_MIMS = np.load(prefix_path + '/MIMS/T1_masked_MIMS.npy', allow_pickle=True)  # T1_MIMS.npy
+    age_MIMS = np.load(prefix_path + '/MIMS/age_MIMS.npy', allow_pickle=True)
+    sex_MIMS = np.load(prefix_path + '/MIMS/sex_MIMS.npy', allow_pickle=True)
+    id_MIMS = np.load(prefix_path + '/MIMS/id_MIMS.npy', allow_pickle=True)
+    # MRE_coverage_MIMS = np.load(prefix_path + '/MIMS/MRE_coverage_MIMS.npy', allow_pickle=True)
+    study_MIMS = np.array(['MIMS'] * len(age_MIMS))
+
+
+    stiffness_all_healthy = np.concatenate(
+        (stiffness_ATLAS, stiffness_NITRC_batch_1, stiffness_NITRC_batch_2,
+            stiffness_MIMS, stiffness_BMI, stiffness_NOVA), axis=0)
+    dr_all_healthy = np.concatenate((dr_ATLAS, dr_NITRC_batch_1, dr_NITRC_batch_2, dr_MIMS, dr_BMI, dr_NOVA),
+                                    axis=0)
+    T1_all_healthy = np.concatenate((T1_ATLAS, T1_NITRC_batch_1, T1_NITRC_batch_2, T1_MIMS, T1_BMI, T1_NOVA),
+                                    axis=0)
+    age_all_healthy = np.concatenate(
+        (age_ATLAS, age_NITRC_batch_1, age_NITRC_batch_2, age_MIMS, age_BMI, age_NOVA), axis=0)
+    sex_all_healthy = np.concatenate(
+        (sex_ATLAS, sex_NITRC_batch_1, sex_NITRC_batch_2, sex_MIMS, sex_BMI, sex_NOVA), axis=0)
+    study_all_healthy = np.concatenate(
+        (study_ATLAS, study_NITRC_batch_1, study_NITRC_batch_2, study_MIMS, study_BMI, study_NOVA),
+        axis=0)
+    id_all_healthy = np.concatenate((id_ATLAS, id_NITRC_batch_1, id_NITRC_batch_2, id_MIMS, id_BMI, id_NOVA),
+                                    axis=0)
+    # MRE_coverage_all_healthy = np.concatenate((MRE_coverage_ATLAS, MRE_coverage_NITRC_batch_1,
+    #                                             MRE_coverage_NITRC_batch_2, MRE_coverage_OA, MRE_coverage_MIMS,
+    #                                             MRE_coverage_BMI, MRE_coverage_NOVA), axis=0)
+
+    unique, inverse = np.unique(age_all_healthy, return_inverse=True)
+    counts = np.bincount(inverse)
+    total_count = age_all_healthy.shape[0]
+    imbalance_percentages = counts[inverse] / total_count
+
+    return (
+        stiffness_all_healthy, dr_all_healthy, T1_all_healthy, age_all_healthy, sex_all_healthy, study_all_healthy,
+        id_all_healthy, imbalance_percentages)
+
+
 
 # class FeatureExtractor(BaseEstimator, TransformerMixin):
 #     """ Select only the requested data associatedd features from the the

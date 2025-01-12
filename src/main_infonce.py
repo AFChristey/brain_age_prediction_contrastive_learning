@@ -138,21 +138,24 @@ def load_data(opts):
     T_train = NViewTransform(T_train, opts.n_views)
 
     
-    train_dataset = OpenBHB(opts.data_dir, train=True, transform=T_train, label=opts.label, path=opts.path)
+    train_dataset = OpenBHB(modality='dr', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
 
-    # train_dataset.norm()
+    print('HELLO')
+    train_dataset.norm()
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opts.batch_size, shuffle=True)
 
-    train_dataset_score = OpenBHB(opts.data_dir, train=True, transform=T_train, label=opts.label, path=opts.path)
+    train_dataset_score = OpenBHB(modality='dr', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
 
-    # train_dataset_score.norm()
+    train_dataset_score.norm()
+    print('HELLO')
+
 
     train_loader_score = torch.utils.data.DataLoader(train_dataset_score, batch_size=opts.batch_size, shuffle=False)
 
-    test_dataset = OpenBHB(opts.data_dir, train=False, transform=T_test, path=opts.path)
+    test_dataset = OpenBHB(modality='dr', train=False, transform=T_test, path=opts.path, fold=0)
 
-    # test_dataset.norm()
+    test_dataset.norm()
 
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=opts.batch_size, shuffle=False)
 
@@ -318,112 +321,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
     return loss.avg, batch_time.avg, data_time.avg
 
 
-# def extract_features_for_umap(train_loader, model, opts):
-
-#     # List to store features and labels
-#     features_list = []
-#     labels_list = []
-
-#     # Set model to evaluation mode to avoid unnecessary gradients
-#     model.eval()
-
-#     with torch.no_grad():  # No need to track gradients
-#         for idx, (images, labels, _) in enumerate(train_loader):
-#             # Move images and labels to the correct device
-#             if opts.path == "local":
-#                 device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
-#                 images = torch.cat(images, dim=0).to(device)
-#                 labels = labels.float().to(device)
-#             else:
-#                 images = torch.cat(images, dim=0).to(opts.device)
-#                 labels = labels.float().to(opts.device)
-
-#             # Add the channel dimension if it's not already there
-#             images = images.unsqueeze(1)  # Add channel dimension at index 1
-
-#             # Extract features from the encoder (without training)
-#             features = model.features(images)  # Get the latent features
-
-#             # print('TESTING THIS')
-#             # print(len(features))
-#             # print(len(labels))
-
-#             # Store the features and corresponding labels for UMAP
-#             features_list.append(features.cpu().numpy())  # Convert to numpy for UMAP
-#             labels_list.append(labels.cpu().numpy())  # Convert to numpy for UMAP
-#             print((labels_list))
-
-#         # Concatenate all features and labels
-#         all_features = np.concatenate(features_list, axis=0)
-#         all_labels = np.concatenate(labels_list, axis=0)
-
-#     return all_features, all_labels
-
-
-
-# def extract_features_for_umap(train_loader, model, opts, max_features=64):
-
-#     # List to store features and labels
-#     features_list = []
-#     labels_list = []
-
-#     # Set model to evaluation mode to avoid unnecessary gradients
-#     model.eval()
-
-#     # Counter to keep track of how many samples have been processed
-#     total_samples = 0
-
-#     with torch.no_grad():  # No need to track gradients
-#         for idx, (images, labels, _) in enumerate(train_loader):
-#             print(total_samples)
-#             # Move images and labels to the correct device
-#             if opts.path == "local":
-#                 device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
-#                 images = torch.cat(images, dim=0).to(device)
-#                 labels = labels.float().to(device)
-#             else:
-#                 images = torch.cat(images, dim=0).to(opts.device)
-#                 labels = labels.float().to(opts.device)
-
-#             # Add the channel dimension if it's not already there
-#             images = images.unsqueeze(1)  # Add channel dimension at index 1
-
-#             print('TESTING THIS')
-#             print(images.shape)
-#             print(len(labels))
-
-#             # Extract features from the encoder (without training)
-#             features = model.features(images)  # Get the latent features
-
-#             # Determine how many samples to take to avoid exceeding 200
-#             remaining_samples = max_features - total_samples
-#             batch_size = features.size(0)
-
-#             if batch_size > remaining_samples:
-#                 features = features[:remaining_samples]  # Take only the required number of samples
-#                 labels = labels[:remaining_samples]
-
-#             # print(len(features))
-#             # print(len(labels))
-
-#             # Store the features and corresponding labels for UMAP
-#             features_list.append(features.cpu().numpy())  # Convert to numpy for UMAP
-#             labels_list.append(labels.cpu().numpy())  # Convert to numpy for UMAP
-
-#             total_samples += features.size(0)  # Update the count of processed samples
-
-#             # Break the loop if we've reached the desired number of samples
-#             if total_samples >= max_features:
-#                 break
-
-#         # Concatenate all features and labels
-#         all_features = np.concatenate(features_list, axis=0)
-#         all_labels = np.concatenate(labels_list, axis=0)
-
-#     print(len(all_features))
-#     print(len(all_labels))
-#     return all_features, all_labels
-def extract_features_for_umap(test_loader, model, opts, max_features=192):
+def extract_features_for_umap(test_loader, model, opts, key, max_features=192):
     features_list = []
     labels_list = []
     metadata_list = []
@@ -458,6 +356,7 @@ def extract_features_for_umap(test_loader, model, opts, max_features=192):
 
             # Extract features from the model
             features = model.features(images)  # Get features from the model
+            print(metadata[key])
 
 
             if opts.path == "local":
@@ -468,23 +367,17 @@ def extract_features_for_umap(test_loader, model, opts, max_features=192):
                 if batch_size > remaining_samples:
                     features = features[:remaining_samples]
                     labels = labels[:remaining_samples]
-                    metadata = metadata[:remaining_samples]
+                    metadata = metadata[key][:remaining_samples]
 
 
             # Repeat the labels for each view (n_views=2)
             # repeated_labels = labels.unsqueeze(1).expand(-1, opts.n_views).contiguous().view(-1)
             # repeated_metadata = metadata.unsqueeze(1).expand(-1, opts.n_views).contiguous().view(-1)
 
-
-            # # Append features and labels to lists (convert to numpy for UMAP)
-            # features_list.append(features.cpu().numpy())  # Convert features to numpy
-            # labels_list.append(repeated_labels.cpu().numpy())  # Convert repeated labels to numpy
-            # metadata_list.append(repeated_metadata.cpu().numpy())  # Convert repeated labels to numpy (NUMPY IF STRINGS???)
-
             # Append features and labels to lists (convert to numpy for UMAP)
             features_list.append(features.cpu())  # Convert features to numpy
             labels_list.append(labels.cpu())  # Convert repeated labels to numpy
-            metadata_list.append(metadata) 
+            metadata_list.append(metadata[key]) 
 
 
 
@@ -512,30 +405,10 @@ def extract_features_for_umap(test_loader, model, opts, max_features=192):
 
 
 def visualise_umap(test_loader, model, opts, epoch=0):
-
-    # # Extract features and labels from your dataset
-    # features, labels = extract_features_for_umap(train_loader, model, opts)
-    # print(features.shape)
-    # print('AFNENEVJEJVJEVJEJEVJVJEVVEJJVEJVVJEJEJVEVJVJ')
-
-    # # Perform dimensionality reduction with UMAP
-    # umap_model = umap.UMAP(n_neighbors=15, min_dist=0.1, metric='euclidean')
-    # reduced_features = umap_model.fit_transform(features)
-
-    # # Plot the UMAP result
-    # plt.figure(figsize=(10, 8))
-    # plt.scatter(reduced_features[:, 0], reduced_features[:, 1], c=labels, cmap='Spectral', s=10)
-    # plt.colorbar()
-    # plt.title('UMAP of Feature Vectors')
-
-    # # Save the plot instead of showing it
-    # plt.savefig('umap_features_plot.png', dpi=300, bbox_inches='tight')  # Save with high resolution
-    # print("UMAP plot saved to 'umap_features_plot.png'")
-
-    # plt.close()  # Close the figure to free memory
+    key = 1
 
     # Main script to run UMAP and plot the results
-    features, labels, metadata = extract_features_for_umap(test_loader, model, opts)
+    features, labels, metadata = extract_features_for_umap(test_loader, model, opts, key)
     print(f"Features shape: {features.shape}")
     print(f"Labels shape: {labels.shape}")
     # print(f"Metadata shape: {metadata.shape}")
@@ -550,14 +423,6 @@ def visualise_umap(test_loader, model, opts, epoch=0):
     # Normalize the sizes based on age values for better scaling
     sizes = (ages - ages.min()) + 10  # Shift to avoid zero sizes
     sizes = (sizes / sizes.max()) * 100  # Normalize to range [10, 100]
-
-    # # Convert features, labels, and sizes into a Pandas DataFrame for Seaborn
-    # umap_df = pd.DataFrame({
-    #     'UMAP1': reduced_features[:, 0],
-    #     'UMAP2': reduced_features[:, 1],
-    #     'Label': labels,  # Optional, for hue if needed
-    #     'Size': sizes  # Point sizes based on age
-    # })
 
     variable_of_interest = 'sites'
 
@@ -602,17 +467,6 @@ def visualise_umap(test_loader, model, opts, epoch=0):
         filename = f'/home/afc53/images/umap_features_seaborn_plot_epoch_{epoch}.png'
         plt.savefig(filename, dpi=300, bbox_inches='tight')  # Save with high resolution
         print(f"UMAP plot saved to '{filename}'")
-
-
-    # # Plot the UMAP result
-    # plt.figure(figsize=(10, 8))
-    # plt.scatter(reduced_features[:, 0], reduced_features[:, 1], c=labels, cmap='Spectral', s=10)
-    # plt.colorbar()  # Show color bar based on labels
-    # plt.title('UMAP of Feature Vectors')
-
-    # # Save the plot as a PNG file instead of showing it
-    # plt.savefig('umap_features_plot.png', dpi=300, bbox_inches='tight')  # Save with high resolution
-    # print("UMAP plot saved to 'umap_features_plot.png'")
 
     # Close the plot to free memory
     plt.close()
