@@ -547,9 +547,21 @@ if __name__ == '__main__':
     visualise_umap(test_loader, model, opts)
 
     for epoch in range(1, opts.epochs + 1):
+        if epoch == 2:
+            visualise_umap(test_loader, model, opts, epoch)
+        if epoch == 5:
+            visualise_umap(test_loader, model, opts, epoch)
+        if epoch == 10:
+            visualise_umap(test_loader, model, opts, epoch)
+        if epoch == 20:
+            visualise_umap(test_loader, model, opts, epoch)
         if epoch == 50:
             visualise_umap(test_loader, model, opts, epoch)
-        if epoch == 140:
+        if epoch == 80:
+            visualise_umap(test_loader, model, opts, epoch)
+        if epoch == 100:
+            visualise_umap(test_loader, model, opts, epoch)
+        if epoch == 150:
             visualise_umap(test_loader, model, opts, epoch)
 
         adjust_learning_rate(opts, optimizer, epoch)
