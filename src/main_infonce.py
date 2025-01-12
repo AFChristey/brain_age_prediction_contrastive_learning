@@ -356,7 +356,7 @@ def extract_features_for_umap(test_loader, model, opts, key, max_features=192):
 
             # Extract features from the model
             features = model.features(images)  # Get features from the model
-            print(metadata[key])
+            # print(metadata[key])
 
 
             if opts.path == "local":
