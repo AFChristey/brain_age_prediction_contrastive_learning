@@ -50,7 +50,7 @@ def parse_arguments():
     parser.add_argument('--print_freq', type=int, help='print frequency', default=10)
     parser.add_argument('--trial', type=int, help='random seed / trial id', default=0)
     parser.add_argument('--save_dir', type=str, help='output dir', default='output')
-    parser.add_argument('--save_freq', type=int, help='save frequency', default=50)
+    parser.add_argument('--save_freq', type=int, help='save frequency', default=3)
     parser.add_argument('--data_dir', type=str, help='path of data dir', default='/data')
     parser.add_argument('--amp', type=arg2bool, help='use amp', default=False)
     parser.add_argument('--clip_grad', type=arg2bool, help='clip gradient to prevent nan', default=False)
@@ -237,6 +237,8 @@ def load_model(opts):
     elif opts.loss_choice == "RnC":
         infonce = losses.RnCLoss(temperature=opts.temp, label_diff=opts.label_diff, feature_sim=opts.feature_sim)
 
+    # print("FEFEGEE  EFE FE  GNRGIRNGRIGNRIGRGNRGINGRIGNRGNRIGRIGNRGIRGRGNRGRIN")            
+
     infonce = infonce.to(opts.device)
     
     return model, infonce
@@ -287,7 +289,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         warmup_learning_rate(opts, epoch, idx, len(train_loader), optimizer)
 
         with torch.cuda.amp.autocast(scaler is not None):
-            # print("hELLO")            
+            # print("GNRGIRNGRIGNRIGRGNRGINGRIGNRGNRIGRIGNRGIRGRGNRGRIN")            
             # print(images.shape)
 
             projected = model(images)
