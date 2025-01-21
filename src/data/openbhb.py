@@ -63,7 +63,7 @@ class OpenBHB(torch.utils.data.Dataset):
     # label = specifies whether the labels should be continuous ("cont") or binned ("bin"). Defaults to "cont"
     # load_feats = If provided, it specifies a file to load additional biased features
     def __init__(self, modality, train=True, transform=None, 
-                 label="cont", fast=False, load_feats=None, path="local", fold=4):
+                 label="cont", fast=False, load_feats=None, path="local", fold=0):
         # Stores the root path where the data is located as an instance variable self.root. 
         # This will be used to locate the files later
 
@@ -111,33 +111,63 @@ class OpenBHB(torch.utils.data.Dataset):
                                                                          test_size=0.2,
                                                                          random_state=42)
 
+        # if train:
+        #     self.y = age_train
+        #     self.sex = sex_train
+        #     self.site = study_train
+        #     self.imbalance = imbalance_train
+        #     # self.MRE_coverage = MRE_coverage_train
+
+        #     if modality == 'stiffness':
+        #         self.x = stiffness_train
+        #     elif modality == 'dr':
+        #         self.x = dr_train
+        #     elif modality == 'T1':
+        #         self.x = T1_train
+
+        # else:
+        #     self.y = age_test
+        #     self.sex = sex_test
+        #     self.site = study_test
+        #     self.imbalance = imbalance_test
+        #     # self.MRE_coverage = MRE_coverage_test
+
+        #     if modality == 'stiffness':
+        #         self.x = stiffness_test
+        #     elif modality == 'dr':
+        #         self.x = dr_test
+        #     elif modality == 'T1':
+        #         self.x = T1_test
+
         if train:
-            self.y = age_train
-            self.sex = sex_train
-            self.site = study_train
-            self.imbalance = imbalance_train
+            self.y = age
+            self.sex = sex
+            self.site = study
+            self.imbalance = imbalance_percentages
             # self.MRE_coverage = MRE_coverage_train
 
             if modality == 'stiffness':
-                self.x = stiffness_train
+                self.x = stiffness
             elif modality == 'dr':
-                self.x = dr_train
+                self.x = dr
             elif modality == 'T1':
-                self.x = T1_train
+                self.x = T1
 
         else:
-            self.y = age_test
-            self.sex = sex_test
-            self.site = study_test
-            self.imbalance = imbalance_test
+            self.y = age
+            self.sex = sex
+            self.site = study
+            self.imbalance = imbalance_percentages
             # self.MRE_coverage = MRE_coverage_test
 
             if modality == 'stiffness':
-                self.x = stiffness_test
+                self.x = stiffness
             elif modality == 'dr':
-                self.x = dr_test
+                self.x = dr
             elif modality == 'T1':
-                self.x = T1_test
+                self.x = T1
+
+
 
         self.modality = modality
         self.T = transform
