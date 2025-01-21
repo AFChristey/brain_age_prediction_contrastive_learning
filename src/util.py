@@ -456,3 +456,31 @@ def compute_site_ba(model, train_loader, test_loader, opts):
     # ba_ext = site_estimator.score(ext_X, ext_y)
 
     return ba_train, ba_test
+
+
+def calculate_dynamic_NN_nb(current_epoch, step_size, end_NN_nb, max_epochs=50, start_NN_nb=32):
+    """
+    Calculate the dynamic NN_nb for the current epoch
+
+    Args:
+    - current_epoch (int): The current epoch number.
+
+    Returns:
+    - int: The dynamically calculated NN_nb for the current epoch.
+    """
+    # Calculate the number of steps completed
+    steps_completed = current_epoch // step_size
+
+    # Total number of steps in the training
+    total_steps = max_epochs // step_size
+
+    # Calculate decrease per step
+    NN_nb_decrement_per_step = (start_NN_nb - end_NN_nb) / float(total_steps - 1)
+
+    # Calculate current NN_nb based on the steps completed
+    dynamic_NN_nb = int(start_NN_nb - (NN_nb_decrement_per_step * steps_completed))
+
+    # Ensure dynamic_NN_nb does not go below end_NN_nb
+    dynamic_NN_nb = max(dynamic_NN_nb, end_NN_nb)
+
+    return dynamic_NN_nb

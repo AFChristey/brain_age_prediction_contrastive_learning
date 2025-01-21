@@ -13,9 +13,16 @@ optimizer: adam
 momentum: 0.9
 weight_decay: 5e-5
 train_all: 1
-method: yaware
+method: expw
 kernel: gaussian
 sigma: 1
 trial: 0
 tf: none
 path: local
+loss_choice: dynamic
+NN_nb_step_size: 0
+end_NN_nb: 14
+NN_nb_selection: manhattan
+temp_RNC: 2
+label_diff: l1
+feature_sim: l2

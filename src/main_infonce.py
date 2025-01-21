@@ -75,6 +75,7 @@ def parse_arguments():
     parser.add_argument('--train_all', type=arg2bool, help='train on all dataset including validation (int+ext)', default=True)
     parser.add_argument('--tf', type=str, help='data augmentation', choices=['none', 'crop', 'cutout', 'all'], default='none')
     parser.add_argument('--path', type=str, help='model ran on cluster or locally', choices=['local', 'cluster'], default='local')
+    parser.add_argument('--loss_choice', type=str, help='which loss function is being tested', choices=['supcon', 'dynamic', 'RnC'], default='supcon')
     
     # Loss 
     parser.add_argument('--method', type=str, help='loss function', choices=['supcon', 'yaware', 'threshold', 'expw'], default='supcon')
@@ -84,6 +85,20 @@ def parse_arguments():
     parser.add_argument('--alpha', type=float, help='infonce weight', default=1.)
     parser.add_argument('--sigma', type=float, help='gaussian-rbf kernel sigma / cauchy gamma', default=1)
     parser.add_argument('--n_views', type=int, help='num. of multiviews', default=2)
+
+
+    # RnCLoss Parameters
+    parser.add_argument('--temp_RNC', type=float, default=2, help='temperature for RnC loss')
+    parser.add_argument('--label_diff', type=str, default='l1', choices=['l1'], help='label distance function')
+    parser.add_argument('--feature_sim', type=str, default='l2', choices=['l2'], help='feature similarity function')
+
+
+    # dynamic loss hyperparameter for new modifications
+    parser.add_argument('--NN_nb_step_size', type=int, help='step size for NN_nb', default=0)
+    parser.add_argument('--end_NN_nb', type=int, help='label type', default=4)
+    parser.add_argument('--NN_nb_selection', type=str, help='selection method for NN_nb',
+                        choices=['euclidean', 'similarity', 'manhattan', 'chebyshev', 'no'], default='similarity')
+
 
     opts = parser.parse_args()
 
@@ -209,10 +224,20 @@ def load_model(opts):
         'rbf': rbf
     }
 
-    infonce = losses.KernelizedSupCon(method=opts.method, temperature=opts.temp, 
-                                      kernel=kernels[opts.kernel], delta_reduction=opts.delta_reduction)
-    infonce = infonce.to(opts.device)
+    if opts.loss_choice == "supcon":
+        infonce = losses.KernelizedSupCon(method=opts.method, temperature=opts.temp, 
+                                          kernel=kernels[opts.kernel], delta_reduction=opts.delta_reduction)
+        
+    elif opts.loss_choice == "dynamic":
+        infonce = losses.DynLocRep_loss(method=opts.method, temperature=opts.temp, kernel=kernels[opts.kernel],
+                                            delta_reduction=opts.delta_reduction, epochs=opts.epochs,
+                                            NN_nb_step_size=opts.NN_nb_step_size, end_NN_nb=opts.end_NN_nb,
+                                            NN_nb_selection=opts.NN_nb_selection)
+        
+    elif opts.loss_choice == "RnC":
+        infonce = losses.RnCLoss(temperature=opts.temp, label_diff=opts.label_diff, feature_sim=opts.feature_sim)
 
+    infonce = infonce.to(opts.device)
     
     return model, infonce
 
@@ -259,14 +284,6 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
         images = images.unsqueeze(1)  # Add channel dimension at index 1
 
-        # print('Length of labels')
-        # print(len(labels))
-        # print(len(images))
-
-        # # TESTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # features = model.features(images)
-        # print(features.shape)
-
         warmup_learning_rate(opts, epoch, idx, len(train_loader), optimizer)
 
         with torch.cuda.amp.autocast(scaler is not None):
@@ -276,15 +293,32 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             projected = model(images)
             projected = torch.split(projected, [bsz]*opts.n_views, dim=0)
             projected = torch.cat([f.unsqueeze(1) for f in projected], dim=1)
-            # running_loss = infonce(projected, labels.to(opts.device))
-            # running_loss = infonce(projected, labels.to(device))
-            # print("Images dtype:", images.dtype)
-            # print("Labels dtype:", labels.dtype)
-            if opts.path == "local":
-                running_loss = infonce(projected, labels.to(device).float())
-            else:
-                running_loss = infonce(projected, labels.to(opts.device).float())
 
+            if opts.loss_choice == "supcon" or opts.loss_choice == "RnC":
+                if opts.path == "local":
+                    running_loss = infonce(projected, labels.to(device).float())
+                else:
+                    running_loss = infonce(projected, labels.to(opts.device).float())
+
+            elif opts.loss_choice == "dynamic":
+                if opts.path == "local":
+                    if opts.NN_nb_step_size > 0:
+                        running_loss = infonce(features=projected,
+                                            labels=labels.to(device),
+                                            epoch=epoch)
+
+                    else:
+                        running_loss = infonce(features=projected,
+                                            labels=labels.to(device))
+                else:
+                    if opts.NN_nb_step_size > 0:
+                        running_loss = infonce(features=projected,
+                                            labels=labels.to(opts.device),
+                                            epoch=epoch)
+
+                    else:
+                        running_loss = infonce(features=projected,
+                                            labels=labels.to(opts.device))
 
         
         optimizer.zero_grad()
