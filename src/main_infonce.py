@@ -441,13 +441,14 @@ def extract_features_for_umap(test_loader, model, opts, key, max_features=192):
 
 
 def visualise_umap(test_loader, model, opts, epoch=0):
-    key = 1
+    key = 0
+    variable_of_interest = str(key)
 
     # Main script to run UMAP and plot the results
     features, labels, metadata = extract_features_for_umap(test_loader, model, opts, key)
     print(f"Features shape: {features.shape}")
     print(f"Labels shape: {labels.shape}")
-    # print(f"Metadata shape: {metadata.shape}")
+    print(f"Metadata shape: {metadata.shape}")
 
     # Perform UMAP dimensionality reduction
     umap_model = umap.UMAP(random_state=42)
@@ -460,13 +461,12 @@ def visualise_umap(test_loader, model, opts, epoch=0):
     sizes = (ages - ages.min()) + 10  # Shift to avoid zero sizes
     sizes = (sizes / sizes.max()) * 100  # Normalize to range [10, 100]
 
-    variable_of_interest = 'sites'
 
     umap_df = pd.DataFrame(embedding, columns=['UMAP 1', 'UMAP 2'])
-    umap_df['sites'] = metadata
+    umap_df[variable_of_interest] = metadata
 
     col_pal_str = 'hsv'
-    order = 1
+    order = -1
     color_palette = sns.color_palette(col_pal_str, len(umap_df[variable_of_interest].unique()))[::order]
     print(umap_df[variable_of_interest].unique())
 

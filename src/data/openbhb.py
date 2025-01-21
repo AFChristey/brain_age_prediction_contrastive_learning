@@ -111,6 +111,8 @@ class OpenBHB(torch.utils.data.Dataset):
                                                                          test_size=0.2,
                                                                          random_state=42)
 
+        # THIS IS TO TRAIN-TEST SPLIT (ONLY 60 TEST SAMPLES)
+            
         # if train:
         #     self.y = age_train
         #     self.sex = sex_train
@@ -139,6 +141,9 @@ class OpenBHB(torch.utils.data.Dataset):
         #     elif modality == 'T1':
         #         self.x = T1_test
 
+
+        # THIS IS TO HAVE SAME TRAIN AND TEST - risky as overfitting
+            
         if train:
             self.y = age
             self.sex = sex
