@@ -63,7 +63,7 @@ class OpenBHB(torch.utils.data.Dataset):
     # label = specifies whether the labels should be continuous ("cont") or binned ("bin"). Defaults to "cont"
     # load_feats = If provided, it specifies a file to load additional biased features
     def __init__(self, modality, train=True, transform=None, 
-                 label="cont", fast=False, load_feats=None, path="local", fold=0):
+                 label="cont", fast=False, load_feats=None, path="local", fold=4):
         # Stores the root path where the data is located as an instance variable self.root. 
         # This will be used to locate the files later
 
@@ -397,9 +397,7 @@ def load_samples(path):
     study_MIMS = np.array(['MIMS'] * len(age_MIMS))
 
 
-    stiffness_all_healthy = np.concatenate(
-        (stiffness_ATLAS, stiffness_NITRC_batch_1, stiffness_NITRC_batch_2,
-            stiffness_MIMS, stiffness_BMI, stiffness_NOVA), axis=0)
+    stiffness_all_healthy = np.concatenate((stiffness_ATLAS, stiffness_NITRC_batch_1, stiffness_NITRC_batch_2, stiffness_MIMS, stiffness_BMI, stiffness_NOVA), axis=0)
     dr_all_healthy = np.concatenate((dr_ATLAS, dr_NITRC_batch_1, dr_NITRC_batch_2, dr_MIMS, dr_BMI, dr_NOVA),
                                     axis=0)
     T1_all_healthy = np.concatenate((T1_ATLAS, T1_NITRC_batch_1, T1_NITRC_batch_2, T1_MIMS, T1_BMI, T1_NOVA),
