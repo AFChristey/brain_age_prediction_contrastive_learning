@@ -382,6 +382,7 @@ class RnCLoss(nn.Module):
         # labels: [bs, label_dim]
 
         features = torch.cat([features[:, 0], features[:, 1]], dim=0)  # [2bs, feat_dim]
+        labels = labels.view(-1, 1)  # Reshape to [batch_size, 1]
         labels = labels.repeat(2, 1)  # [2bs, label_dim]
 
         label_diffs = self.label_diff_fn(labels)
@@ -391,6 +392,10 @@ class RnCLoss(nn.Module):
         exp_logits = logits.exp()
 
         n = logits.shape[0]  # n = 2bs
+
+        print("logits shape:", logits.shape)
+        print("label_diffs shape:", label_diffs.shape)
+        print("mask shape:", (1 - torch.eye(n).to(logits.device)).shape)
 
         # remove diagonal
         logits = logits.masked_select((1 - torch.eye(n).to(logits.device)).bool()).view(n, n - 1)

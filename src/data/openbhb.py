@@ -71,6 +71,11 @@ class OpenBHB(torch.utils.data.Dataset):
         (stiffness, dr, T1, age, sex, study,
          id, imbalance_percentages) = load_samples(path=path)
 
+        sex = pd.Series(sex)
+        sex = sex.replace('f', 'F')
+        sex = sex.replace('m', 'M')
+        sex = sex.to_numpy()
+
         if modality == 'stiffness':
             _, mu_stiff, sigma_stiff = normalize_mean_0_std_1(stiffness, default_value=0, mu_nonzero=None,
                                                               sigma_nonzero=None)

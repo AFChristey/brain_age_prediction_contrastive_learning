@@ -357,7 +357,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
     return loss.avg, batch_time.avg, data_time.avg
 
 
-def extract_features_for_umap(test_loader, model, opts, key, max_features=192):
+def extract_features_for_umap(test_loader, model, opts, key, max_features=64):
     features_list = []
     labels_list = []
     metadata_list = []
@@ -601,8 +601,8 @@ if __name__ == '__main__':
         #     visualise_umap(test_loader, model, opts, epoch)
 
 
-        if epoch == 1:
-            visualise_umap(test_loader, model, opts, epoch)
+        # if epoch == 1:
+        #     visualise_umap(test_loader, model, opts, epoch)
         if epoch == 2:
             visualise_umap(test_loader, model, opts, epoch)
         if epoch == 3:
