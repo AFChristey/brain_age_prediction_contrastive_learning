@@ -218,38 +218,6 @@ class OpenBHB(torch.utils.data.Dataset):
 
         return x, y, (sex, site, imbalance)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     #     self.root = root
 
     #     # store the train and internal flags as instance variables

@@ -431,13 +431,13 @@ def gather_site_feats(model, dataloader, opts):
     site_labels = []
 
     model.eval()
-    for idx, (images, _, sites) in enumerate(dataloader):
+    for idx, (images, _, metadata) in enumerate(dataloader):
         if isinstance(images, list):
             images = images[0]
         images = images.to(opts.device)
         images = images.unsqueeze(1)  # Add channel dimension at index 1
         features.append(model.features(images))
-        site_labels.append(sites)
+        site_labels.append(metadata[1])
     
     return torch.cat(features, 0).cpu().numpy(), torch.cat(site_labels, 0).cpu().numpy()
 
