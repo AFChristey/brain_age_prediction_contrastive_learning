@@ -50,7 +50,7 @@ def parse_arguments():
     parser.add_argument('--print_freq', type=int, help='print frequency', default=10)
     parser.add_argument('--trial', type=int, help='random seed / trial id', default=0)
     parser.add_argument('--save_dir', type=str, help='output dir', default='output')
-    parser.add_argument('--save_freq', type=int, help='save frequency', default=10)
+    parser.add_argument('--save_freq', type=int, help='save frequency', default=2)
     parser.add_argument('--data_dir', type=str, help='path of data dir', default='/data')
     parser.add_argument('--amp', type=arg2bool, help='use amp', default=False)
     parser.add_argument('--clip_grad', type=arg2bool, help='clip gradient to prevent nan', default=False)
@@ -601,22 +601,20 @@ if __name__ == '__main__':
         #     visualise_umap(test_loader, model, opts, epoch)
 
 
-        # if epoch == 1:
+        # if epoch == 2:
         #     visualise_umap(test_loader, model, opts, epoch)
-        if epoch == 2:
-            visualise_umap(test_loader, model, opts, epoch)
-        if epoch == 3:
-            visualise_umap(test_loader, model, opts, epoch)
-        if epoch == 4:
-            visualise_umap(test_loader, model, opts, epoch)
-        if epoch == 5:
-            visualise_umap(test_loader, model, opts, epoch)
-        if epoch == 6:
-            visualise_umap(test_loader, model, opts, epoch)
-        if epoch == 8:
-            visualise_umap(test_loader, model, opts, epoch)
-        if epoch == 10:
-            visualise_umap(test_loader, model, opts, epoch)
+        # if epoch == 3:
+        #     visualise_umap(test_loader, model, opts, epoch)
+        # if epoch == 4:
+        #     visualise_umap(test_loader, model, opts, epoch)
+        # if epoch == 5:
+        #     visualise_umap(test_loader, model, opts, epoch)
+        # if epoch == 6:
+        #     visualise_umap(test_loader, model, opts, epoch)
+        # if epoch == 8:
+        #     visualise_umap(test_loader, model, opts, epoch)
+        # if epoch == 10:
+        #     visualise_umap(test_loader, model, opts, epoch)
 
         adjust_learning_rate(opts, optimizer, epoch)
 
