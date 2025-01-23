@@ -118,64 +118,64 @@ class OpenBHB(torch.utils.data.Dataset):
 
         # THIS IS TO TRAIN-TEST SPLIT (ONLY 60 TEST SAMPLES)
             
-        # if train:
-        #     self.y = age_train
-        #     self.sex = sex_train
-        #     self.site = study_train
-        #     self.imbalance = imbalance_train
-        #     # self.MRE_coverage = MRE_coverage_train
+        if train:
+            self.y = age_train
+            self.sex = sex_train
+            self.site = study_train
+            self.imbalance = imbalance_train
+            # self.MRE_coverage = MRE_coverage_train
 
-        #     if modality == 'stiffness':
-        #         self.x = stiffness_train
-        #     elif modality == 'dr':
-        #         self.x = dr_train
-        #     elif modality == 'T1':
-        #         self.x = T1_train
+            if modality == 'stiffness':
+                self.x = stiffness_train
+            elif modality == 'dr':
+                self.x = dr_train
+            elif modality == 'T1':
+                self.x = T1_train
 
-        # else:
-        #     self.y = age_test
-        #     self.sex = sex_test
-        #     self.site = study_test
-        #     self.imbalance = imbalance_test
-        #     # self.MRE_coverage = MRE_coverage_test
+        else:
+            self.y = age_test
+            self.sex = sex_test
+            self.site = study_test
+            self.imbalance = imbalance_test
+            # self.MRE_coverage = MRE_coverage_test
 
-        #     if modality == 'stiffness':
-        #         self.x = stiffness_test
-        #     elif modality == 'dr':
-        #         self.x = dr_test
-        #     elif modality == 'T1':
-        #         self.x = T1_test
+            if modality == 'stiffness':
+                self.x = stiffness_test
+            elif modality == 'dr':
+                self.x = dr_test
+            elif modality == 'T1':
+                self.x = T1_test
 
 
         # THIS IS TO HAVE SAME TRAIN AND TEST - risky as overfitting
             
-        if train:
-            self.y = age
-            self.sex = sex
-            self.site = study
-            self.imbalance = imbalance_percentages
-            # self.MRE_coverage = MRE_coverage_train
+        # if train:
+        #     self.y = age
+        #     self.sex = sex
+        #     self.site = study
+        #     self.imbalance = imbalance_percentages
+        #     # self.MRE_coverage = MRE_coverage_train
 
-            if modality == 'stiffness':
-                self.x = stiffness
-            elif modality == 'dr':
-                self.x = dr
-            elif modality == 'T1':
-                self.x = T1
+        #     if modality == 'stiffness':
+        #         self.x = stiffness
+        #     elif modality == 'dr':
+        #         self.x = dr
+        #     elif modality == 'T1':
+        #         self.x = T1
 
-        else:
-            self.y = age
-            self.sex = sex
-            self.site = study
-            self.imbalance = imbalance_percentages
-            # self.MRE_coverage = MRE_coverage_test
+        # else:
+        #     self.y = age
+        #     self.sex = sex
+        #     self.site = study
+        #     self.imbalance = imbalance_percentages
+        #     # self.MRE_coverage = MRE_coverage_test
 
-            if modality == 'stiffness':
-                self.x = stiffness
-            elif modality == 'dr':
-                self.x = dr
-            elif modality == 'T1':
-                self.x = T1
+        #     if modality == 'stiffness':
+        #         self.x = stiffness
+        #     elif modality == 'dr':
+        #         self.x = dr
+        #     elif modality == 'T1':
+        #         self.x = T1
 
 
 
