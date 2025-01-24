@@ -50,7 +50,7 @@ def parse_arguments():
     parser.add_argument('--print_freq', type=int, help='print frequency', default=10)
     parser.add_argument('--trial', type=int, help='random seed / trial id', default=0)
     parser.add_argument('--save_dir', type=str, help='output dir', default='output')
-    parser.add_argument('--save_freq', type=int, help='save frequency', default=2)
+    parser.add_argument('--save_freq', type=int, help='save frequency', default=4)
     parser.add_argument('--data_dir', type=str, help='path of data dir', default='/data')
     parser.add_argument('--amp', type=arg2bool, help='use amp', default=False)
     parser.add_argument('--clip_grad', type=arg2bool, help='clip gradient to prevent nan', default=False)
@@ -153,14 +153,14 @@ def load_data(opts):
     T_train = NViewTransform(T_train, opts.n_views)
 
     
-    train_dataset = OpenBHB(modality='stiffness', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
+    train_dataset = OpenBHB(modality='T1', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
 
     print('HELLO')
     train_dataset.norm()
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opts.batch_size, shuffle=True)
 
-    train_dataset_score = OpenBHB(modality='stiffness', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
+    train_dataset_score = OpenBHB(modality='T1', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
 
     train_dataset_score.norm()
     print('HELLO')
@@ -168,7 +168,7 @@ def load_data(opts):
 
     train_loader_score = torch.utils.data.DataLoader(train_dataset_score, batch_size=opts.batch_size, shuffle=False)
 
-    test_dataset = OpenBHB(modality='stiffness', train=False, transform=T_test, path=opts.path, fold=0)
+    test_dataset = OpenBHB(modality='T1', train=False, transform=T_test, path=opts.path, fold=0)
 
     test_dataset.norm()
 
