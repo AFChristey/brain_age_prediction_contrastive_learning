@@ -442,7 +442,7 @@ def gather_site_feats(model, dataloader, opts):
         # print(site_labels)
     
     # return torch.cat(features, 0).cpu().numpy(), torch.cat(site_labels, 0).cpu().numpy()
-    return torch.cat(features, 0).cpu().numpy(), site_labels.cpu().numpy()
+    return torch.cat(features, 0).cpu().numpy(), site_labels.numpy()
 
 @torch.no_grad()
 def compute_site_ba(model, train_loader, test_loader, opts):
