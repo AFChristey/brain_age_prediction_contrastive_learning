@@ -662,7 +662,7 @@ if __name__ == '__main__':
         #     visualise_umap(test_loader, model, opts, epoch)
         # if epoch == 8:
         #     visualise_umap(test_loader, model, opts, epoch)
-        if epoch == 12:
+        if epoch == 36:
             visualise_umap(test_loader, model, opts, epoch)
 
         adjust_learning_rate(opts, optimizer, epoch)
