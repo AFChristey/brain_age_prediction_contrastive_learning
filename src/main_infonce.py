@@ -34,6 +34,9 @@ import umap
 import seaborn as sns
 import pandas as pd
 
+from sklearn.manifold import TSNE
+
+
 
 
 
@@ -441,7 +444,7 @@ def extract_features_for_umap(test_loader, model, opts, key, max_features=64):
 
 
 def visualise_umap(test_loader, model, opts, epoch=0):
-    key = 0
+    key = 1
     variable_of_interest = str(key)
 
     # Main script to run UMAP and plot the results
@@ -452,7 +455,10 @@ def visualise_umap(test_loader, model, opts, epoch=0):
 
     # Perform UMAP dimensionality reduction
     umap_model = umap.UMAP(random_state=42)
-    embedding = umap_model.fit_transform(features)
+    embedding_umap = umap_model.fit_transform(features)
+
+    tsne_model = TSNE(n_components=2, random_state=42, perplexity=30, n_iter=1000)
+    embedding_tsne = tsne_model.fit_transform(features)
 
 
     ages = labels  # Assuming 'labels' represents ages
@@ -462,14 +468,47 @@ def visualise_umap(test_loader, model, opts, epoch=0):
     sizes = (sizes / sizes.max()) * 100  # Normalize to range [10, 100]
 
 
-    umap_df = pd.DataFrame(embedding, columns=['UMAP 1', 'UMAP 2'])
+    umap_df = pd.DataFrame(embedding_umap, columns=['UMAP 1', 'UMAP 2'])
     umap_df[variable_of_interest] = metadata
 
+    tsne_df = pd.DataFrame(embedding_tsne, columns=['t-SNE 1', 't-SNE 2'])
+    tsne_df[variable_of_interest] = metadata
+
     col_pal_str = 'hsv'
-    order = -1
+    order = 1
     color_palette = sns.color_palette(col_pal_str, len(umap_df[variable_of_interest].unique()))[::order]
     print(umap_df[variable_of_interest].unique())
 
+
+    # Create a scatter plot using Seaborn
+    plt.figure(figsize=(10, 8))
+    sns.scatterplot(
+        data=tsne_df,
+        x='t-SNE 1',
+        y='t-SNE 2',
+        hue=variable_of_interest,
+        palette=color_palette,
+        size=sizes,  # Scale point size based on age
+        sizes=(20, 200),  # Define size range for the points
+        alpha=0.5  # Transparency of points
+    )
+
+    # Customize plot appearance
+    plt.title('t-SNE of Feature Vectors', fontsize=16)
+    plt.legend(title='Labels', bbox_to_anchor=(1.05, 1), loc='upper left')  # Place legend outside
+    plt.tight_layout()
+
+
+    if opts.path == "local":
+        filename = f'tsne_features_seaborn_plot_epoch_{epoch}.png'
+        plt.savefig(filename, dpi=300, bbox_inches='tight')  # Save with high resolution
+        print(f"t-SNE plot saved to '{filename}'")
+    else:
+        filename = f'/home/afc53/images/tsne_features_seaborn_plot_epoch_{epoch}.png'
+        plt.savefig(filename, dpi=300, bbox_inches='tight')  # Save with high resolution
+        print(f"t-SNE plot saved to '{filename}'")
+
+    plt.close()
 
     # Create a scatter plot using Seaborn
     plt.figure(figsize=(10, 8))
@@ -491,10 +530,6 @@ def visualise_umap(test_loader, model, opts, epoch=0):
     plt.legend(title='Labels', bbox_to_anchor=(1.05, 1), loc='upper left')  # Place legend outside
     plt.tight_layout()
 
-    
-
-
-
     if opts.path == "local":
         filename = f'umap_features_seaborn_plot_epoch_{epoch}.png'
         plt.savefig(filename, dpi=300, bbox_inches='tight')  # Save with high resolution
@@ -506,6 +541,20 @@ def visualise_umap(test_loader, model, opts, epoch=0):
 
     # Close the plot to free memory
     plt.close()
+
+    if opts.path == "cluster":
+        save_path = "/rds/user/afc53/hpc-work/saved_features/"
+
+        # Save the original features, labels, and metadata
+        np.save(os.path.join(save_path, f'features_before_reduction_epoch_{epoch}.npy'), features)
+        np.save(os.path.join(save_path, f'labels_epoch_{epoch}.npy'), labels)
+        np.save(os.path.join(save_path, f'metadata_epoch_{epoch}.npy'), metadata)
+
+        # Save UMAP and t-SNE reduced features
+        np.save(os.path.join(save_path, f'features_umap_epoch_{epoch}.npy'), embedding_umap)
+        np.save(os.path.join(save_path, f'features_tsne_epoch_{epoch}.npy'), embedding_tsne)
+
+
 
 if __name__ == '__main__':
     opts = parse_arguments()
@@ -580,7 +629,7 @@ if __name__ == '__main__':
     start_time = time.time()
     best_acc = 0.
 
-    visualise_umap(test_loader, model, opts)
+    # visualise_umap(test_loader, model, opts)
 
     for epoch in range(1, opts.epochs + 1):
         # if epoch == 2:
@@ -613,8 +662,8 @@ if __name__ == '__main__':
         #     visualise_umap(test_loader, model, opts, epoch)
         # if epoch == 8:
         #     visualise_umap(test_loader, model, opts, epoch)
-        # if epoch == 10:
-        #     visualise_umap(test_loader, model, opts, epoch)
+        if epoch == 12:
+            visualise_umap(test_loader, model, opts, epoch)
 
         adjust_learning_rate(opts, optimizer, epoch)
 
@@ -651,6 +700,10 @@ if __name__ == '__main__':
     
         # save_file = os.path.join(save_dir, f"weights.pth")
         # save_model(model, optimizer, opts, epoch, save_file)
+            
+
+    visualise_umap(test_loader, model, opts, epoch)
+
     
     mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
     # writer.add_scalar("train/mae", mae_train, epoch)
