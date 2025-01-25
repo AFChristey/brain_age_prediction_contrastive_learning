@@ -450,8 +450,8 @@ def compute_site_ba(model, train_loader, test_loader, opts):
 
     print("Training site estimator")
     train_X, train_y = gather_site_feats(model, train_loader, opts)
-    print(train_X.shape)
-    print(train_y)
+    # print(train_X.shape)
+    # print(train_y)
     ba_train = site_estimator.fit(train_X, train_y)
 
     print("Computing BA")
