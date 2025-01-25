@@ -438,8 +438,8 @@ def gather_site_feats(model, dataloader, opts):
         images = images.unsqueeze(1)  # Add channel dimension at index 1
         features.append(model.features(images))
         site_labels.append(metadata[1])
-        print(site_labels.shape)
-        print(site_labels)
+        # print(site_labels.shape)
+        # print(site_labels)
     
     # return torch.cat(features, 0).cpu().numpy(), torch.cat(site_labels, 0).cpu().numpy()
     return torch.cat(features, 0).cpu().numpy(), site_labels.cpu().numpy()
