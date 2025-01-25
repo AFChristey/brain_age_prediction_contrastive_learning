@@ -156,14 +156,14 @@ def load_data(opts):
     T_train = NViewTransform(T_train, opts.n_views)
 
     
-    train_dataset = OpenBHB(modality='stiffness', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
+    train_dataset = OpenBHB(modality='dr', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
 
     print('HELLO')
     train_dataset.norm()
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opts.batch_size, shuffle=True)
 
-    train_dataset_score = OpenBHB(modality='stiffness', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
+    train_dataset_score = OpenBHB(modality='dr', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
 
     train_dataset_score.norm()
     print('HELLO')
@@ -171,7 +171,7 @@ def load_data(opts):
 
     train_loader_score = torch.utils.data.DataLoader(train_dataset_score, batch_size=opts.batch_size, shuffle=False)
 
-    test_dataset = OpenBHB(modality='stiffness', train=False, transform=T_test, path=opts.path, fold=0)
+    test_dataset = OpenBHB(modality='dr', train=False, transform=T_test, path=opts.path, fold=0)
 
     test_dataset.norm()
 
@@ -711,7 +711,7 @@ if __name__ == '__main__':
     # writer.add_scalar("test/mae_ext", mae_ext, epoch)
     print("Age MAE:", mae_train, mae_test)
 
-    ba_train, ba_test, ba_ext = compute_site_ba(model, train_loader_score, test_loader, opts)
+    ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
     # writer.add_scalar("train/site_ba", ba_train, epoch)
     # writer.add_scalar("test/ba_int", ba_int, epoch)
     # writer.add_scalar("test/ba_ext", ba_ext, epoch)
