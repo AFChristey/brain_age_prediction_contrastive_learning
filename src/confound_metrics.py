@@ -36,12 +36,20 @@ import pandas as pd
 from sklearn.manifold import TSNE
 from sklearn.metrics import silhouette_score
 from sklearn.feature_selection import mutual_info_classif
+from sklearn.preprocessing import LabelEncoder
+
 
 
 features = np.load("/rds/user/afc53/hpc-work/saved_features/Dynamic_DR/features_before_reduction_epoch_50.npy")
 metadata = np.load("/rds/user/afc53/hpc-work/saved_features/Dynamic_DR/metadata_epoch_50.npy")
 
 site_labels = metadata[1]
+
+# Initialize LabelEncoder
+label_encoder = LabelEncoder()
+
+# Fit and transform labels to numbers
+site_labels = label_encoder.fit_transform(site_labels)
 
 
 # Compute silhouette score
