@@ -43,7 +43,13 @@ from sklearn.preprocessing import LabelEncoder
 features = np.load("/rds/user/afc53/hpc-work/saved_features/Dynamic_DR/features_before_reduction_epoch_50.npy")
 metadata = np.load("/rds/user/afc53/hpc-work/saved_features/Dynamic_DR/metadata_epoch_50.npy")
 
-site_labels = metadata[1]
+print(metadata)
+
+site_labels = metadata
+
+print(site_labels.shape)
+print(features.shape)
+print(site_labels)
 
 # Initialize LabelEncoder
 label_encoder = LabelEncoder()
@@ -51,6 +57,7 @@ label_encoder = LabelEncoder()
 # Fit and transform labels to numbers
 site_labels = label_encoder.fit_transform(site_labels)
 
+print(site_labels)
 
 # Compute silhouette score
 sil_score = silhouette_score(features, site_labels)

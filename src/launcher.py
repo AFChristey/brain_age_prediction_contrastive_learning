@@ -58,7 +58,6 @@ if __name__ == '__main__':
     # builds the command to run the Python program
         # 'os.getcwd()' returns the current working directory, and 'program' is the path to the script specified in the YAML file.
     args = ["python3", os.path.join(os.getcwd(), program)]
-
     # The for loop iterates over the data dictionary and appends each key-value pair as a command-line argument in the format --key value
     for k, v in data.items():
         args.extend(["--" + k, str(v)])
