@@ -18,10 +18,15 @@ if __name__ == '__main__':
     with open(sys.argv[1]) as f:
         data = yaml.load(f, Loader=SafeLoader)
 
-    # print(sys.argv[2])
-    
-    # Recieves the program from yaml file - in this case 'main_mse.py'
-    program = data['program']
+    # print(sys.argv[3])
+
+    if len(sys.argv) > 3 and sys.argv[3] == "testing":
+        program = "confound_metrics.py"
+    else:
+        # Recieves the program from yaml file - in this case 'main_mse.py'
+        program = data['program']
+
+
     # removes the 'program' entry from the data dictionary since it is no longer needed, 
     # leaving the remaining configuration parameters for command-line arguments.
     del data['program']
@@ -30,7 +35,7 @@ if __name__ == '__main__':
 
     # allows the user to override values from the YAML file via command-line arguments
     # sys.argv[2:] represents all command-line arguments after the script name and YAML file path.
-    for idx, override in enumerate(sys.argv[2:]):
+    for idx, override in enumerate(sys.argv[2:3]):
         if skip: 
             skip = False
             continue
@@ -53,6 +58,7 @@ if __name__ == '__main__':
     # builds the command to run the Python program
         # 'os.getcwd()' returns the current working directory, and 'program' is the path to the script specified in the YAML file.
     args = ["python3", os.path.join(os.getcwd(), program)]
+
     # The for loop iterates over the data dictionary and appends each key-value pair as a command-line argument in the format --key value
     for k, v in data.items():
         args.extend(["--" + k, str(v)])
