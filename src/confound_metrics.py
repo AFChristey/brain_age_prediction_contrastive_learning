@@ -34,32 +34,27 @@
 # import pandas as pd
 
 # from sklearn.manifold import TSNE
+# from sklearn.metrics import silhouette_score
+# from sklearn.feature_selection import mutual_info_classif
 
 
 
 
 
-# def compute_site_ba(features, labels):
-#     site_estimator = models.SiteEstimator()
-
-#     print("Training site estimator")
-#     train_X, train_y = gather_site_feats(model, train_loader, opts)
-#     # print(train_X.shape)
-#     # print(train_y)
-#     ba_train = site_estimator.fit(train_X, train_y)
-
-#     print("Computing BA")
-#     test_X, test_y = gather_site_feats(model, test_loader, opts)
-#     # ext_X, ext_y = gather_site_feats(model, test_ext, opts)
-#     ba_test = site_estimator.score(test_X, test_y)
-#     # ba_ext = site_estimator.score(ext_X, ext_y)
+# features = x
+# site_labels = y
 
 
+# # Compute silhouette score
+# sil_score = silhouette_score(features, site_labels)
+# print(f"Silhouette Score: {sil_score}")
 
-# mae_train, mae_test = compute_age_mae(features, labels)
-# print("Age MAE:", mae_train, mae_test)
+# # Compute Mutual Information
+# mi_score = mutual_info_classif(features, site_labels)
+# # Average MI over all feature dimensions
+# mi_score_mean = mi_score.mean()
+# print(f"Mutual Information Score: {mi_score_mean}")
 
 
 
-# ba_train, ba_test = compute_site_ba(features, labels)
-# print("Site BA:", ba_train, ba_test)
+
