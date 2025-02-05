@@ -269,7 +269,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
     # print()
 
 
-    for idx, (images, labels, _) in enumerate(train_loader):
+    for idx, (images, labels, metadata) in enumerate(train_loader):
         # print('hi')
         data_time.update(time.time() - t1)
         # print(images[0])
@@ -294,6 +294,8 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         with torch.cuda.amp.autocast(scaler is not None):
             # print("GNRGIRNGRIGNRIGRGNRGINGRIGNRGNRIGRIGNRGIRGRGNRGRIN")            
             # print(images.shape)
+
+            site_labels = metadata[1]
 
             projected = model(images)
             projected = torch.split(projected, [bsz]*opts.n_views, dim=0)
@@ -358,6 +360,140 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
                   f"loss {loss.avg:.3f}\t")
 
     return loss.avg, batch_time.avg, data_time.avg
+
+
+
+def train_new(train_loader, model, infonce, optimizer, opts, epoch):
+    lambda_adv=0.1
+    loss_meter = AverageMeter()
+    batch_time = AverageMeter()
+    data_time = AverageMeter()
+
+    scaler = torch.cuda.amp.GradScaler() if opts.amp else None
+    model.train()
+
+    t1 = time.time()
+
+    site_estimator = models.SiteEstimator()
+
+    for idx, (images, labels, metadata) in enumerate(train_loader):
+        # print('hi')
+        data_time.update(time.time() - t1)
+        # print(images[0])
+        if opts.path == "local":
+            device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+
+            # images = torch.cat(images, dim=0).to(opts.device)
+            images = torch.cat(images, dim=0).to(device)
+            bsz = labels.shape[0]
+            labels = labels.float().to(device)
+            site_labels = metadata[1]  # Site labels
+
+        else:
+            # images = torch.cat(images, dim=0).to(opts.device)
+            images = torch.cat(images, dim=0).to(opts.device)
+            bsz = labels.shape[0]
+            labels = labels.float().to(opts.device)
+            site_labels = metadata[1]
+
+
+        # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
+        images = images.unsqueeze(1)  # Add channel dimension at index 1
+
+        warmup_learning_rate(opts, epoch, idx, len(train_loader), optimizer)
+
+        with torch.cuda.amp.autocast(scaler is not None):
+            # print("GNRGIRNGRIGNRIGRGNRGINGRIGNRGNRIGRIGNRGIRGRGNRGRIN")            
+            # print(images.shape)
+
+            site_labels = metadata[1]
+
+            projected = model(images)
+
+            # Split features and labels into two halves        
+            half_bsz = bsz // 2
+
+            train_features, test_features = projected[:half_bsz].detach(), projected[half_bsz:].detach()
+            print(train_features)
+            train_sites, test_sites = site_labels[:half_bsz], site_labels[half_bsz:]
+
+            site_estimator.site_estimator.fit(train_features.cpu().numpy(), train_sites)
+            site_pred = site_estimator.site_estimator.predict(test_features.cpu().numpy())
+            print(site_pred)
+
+            # Compute the site classification loss
+            site_loss = torch.nn.functional.cross_entropy(
+                torch.tensor(site_pred, dtype=torch.float32, device=device), 
+                torch.tensor(test_sites, dtype=torch.long, device=device)
+            )
+
+            projected = torch.split(projected, [bsz]*opts.n_views, dim=0)
+            projected = torch.cat([f.unsqueeze(1) for f in projected], dim=1)
+
+
+            if opts.loss_choice == "supcon" or opts.loss_choice == "RnC":
+                if opts.path == "local":
+                    contrastive_loss = infonce(projected, labels.to(device).float())
+                else:
+                    contrastive_loss = infonce(projected, labels.to(opts.device).float())
+
+            elif opts.loss_choice == "dynamic":
+                if opts.path == "local":
+                    if opts.NN_nb_step_size > 0:
+                        contrastive_loss = infonce(features=projected,
+                                            labels=labels.to(device),
+                                            epoch=epoch)
+
+                    else:
+                        contrastive_loss = infonce(features=projected,
+                                            labels=labels.to(device))
+                else:
+                    if opts.NN_nb_step_size > 0:
+                        contrastive_loss = infonce(features=projected,
+                                            labels=labels.to(opts.device),
+                                            epoch=epoch)
+
+                    else:
+                        contrastive_loss = infonce(features=projected,
+                                            labels=labels.to(opts.device))
+
+
+        # Compute the final loss with adversarial training
+        total_loss = contrastive_loss - lambda_adv * site_loss  # Adversarial term
+
+
+        optimizer.zero_grad()
+        if scaler is None:
+            total_loss.backward()
+            if opts.clip_grad:
+                nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+            optimizer.step()
+        else:
+            scaler.scale(total_loss).backward()
+            if opts.clip_grad:
+                scaler.unscale_(optimizer)
+                nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+            scaler.step(optimizer)
+            scaler.update()
+        
+        loss_meter.update(total_loss.item(), bsz)
+        batch_time.update(time.time() - t1)
+        t1 = time.time()
+        eta = batch_time.avg * (len(train_loader) - idx)
+
+
+        print(f"Train: [{epoch}][{idx + 1}/{len(train_loader)}]:\t"
+                f"BT {batch_time.avg:.3f}\t"
+                f"ETA {datetime.timedelta(seconds=eta)}\t"
+                f"loss {loss_meter.avg:.3f}\t")
+
+        if (idx + 1) % opts.print_freq == 0:
+            print(f"Train: [{epoch}][{idx + 1}/{len(train_loader)}]:\t"
+                  f"BT {batch_time.avg:.3f}\t"
+                  f"ETA {datetime.timedelta(seconds=eta)}\t"
+                  f"loss {loss_meter.avg:.3f}\t")
+
+    return loss_meter.avg, batch_time.avg, data_time.avg
 
 
 def extract_features_for_umap(test_loader, model, opts, key, max_features=64):
@@ -457,8 +593,8 @@ def visualise_umap(test_loader, model, opts, epoch=0):
     umap_model = umap.UMAP(random_state=42)
     embedding_umap = umap_model.fit_transform(features)
 
-    tsne_model = TSNE(n_components=2, random_state=42, perplexity=30, n_iter=1000)
-    embedding_tsne = tsne_model.fit_transform(features)
+    # tsne_model = TSNE(n_components=2, random_state=42, perplexity=30, n_iter=1000)
+    # embedding_tsne = tsne_model.fit_transform(features)
 
 
     ages = labels  # Assuming 'labels' represents ages
@@ -556,7 +692,7 @@ def visualise_umap(test_loader, model, opts, epoch=0):
 
         # Save UMAP and t-SNE reduced features
         np.save(os.path.join(save_path, f'features_umap_epoch_{epoch}.npy'), embedding_umap)
-        np.save(os.path.join(save_path, f'features_tsne_epoch_{epoch}.npy'), embedding_tsne)
+        # np.save(os.path.join(save_path, f'features_tsne_epoch_{epoch}.npy'), embedding_tsne)
 
 
 
