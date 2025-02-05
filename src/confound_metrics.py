@@ -54,7 +54,11 @@ def mmd_rbf(X, Y, gamma=1.0):
 features = np.load("/rds/user/afc53/hpc-work/saved_features/Dynamic_DR/features_before_reduction_epoch_50.npy")
 metadata = np.load("/rds/user/afc53/hpc-work/saved_features/Dynamic_DR/metadata_epoch_50.npy")
 
+print(features)
 print(metadata)
+
+print(features.type)
+print(metadata.type)
 
 site_labels = metadata
 
@@ -105,7 +109,7 @@ for site_A, site_B in itertools.combinations(unique_sites, 2):
     print(f"Comparing Site {site_A} and Site {site_B}")
     features_A = features[site_labels == site_A]
     features_B = features[site_labels == site_B]
-    
+
     features_A = torch.tensor(features_A, dtype=torch.float32)
     features_B = torch.tensor(features_B, dtype=torch.float32)
     # Debugging prints
