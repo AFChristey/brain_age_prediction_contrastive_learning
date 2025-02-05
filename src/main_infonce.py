@@ -394,7 +394,14 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
     # Initialize the site classifier
     # input_dim = model.projector.output_dim  # Adjust according to your model
     num_sites = 6  # Number of unique sites (0-5)
-    site_classifier = SiteClassifier(128, num_sites).to(opts.device)
+
+
+    if opts.path == "local":
+        device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+        site_classifier = SiteClassifier(128, num_sites).to(device)
+    else:
+        site_classifier = SiteClassifier(128, num_sites).to(opts.device)
+
     site_optimizer = torch.optim.Adam(site_classifier.parameters(), lr=1e-3)
 
 
@@ -469,7 +476,12 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
 
 
             # Compute the final loss: Adversarial Training
+
+            print('this is contrastive loss:', contrastive_loss)
+            print('this is site loss:', site_loss)
             total_loss = contrastive_loss - lambda_adv * site_loss  # Minimize contrastive, maximize site confusion
+
+            print('this is total loss:', total_loss)
 
 
         

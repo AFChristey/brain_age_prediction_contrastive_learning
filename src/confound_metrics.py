@@ -54,17 +54,21 @@ def mmd_rbf(X, Y, gamma=1.0):
 features = np.load("/rds/user/afc53/hpc-work/saved_features/Dynamic_DR/features_before_reduction_epoch_50.npy")
 metadata = np.load("/rds/user/afc53/hpc-work/saved_features/Dynamic_DR/metadata_epoch_50.npy")
 
-print(features)
-print(metadata)
+# print(features)
+# print(metadata)
 
-print(features.type)
-print(metadata.type)
+
+# features = [[0.03586222, -0.00067997, -0.01195611, -0.02239724, 0.1086802, -0.00415948], 
+#             [-0.02256612, 0.03379672, -0.05384277, 0.04146272, 0.05478617, 0.0526447], 
+#             [ 0.01575743, 0.01593883, -0.02351342, -0.00440824, 0.099177, 0.01441356],
+#             [-0.0191126, 0.02508227, -0.05166087, 0.03427609, 0.05926874, 0.04427647]]
+# metadata = ['ATLAS', 'MIMS', 'NOVA', 'ATLAS']
 
 site_labels = metadata
 
-print(site_labels.shape)
-print(features.shape)
-print(site_labels)
+# print(site_labels.shape)
+# print(features.shape)
+# print(site_labels)
 
 # Initialize LabelEncoder
 label_encoder = LabelEncoder()
@@ -100,13 +104,15 @@ site_labels = torch.tensor(site_labels, dtype=torch.long)
 
 # Unique site labels (0 to 5)
 unique_sites = torch.arange(6)  # Since sites are encoded as 0,1,2,3,4,5
-print(unique_sites)
+# print(unique_sites)
 # Dictionary to store MMD results
 mmd_scores = {}
 
 # Iterate over all unique pairs of sites (0-5)
 for site_A, site_B in itertools.combinations(unique_sites, 2):
     print(f"Comparing Site {site_A} and Site {site_B}")
+    # print(site_labels)
+    features = torch.tensor(features, dtype=torch.float32)
     features_A = features[site_labels == site_A]
     features_B = features[site_labels == site_B]
 
