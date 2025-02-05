@@ -40,12 +40,6 @@ from sklearn.feature_selection import mutual_info_classif
 from sklearn.preprocessing import LabelEncoder
 
 
-import numpy as np
-import torch
-from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import silhouette_score, mutual_info_classif
-import itertools
-
 # Define the MMD function
 def mmd_rbf(X, Y, gamma=1.0):
     XX = torch.exp(-gamma * torch.cdist(X, X, p=2).pow(2))
