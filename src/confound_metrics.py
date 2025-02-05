@@ -41,6 +41,16 @@ from sklearn.preprocessing import LabelEncoder
 
 
 
+
+def mmd_rbf(X, Y, gamma=1.0):
+    """Compute Maximum Mean Discrepancy (MMD) using an RBF kernel (Gaussian kernel)."""
+    XX = torch.exp(-gamma * torch.cdist(X, X, p=2).pow(2))  # Kernel K(X, X)
+    YY = torch.exp(-gamma * torch.cdist(Y, Y, p=2).pow(2))  # Kernel K(Y, Y)
+    XY = torch.exp(-gamma * torch.cdist(X, Y, p=2).pow(2))  # Kernel K(X, Y)
+    
+    return XX.mean() + YY.mean() - 2 * XY.mean()
+
+
 features = np.load("/rds/user/afc53/hpc-work/saved_features/Dynamic_DR/features_before_reduction_epoch_50.npy")
 metadata = np.load("/rds/user/afc53/hpc-work/saved_features/Dynamic_DR/metadata_epoch_50.npy")
 
@@ -83,23 +93,17 @@ print(f"Mutual Information Score: {mi_score_mean}")
 
 
 
-def mmd_rbf(X, Y, gamma=1.0):
-    """Compute Maximum Mean Discrepancy (MMD) using an RBF kernel (Gaussian kernel)."""
-    XX = torch.exp(-gamma * torch.cdist(X, X, p=2).pow(2))  # Kernel K(X, X)
-    YY = torch.exp(-gamma * torch.cdist(Y, Y, p=2).pow(2))  # Kernel K(Y, Y)
-    XY = torch.exp(-gamma * torch.cdist(X, Y, p=2).pow(2))  # Kernel K(X, Y)
-    
-    return XX.mean() + YY.mean() - 2 * XY.mean()
-
 
 # Unique site labels (0 to 5)
 unique_sites = torch.arange(6)  # Since sites are encoded as 0,1,2,3,4,5
-
+print(unique_sites)
 # Dictionary to store MMD results
 mmd_scores = {}
 
 # Iterate over all unique pairs of sites (0-5)
 for site_A, site_B in itertools.combinations(unique_sites, 2):
+    print(site_A)
+    print(site_B)
     features_A = features[site_labels == site_A]
     features_B = features[site_labels == site_B]
     
@@ -107,6 +111,7 @@ for site_A, site_B in itertools.combinations(unique_sites, 2):
     if features_A.shape[0] > 0 and features_B.shape[0] > 0:
         mmd_score = mmd_rbf(features_A, features_B)
         mmd_scores[(site_A.item(), site_B.item())] = mmd_score.item()
+        print('computing')
 
 # Print all MMD results
 for (site_A, site_B), score in mmd_scores.items():
