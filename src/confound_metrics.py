@@ -92,7 +92,7 @@ print(f"Mutual Information Score: {mi_score_mean}")
 # MIMS
 
 
-
+site_labels = torch.tensor(site_labels, dtype=torch.long, device=features.device)
 
 # Unique site labels (0 to 5)
 unique_sites = torch.arange(6)  # Since sites are encoded as 0,1,2,3,4,5
@@ -102,16 +102,18 @@ mmd_scores = {}
 
 # Iterate over all unique pairs of sites (0-5)
 for site_A, site_B in itertools.combinations(unique_sites, 2):
-    print(site_A)
-    print(site_B)
+    print(f"Comparing Site {site_A} and Site {site_B}")
     features_A = features[site_labels == site_A]
     features_B = features[site_labels == site_B]
+    # Debugging prints
+    print(f"Site {site_A} has {features_A.shape[0]} samples")
+    print(f"Site {site_B} has {features_B.shape[0]} samples")
     
     # Only compute MMD if both sites have samples
     if features_A.shape[0] > 0 and features_B.shape[0] > 0:
         mmd_score = mmd_rbf(features_A, features_B)
         mmd_scores[(site_A.item(), site_B.item())] = mmd_score.item()
-        print('computing')
+        print(f"MMD computed for Site {site_A} and Site {site_B}")
 
 # Print all MMD results
 for (site_A, site_B), score in mmd_scores.items():
