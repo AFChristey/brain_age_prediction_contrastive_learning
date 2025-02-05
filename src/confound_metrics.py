@@ -105,6 +105,9 @@ for site_A, site_B in itertools.combinations(unique_sites, 2):
     print(f"Comparing Site {site_A} and Site {site_B}")
     features_A = features[site_labels == site_A]
     features_B = features[site_labels == site_B]
+    
+    features_A = torch.tensor(features_A, dtype=torch.float32)
+    features_B = torch.tensor(features_B, dtype=torch.float32)
     # Debugging prints
     print(f"Site {site_A} has {features_A.shape[0]} samples")
     print(f"Site {site_B} has {features_B.shape[0]} samples")

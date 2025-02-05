@@ -429,7 +429,7 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
 
             site_labels = metadata[1]
             # NEEDED???????????
-            site_labels = torch.tensor(site_labels, dtype=torch.long, device=device)
+            # site_labels = torch.tensor(site_labels, dtype=torch.long, device=device)
 
 
             projected = model(images)
