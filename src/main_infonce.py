@@ -372,7 +372,7 @@ class SiteClassifier(nn.Module):
 
     def forward(self, x):
         x = self.relu(self.fc1(x))
-        x = self.fc2(x)  # No activation for logits
+        x = self.fc2(x)
         return x
     
 
@@ -417,11 +417,17 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
             images = torch.cat(images, dim=0).to(device)
             bsz = labels.shape[0]
             labels = labels.float().to(device)
+            site_labels = metadata[1]
+            # NEEDED???????????
+            site_labels = torch.tensor(site_labels, dtype=torch.long, device=device)
         else:
             # images = torch.cat(images, dim=0).to(opts.device)
             images = torch.cat(images, dim=0).to(opts.device)
             bsz = labels.shape[0]
             labels = labels.float().to(opts.device)
+            site_labels = metadata[1]
+            # NEEDED???????????
+            site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
 
         site_labels = metadata[1]  # Site labels
 
@@ -436,7 +442,7 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
 
             site_labels = metadata[1]
             # NEEDED???????????
-            # site_labels = torch.tensor(site_labels, dtype=torch.long, device=device)
+            site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
 
 
             projected = model(images)
