@@ -450,10 +450,6 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
             # print("GNRGIRNGRIGNRIGRGNRGINGRIGNRGNRIGRIGNRGIRGRGNRGRIN")            
             # print(images.shape)
 
-            site_labels = metadata[1]
-            # NEEDED???????????
-            site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
-
 
             projected = model(images)
             projected = torch.split(projected, [bsz]*opts.n_views, dim=0)
