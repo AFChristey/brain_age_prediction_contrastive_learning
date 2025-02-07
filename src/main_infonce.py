@@ -36,6 +36,8 @@ import pandas as pd
 
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import LabelEncoder
+import torch.optim.lr_scheduler as lr_scheduler
+
 
 
 
@@ -381,7 +383,7 @@ class SiteClassifier(nn.Module):
 
 
 def train_new(train_loader, model, infonce, optimizer, opts, epoch):
-    lambda_adv = 0.9  # Weight for adversarial loss
+    lambda_adv = 0.6  # Weight for adversarial loss
     loss_meter = AverageMeter()
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -404,8 +406,9 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
     else:
         site_classifier = SiteClassifier(128, num_sites).to(opts.device)
 
-    site_optimizer = torch.optim.Adam(site_classifier.parameters(), lr=1e-3)
+    site_optimizer = torch.optim.Adam(site_classifier.parameters(), lr=5e-4)
 
+    scheduler = lr_scheduler.StepLR(site_optimizer, step_size=10, gamma=0.1)
 
 
     for idx, (images, labels, metadata) in enumerate(train_loader):
@@ -493,6 +496,9 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
             print('this is site loss:', site_loss)
             total_loss = contrastive_loss - lambda_adv * site_loss  # Minimize contrastive, maximize site confusion
 
+            ba_train, ba_test = compute_site_ba(model, train_loader, test_loader, opts)
+            print(f"Balanced Accuracy (BA) on test set: {ba_test}")
+
             # print('this is total loss:', total_loss)
 
 
@@ -532,6 +538,9 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
                   f"BT {batch_time.avg:.3f}\t"
                   f"ETA {datetime.timedelta(seconds=eta)}\t"
                   f"loss {loss_meter.avg:.3f}\t")
+            
+    scheduler.step()
+
 
     return loss_meter.avg, batch_time.avg, data_time.avg
 
