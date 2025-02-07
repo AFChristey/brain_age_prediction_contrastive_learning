@@ -160,7 +160,7 @@ def load_data(opts):
     
     train_dataset = OpenBHB(modality='T1', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
 
-    print('HELLO')
+    # print('HELLO')
     train_dataset.norm()
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opts.batch_size, shuffle=True)
@@ -168,7 +168,7 @@ def load_data(opts):
     train_dataset_score = OpenBHB(modality='T1', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
 
     train_dataset_score.norm()
-    print('HELLO')
+    # print('HELLO')
 
 
     train_loader_score = torch.utils.data.DataLoader(train_dataset_score, batch_size=opts.batch_size, shuffle=False)
@@ -180,7 +180,7 @@ def load_data(opts):
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=opts.batch_size, shuffle=False)
 
     
-    print('TEST LOADER SIZE')
+    # print('TEST LOADER SIZE')
     # print(test_internal)
     print(len(test_loader.dataset))
     return train_loader, train_loader_score, test_loader
@@ -381,7 +381,7 @@ class SiteClassifier(nn.Module):
 
 
 def train_new(train_loader, model, infonce, optimizer, opts, epoch):
-    lambda_adv = 0.1  # Weight for adversarial loss
+    lambda_adv = 0.9  # Weight for adversarial loss
     loss_meter = AverageMeter()
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -489,11 +489,11 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
 
             # Compute the final loss: Adversarial Training
 
-            print('this is contrastive loss:', contrastive_loss)
+            # print('this is contrastive loss:', contrastive_loss)
             print('this is site loss:', site_loss)
             total_loss = contrastive_loss - lambda_adv * site_loss  # Minimize contrastive, maximize site confusion
 
-            print('this is total loss:', total_loss)
+            # print('this is total loss:', total_loss)
 
 
         
