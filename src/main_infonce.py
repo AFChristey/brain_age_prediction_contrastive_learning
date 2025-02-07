@@ -35,6 +35,8 @@ import seaborn as sns
 import pandas as pd
 
 from sklearn.manifold import TSNE
+from sklearn.preprocessing import LabelEncoder
+
 
 
 
@@ -417,19 +419,27 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
             images = torch.cat(images, dim=0).to(device)
             bsz = labels.shape[0]
             labels = labels.float().to(device)
-            site_labels = metadata[1]
-            # NEEDED???????????
-            site_labels = torch.tensor(site_labels, dtype=torch.long, device=device)
+            # Ensure site_labels is a list of site names
+            site_labels = list(metadata[1])  # Convert tuple to list if necessary
+            # Convert site labels (strings) to numeric indices
+            label_encoder = LabelEncoder()
+            site_labels = label_encoder.fit_transform(site_labels)  # Converts strings to integers
+            # Convert to torch tensor
+            site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
+
         else:
             # images = torch.cat(images, dim=0).to(opts.device)
             images = torch.cat(images, dim=0).to(opts.device)
             bsz = labels.shape[0]
             labels = labels.float().to(opts.device)
-            site_labels = metadata[1]
-            # NEEDED???????????
+            # Ensure site_labels is a list of site names
+            site_labels = list(metadata[1])  # Convert tuple to list if necessary
+            # Convert site labels (strings) to numeric indices
+            label_encoder = LabelEncoder()
+            site_labels = label_encoder.fit_transform(site_labels)  # Converts strings to integers
+            # Convert to torch tensor
             site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
 
-        site_labels = metadata[1]  # Site labels
 
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
         images = images.unsqueeze(1)  # Add channel dimension at index 1
