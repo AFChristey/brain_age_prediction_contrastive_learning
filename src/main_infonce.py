@@ -495,10 +495,6 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
             # print('this is contrastive loss:', contrastive_loss)
             print('this is site loss:', site_loss)
             total_loss = contrastive_loss - lambda_adv * site_loss  # Minimize contrastive, maximize site confusion
-
-            ba_train, ba_test = compute_site_ba(model, train_loader, test_loader, opts)
-            print(f"Balanced Accuracy (BA) on test set: {ba_test}")
-
             # print('this is total loss:', total_loss)
 
 
@@ -999,6 +995,10 @@ if __name__ == '__main__':
         writer.add_scalar("BT", batch_time, epoch)
         writer.add_scalar("DT", data_time, epoch)
         print(f"epoch {epoch}, total time {t2-start_time:.2f}, epoch time {t2-t1:.3f} loss {loss_train:.4f}")
+
+
+        ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
+        print("Site BA:", ba_train, ba_test)
 
         if epoch % opts.save_freq == 0:
             # WAS ALREADY COMMENTED OUT 
