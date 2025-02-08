@@ -991,7 +991,7 @@ if __name__ == '__main__':
         adjust_learning_rate(opts, optimizer, epoch)
 
         t1 = time.time()
-        loss_train, batch_time, data_time = train(train_loader, model, infonce, optimizer, opts, epoch)
+        loss_train, batch_time, data_time = train_new(train_loader, model, infonce, optimizer, opts, epoch)
         t2 = time.time()
         writer.add_scalar("train/loss", loss_train, epoch)
 
