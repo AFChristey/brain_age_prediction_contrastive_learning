@@ -383,7 +383,7 @@ class SiteClassifier(nn.Module):
 
 
 def train_new(train_loader, model, infonce, optimizer, opts, epoch):
-    lambda_adv = 0.6  # Weight for adversarial loss
+    lambda_adv = 0.9  # Weight for adversarial loss
     loss_meter = AverageMeter()
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -406,9 +406,9 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
     else:
         site_classifier = SiteClassifier(128, num_sites).to(opts.device)
 
-    site_optimizer = torch.optim.Adam(site_classifier.parameters(), lr=5e-4)
+    site_optimizer = torch.optim.Adam(site_classifier.parameters(), lr=1e-3)
 
-    scheduler = lr_scheduler.StepLR(site_optimizer, step_size=10, gamma=0.1)
+    # scheduler = lr_scheduler.StepLR(site_optimizer, step_size=10, gamma=0.1)
 
 
     for idx, (images, labels, metadata) in enumerate(train_loader):
@@ -513,7 +513,11 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
             scaler.scale(total_loss).backward()
             if opts.clip_grad:
                 scaler.unscale_(optimizer)
+                scaler.unscale_(site_optimizer)  # ✅ Unscale site classifier gradients
+
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+                nn.utils.clip_grad_norm_(site_classifier.parameters(), max_norm=1)  # ✅ Clip site classifier gradients
+
             scaler.step(optimizer)
             scaler.step(site_optimizer)  # Update site classifier
             scaler.update()
@@ -535,7 +539,7 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
                   f"ETA {datetime.timedelta(seconds=eta)}\t"
                   f"loss {loss_meter.avg:.3f}\t")
             
-    scheduler.step()
+    # scheduler.step()
 
 
     return loss_meter.avg, batch_time.avg, data_time.avg
@@ -987,7 +991,7 @@ if __name__ == '__main__':
         adjust_learning_rate(opts, optimizer, epoch)
 
         t1 = time.time()
-        loss_train, batch_time, data_time = train_new(train_loader, model, infonce, optimizer, opts, epoch)
+        loss_train, batch_time, data_time = train(train_loader, model, infonce, optimizer, opts, epoch)
         t2 = time.time()
         writer.add_scalar("train/loss", loss_train, epoch)
 
