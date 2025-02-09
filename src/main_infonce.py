@@ -160,14 +160,14 @@ def load_data(opts):
     T_train = NViewTransform(T_train, opts.n_views)
 
     
-    train_dataset = OpenBHB(modality='stiffness', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
+    train_dataset = OpenBHB(modality='dr', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
 
     # print('HELLO')
     train_dataset.norm()
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opts.batch_size, shuffle=True)
 
-    train_dataset_score = OpenBHB(modality='stiffness', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
+    train_dataset_score = OpenBHB(modality='dr', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
 
     train_dataset_score.norm()
     # print('HELLO')
@@ -175,7 +175,7 @@ def load_data(opts):
 
     train_loader_score = torch.utils.data.DataLoader(train_dataset_score, batch_size=opts.batch_size, shuffle=False)
 
-    test_dataset = OpenBHB(modality='stiffness', train=False, transform=T_test, path=opts.path, fold=0)
+    test_dataset = OpenBHB(modality='dr', train=False, transform=T_test, path=opts.path, fold=0)
 
     test_dataset.norm()
 
