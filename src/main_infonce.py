@@ -513,10 +513,10 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
             scaler.scale(total_loss).backward()
             if opts.clip_grad:
                 scaler.unscale_(optimizer)
-                scaler.unscale_(site_optimizer)  # ✅ Unscale site classifier gradients
+                scaler.unscale_(site_optimizer)  # Unscale site classifier gradients
 
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
-                nn.utils.clip_grad_norm_(site_classifier.parameters(), max_norm=1)  # ✅ Clip site classifier gradients
+                nn.utils.clip_grad_norm_(site_classifier.parameters(), max_norm=1)  # Clip site classifier gradients
 
             scaler.step(optimizer)
             scaler.step(site_optimizer)  # Update site classifier
@@ -1000,9 +1000,9 @@ if __name__ == '__main__':
         writer.add_scalar("DT", data_time, epoch)
         print(f"epoch {epoch}, total time {t2-start_time:.2f}, epoch time {t2-t1:.3f} loss {loss_train:.4f}")
 
-
-        ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
-        print("Site BA:", ba_train, ba_test)
+        if epoch % 5 == 0:
+            ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
+            print("Site BA:", ba_train, ba_test)
 
         if epoch % opts.save_freq == 0:
             # WAS ALREADY COMMENTED OUT 
