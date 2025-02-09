@@ -72,7 +72,10 @@ def mmd_rbf(X, Y, gamma=1.0):
 # List of datasets
 datasets = {
     "RankN_Stiffness": ("/rds/user/afc53/hpc-work/saved_features/RankN_Stiffness_CLASSIFICATION/features_before_reduction_epoch_100.npy",
-                   "/rds/user/afc53/hpc-work/saved_features/RankN_Stiffness_CLASSIFICATION/metadata_epoch_100.npy")
+                   "/rds/user/afc53/hpc-work/saved_features/RankN_Stiffness_CLASSIFICATION/metadata_epoch_100.npy"),
+    "RankN_DR": ("/rds/user/afc53/hpc-work/saved_features/RankN_DR_CLASSIFICATION/features_before_reduction_epoch_100.npy",
+                   "/rds/user/afc53/hpc-work/saved_features/RankN_DR_CLASSIFICATION/metadata_epoch_100.npy")
+                
 }
 
 
