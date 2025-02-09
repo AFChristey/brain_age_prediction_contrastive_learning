@@ -498,19 +498,30 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
             # print('this is total loss:', total_loss)
 
 
-        
+        # EXPLAIN PLEASE
+        with torch.no_grad():
+            pred_sites = torch.argmax(site_logits, dim=1)  # Predicted site labels
+            site_acc = (pred_sites == site_labels).float().mean()  # Accuracy
+        print(f"Batch {idx}: Site Classifier Accuracy = {site_acc.item():.4f}, Site Loss = {site_loss.item():.4f}")
+                
+
         optimizer.zero_grad()
         site_optimizer.zero_grad()  # Also optimize the site classifier
 
         if scaler is None:
-            total_loss.backward()
+            total_loss.backward(retain_graph=True)  # Optimize main model to remove site information
+            site_loss.backward()  # Optimize site classifier separately
             if opts.clip_grad:
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+                nn.utils.clip_grad_norm_(site_classifier.parameters(), max_norm=1)  # Clip site classifier gradients
+
             optimizer.step()
             site_optimizer.step()  # Update site classifier
 
         else:
             scaler.scale(total_loss).backward()
+            scaler.scale(site_loss).backward()  # Backpropagate site classifier loss separately
+
             if opts.clip_grad:
                 scaler.unscale_(optimizer)
                 scaler.unscale_(site_optimizer)  # Unscale site classifier gradients
