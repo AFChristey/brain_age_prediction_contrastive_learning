@@ -47,27 +47,35 @@ def mmd_rbf(X, Y, gamma=1.0):
     XY = torch.exp(-gamma * torch.cdist(X, Y, p=2).pow(2))
     return XX.mean() + YY.mean() - 2 * XY.mean()
 
+# # List of datasets
+# datasets = {
+#     "Dynamic_DR": ("/rds/user/afc53/hpc-work/saved_features/Dynamic_DR/features_before_reduction_epoch_50.npy",
+#                    "/rds/user/afc53/hpc-work/saved_features/Dynamic_DR/metadata_epoch_50.npy"),
+#     "Dynamic_Stiffness": ("/rds/user/afc53/hpc-work/saved_features/Dynamic_Stiffness/features_before_reduction_epoch_50.npy",
+#                           "/rds/user/afc53/hpc-work/saved_features/Dynamic_Stiffness/metadata_epoch_50.npy"),
+#     "Dynamic_T1": ("/rds/user/afc53/hpc-work/saved_features/Dynamic_T1/features_before_reduction_epoch_50.npy",
+#                    "/rds/user/afc53/hpc-work/saved_features/Dynamic_T1/metadata_epoch_50.npy"),
+#     "Exponential_DR": ("/rds/user/afc53/hpc-work/saved_features/Exponential_DR/features_before_reduction_epoch_300.npy",
+#                         "/rds/user/afc53/hpc-work/saved_features/Exponential_DR/metadata_epoch_300.npy"),
+#     "Exponential_Stiffness": ("/rds/user/afc53/hpc-work/saved_features/Exponential_Stiffness/features_before_reduction_epoch_300.npy",
+#                               "/rds/user/afc53/hpc-work/saved_features/Exponential_Stiffness/metadata_epoch_300.npy"),
+#     "Exponential_T1": ("/rds/user/afc53/hpc-work/saved_features/Exponential_T1/features_before_reduction_epoch_300.npy",
+#                         "/rds/user/afc53/hpc-work/saved_features/Exponential_T1/metadata_epoch_300.npy"),
+#     "RankN_DR": ("/rds/user/afc53/hpc-work/saved_features/RankN_DR/features_before_reduction_epoch_100.npy",
+#                  "/rds/user/afc53/hpc-work/saved_features/RankN_DR/metadata_epoch_100.npy"),
+#     "RankN_Stiffness": ("/rds/user/afc53/hpc-work/saved_features/RankN_Stiffness/features_before_reduction_epoch_100.npy",
+#                         "/rds/user/afc53/hpc-work/saved_features/RankN_Stiffness/metadata_epoch_100.npy"),
+#     "RankN_T1": ("/rds/user/afc53/hpc-work/saved_features/RankN_T1/features_before_reduction_epoch_100.npy",
+#                  "/rds/user/afc53/hpc-work/saved_features/RankN_T1/metadata_epoch_100.npy"),
+# }
+
 # List of datasets
 datasets = {
-    "Dynamic_DR": ("/rds/user/afc53/hpc-work/saved_features/Dynamic_DR/features_before_reduction_epoch_50.npy",
-                   "/rds/user/afc53/hpc-work/saved_features/Dynamic_DR/metadata_epoch_50.npy"),
-    "Dynamic_Stiffness": ("/rds/user/afc53/hpc-work/saved_features/Dynamic_Stiffness/features_before_reduction_epoch_50.npy",
-                          "/rds/user/afc53/hpc-work/saved_features/Dynamic_Stiffness/metadata_epoch_50.npy"),
-    "Dynamic_T1": ("/rds/user/afc53/hpc-work/saved_features/Dynamic_T1/features_before_reduction_epoch_50.npy",
-                   "/rds/user/afc53/hpc-work/saved_features/Dynamic_T1/metadata_epoch_50.npy"),
-    "Exponential_DR": ("/rds/user/afc53/hpc-work/saved_features/Exponential_DR/features_before_reduction_epoch_300.npy",
-                        "/rds/user/afc53/hpc-work/saved_features/Exponential_DR/metadata_epoch_300.npy"),
-    "Exponential_Stiffness": ("/rds/user/afc53/hpc-work/saved_features/Exponential_Stiffness/features_before_reduction_epoch_300.npy",
-                              "/rds/user/afc53/hpc-work/saved_features/Exponential_Stiffness/metadata_epoch_300.npy"),
-    "Exponential_T1": ("/rds/user/afc53/hpc-work/saved_features/Exponential_T1/features_before_reduction_epoch_300.npy",
-                        "/rds/user/afc53/hpc-work/saved_features/Exponential_T1/metadata_epoch_300.npy"),
-    "RankN_DR": ("/rds/user/afc53/hpc-work/saved_features/RankN_DR/features_before_reduction_epoch_100.npy",
-                 "/rds/user/afc53/hpc-work/saved_features/RankN_DR/metadata_epoch_100.npy"),
-    "RankN_Stiffness": ("/rds/user/afc53/hpc-work/saved_features/RankN_Stiffness/features_before_reduction_epoch_100.npy",
-                        "/rds/user/afc53/hpc-work/saved_features/RankN_Stiffness/metadata_epoch_100.npy"),
-    "RankN_T1": ("/rds/user/afc53/hpc-work/saved_features/RankN_T1/features_before_reduction_epoch_100.npy",
-                 "/rds/user/afc53/hpc-work/saved_features/RankN_T1/metadata_epoch_100.npy"),
+    "RankN_Stiffness": ("/rds/user/afc53/hpc-work/saved_features/RankN_Stiffness_CLASSIFICATION/features_before_reduction_epoch_100.npy",
+                   "/rds/user/afc53/hpc-work/saved_features/RankN_Stiffness_CLASSIFICATION/metadata_epoch_100.npy")
 }
+
+
 
 results = {}
 
