@@ -370,21 +370,16 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 class SiteClassifier(nn.Module):
     def __init__(self, input_dim, num_sites):
         super(SiteClassifier, self).__init__()
-        self.fc1 = nn.Linear(input_dim, 128)
-        self.bn1 = nn.BatchNorm1d(128)
-        self.fc2 = nn.Linear(128, 64)
-        self.bn2 = nn.BatchNorm1d(64)
-        self.fc3 = nn.Linear(64, num_sites)
+        self.fc1 = nn.Linear(input_dim, 256)
+        self.fc2 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, num_sites)
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(0.3)
 
     def forward(self, x):
-        x = self.relu(self.bn1(self.fc1(x)))
-        x = self.dropout(x)
-        x = self.relu(self.bn2(self.fc2(x)))
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
         x = self.fc3(x)
         return x
-
 
 
 def train_new(train_loader, model, infonce, optimizer, opts, epoch):
@@ -411,7 +406,7 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
     else:
         site_classifier = SiteClassifier(128, num_sites).to(opts.device)
 
-    site_optimizer = torch.optim.Adam(site_classifier.parameters(), lr=1e-4)
+    site_optimizer = torch.optim.Adam(site_classifier.parameters(), lr=1e-3)
 
     # scheduler = lr_scheduler.StepLR(site_optimizer, step_size=10, gamma=0.1)
 
@@ -442,15 +437,11 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
             labels = labels.float().to(opts.device)
             # Ensure site_labels is a list of site names
             site_labels = list(metadata[1])  # Convert tuple to list if necessary
-            print('This is site labels before')
-            print(site_labels)
             # Convert site labels (strings) to numeric indices
             label_encoder = LabelEncoder()
             site_labels = label_encoder.fit_transform(site_labels)  # Converts strings to integers
             # Convert to torch tensor
             site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
-            print('This is site labels after')
-            print(site_labels)
 
 
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
@@ -459,9 +450,6 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
         warmup_learning_rate(opts, epoch, idx, len(train_loader), optimizer)
 
         with torch.cuda.amp.autocast(scaler is not None):
-            # print("GNRGIRNGRIGNRIGRGNRGINGRIGNRGNRIGRIGNRGIRGRGNRGRIN")            
-            # print(images.shape)
-
 
             projected = model(images)
             projected = torch.split(projected, [bsz]*opts.n_views, dim=0)
@@ -542,6 +530,12 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
             scaler.step(optimizer)
             scaler.step(site_optimizer)  # Update site classifier
             scaler.update()
+
+
+        # Print gradients to debug
+        for name, param in site_classifier.named_parameters():
+            print(f"{name}: {param.grad}")
+
         
         loss_meter.update(total_loss.item(), bsz)
         batch_time.update(time.time() - t1)
