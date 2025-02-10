@@ -366,19 +366,24 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
     return loss.avg, batch_time.avg, data_time.avg
 
 
+    
 class SiteClassifier(nn.Module):
-    """A small MLP classifier to predict site labels."""
     def __init__(self, input_dim, num_sites):
         super(SiteClassifier, self).__init__()
-        self.fc1 = nn.Linear(input_dim, 64)
-        self.fc2 = nn.Linear(64, num_sites)
+        self.fc1 = nn.Linear(input_dim, 128)
+        self.bn1 = nn.BatchNorm1d(128)
+        self.fc2 = nn.Linear(128, 64)
+        self.bn2 = nn.BatchNorm1d(64)
+        self.fc3 = nn.Linear(64, num_sites)
         self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(0.3)
 
     def forward(self, x):
-        x = self.relu(self.fc1(x))
-        x = self.fc2(x)
+        x = self.relu(self.bn1(self.fc1(x)))
+        x = self.dropout(x)
+        x = self.relu(self.bn2(self.fc2(x)))
+        x = self.fc3(x)
         return x
-    
 
 
 
@@ -406,7 +411,7 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
     else:
         site_classifier = SiteClassifier(128, num_sites).to(opts.device)
 
-    site_optimizer = torch.optim.Adam(site_classifier.parameters(), lr=1e-3)
+    site_optimizer = torch.optim.Adam(site_classifier.parameters(), lr=1e-4)
 
     # scheduler = lr_scheduler.StepLR(site_optimizer, step_size=10, gamma=0.1)
 
@@ -437,11 +442,15 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
             labels = labels.float().to(opts.device)
             # Ensure site_labels is a list of site names
             site_labels = list(metadata[1])  # Convert tuple to list if necessary
+            print('This is site labels before')
+            print(site_labels)
             # Convert site labels (strings) to numeric indices
             label_encoder = LabelEncoder()
             site_labels = label_encoder.fit_transform(site_labels)  # Converts strings to integers
             # Convert to torch tensor
             site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
+            print('This is site labels after')
+            print(site_labels)
 
 
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
@@ -509,7 +518,8 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
         site_optimizer.zero_grad()  # Also optimize the site classifier
 
         if scaler is None:
-            total_loss.backward(retain_graph=True)  # Optimize main model to remove site information
+            total_loss.backward()  # Optimize main model to remove site information
+            # total_loss.backward(retain_graph=True)  # Optimize main model to remove site information
             site_loss.backward()  # Optimize site classifier separately
             if opts.clip_grad:
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
