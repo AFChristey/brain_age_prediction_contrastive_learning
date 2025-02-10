@@ -503,7 +503,8 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
 
             # print('this is contrastive loss:', contrastive_loss)
             print('this is site loss:', site_loss)
-            total_loss = contrastive_loss - lambda_adv * site_loss  # Minimize contrastive, maximize site confusion
+            # total_loss = contrastive_loss - lambda_adv * site_loss  # Minimize contrastive, maximize site confusion
+            total_loss = contrastive_loss  # I want to see if site_loss decreases now that it is not involved in total_loss. If not, then it is not learning. Why?
             # print('this is total loss:', total_loss)
 
 
@@ -518,8 +519,7 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
         site_optimizer.zero_grad()  # Also optimize the site classifier
 
         if scaler is None:
-            total_loss.backward()  # Optimize main model to remove site information
-            # total_loss.backward(retain_graph=True)  # Optimize main model to remove site information
+            total_loss.backward(retain_graph=True)  # Optimize main model to remove site information
             site_loss.backward()  # Optimize site classifier separately
             if opts.clip_grad:
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
@@ -529,7 +529,7 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
             site_optimizer.step()  # Update site classifier
 
         else:
-            scaler.scale(total_loss).backward()
+            scaler.scale(total_loss).backward(retain_graph=True)
             scaler.scale(site_loss).backward()  # Backpropagate site classifier loss separately
 
             if opts.clip_grad:
