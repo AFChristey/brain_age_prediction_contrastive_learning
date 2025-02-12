@@ -532,9 +532,9 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
             scaler.update()
 
 
-        # Print gradients to debug
-        for name, param in site_classifier.named_parameters():
-            print(f"{name}: {param.grad}")
+        # # Print gradients to debug
+        # for name, param in site_classifier.named_parameters():
+        #     print(f"{name}: {param.grad}")
 
         
         loss_meter.update(total_loss.item(), bsz)
