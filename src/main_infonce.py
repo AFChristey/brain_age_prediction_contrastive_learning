@@ -382,7 +382,7 @@ class SiteClassifier(nn.Module):
         return x
 
 
-def train_new(train_loader, model, infonce, optimizer, opts, epoch):
+def train_new(train_loader, model, infonce, optimizer, site_optimizer, opts, epoch):
     lambda_adv = 0.5  # Weight for adversarial loss
     loss_meter = AverageMeter()
     batch_time = AverageMeter()
@@ -394,21 +394,6 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
     t1 = time.time()
     # print(train_loader)
     # print()
-
-    # Initialize the site classifier
-    # input_dim = model.projector.output_dim  # Adjust according to your model
-    num_sites = 6  # Number of unique sites (0-5)
-
-
-    if opts.path == "local":
-        device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
-        site_classifier = SiteClassifier(128, num_sites).to(device)
-    else:
-        site_classifier = SiteClassifier(128, num_sites).to(opts.device)
-
-    site_optimizer = torch.optim.Adam(site_classifier.parameters(), lr=1e-3)
-
-    # scheduler = lr_scheduler.StepLR(site_optimizer, step_size=10, gamma=0.1)
 
 
     for idx, (images, labels, metadata) in enumerate(train_loader):
@@ -482,7 +467,9 @@ def train_new(train_loader, model, infonce, optimizer, opts, epoch):
                                             labels=labels.to(opts.device))
                         
             # Compute adversarial site classification loss
-            site_features = projected.detach()  # Detach so main model isn't affected by site classification
+            # site_features = projected.detach()  # Detach so main model isn't affected by site classification
+            site_features = projected  # Don't detach to check if features change over time
+
             site_logits = site_classifier(site_features.mean(dim=1))  # Average over views
             site_loss = nn.CrossEntropyLoss()(site_logits, site_labels)
 
@@ -969,6 +956,23 @@ if __name__ == '__main__':
 
     # visualise_umap(test_loader, model, opts)
 
+
+    # Initialize the site classifier
+    # input_dim = model.projector.output_dim  # Adjust according to your model
+    num_sites = 6  # Number of unique sites (0-5)
+
+
+    if opts.path == "local":
+        device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+        site_classifier = SiteClassifier(128, num_sites).to(device)
+    else:
+        site_classifier = SiteClassifier(128, num_sites).to(opts.device)
+
+    site_optimizer = torch.optim.Adam(site_classifier.parameters(), lr=1e-3)
+
+    scheduler = lr_scheduler.StepLR(site_optimizer, step_size=5, gamma=0.5)
+
+
     for epoch in range(1, opts.epochs + 1):
         # if epoch == 2:
         #     visualise_umap(test_loader, model, opts, epoch)
@@ -1006,7 +1010,7 @@ if __name__ == '__main__':
         adjust_learning_rate(opts, optimizer, epoch)
 
         t1 = time.time()
-        loss_train, batch_time, data_time = train_new(train_loader, model, infonce, optimizer, opts, epoch)
+        loss_train, batch_time, data_time = train_new(train_loader, model, infonce, optimizer, site_optimizer, opts, epoch)
         t2 = time.time()
         writer.add_scalar("train/loss", loss_train, epoch)
 
@@ -1042,6 +1046,8 @@ if __name__ == '__main__':
     
         # save_file = os.path.join(save_dir, f"weights.pth")
         # save_model(model, optimizer, opts, epoch, save_file)
+        scheduler.step()
+
             
 
     visualise_umap(test_loader, model, opts, epoch)
