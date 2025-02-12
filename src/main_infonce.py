@@ -382,6 +382,7 @@ class SiteClassifier(nn.Module):
         return x
 
 
+# Changed
 def train_new(train_loader, model, infonce, optimizer, site_optimizer, opts, epoch):
     lambda_adv = 0.5  # Weight for adversarial loss
     loss_meter = AverageMeter()
@@ -395,6 +396,7 @@ def train_new(train_loader, model, infonce, optimizer, site_optimizer, opts, epo
     # print(train_loader)
     # print()
 
+    # Removed site_optimizer
 
     for idx, (images, labels, metadata) in enumerate(train_loader):
         # print('hi')
@@ -478,8 +480,8 @@ def train_new(train_loader, model, infonce, optimizer, site_optimizer, opts, epo
 
             # print('this is contrastive loss:', contrastive_loss)
             print('this is site loss:', site_loss)
-            # total_loss = contrastive_loss - lambda_adv * site_loss  # Minimize contrastive, maximize site confusion
-            total_loss = contrastive_loss  # I want to see if site_loss decreases now that it is not involved in total_loss. If not, then it is not learning. Why?
+            total_loss = contrastive_loss - lambda_adv * site_loss  # Minimize contrastive, maximize site confusion
+            # total_loss = contrastive_loss  # I want to see if site_loss decreases now that it is not involved in total_loss. If not, then it is not learning. Why?
             # print('this is total loss:', total_loss)
 
 
@@ -961,15 +963,16 @@ if __name__ == '__main__':
     # input_dim = model.projector.output_dim  # Adjust according to your model
     num_sites = 6  # Number of unique sites (0-5)
 
-
     if opts.path == "local":
         device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
         site_classifier = SiteClassifier(128, num_sites).to(device)
     else:
         site_classifier = SiteClassifier(128, num_sites).to(opts.device)
 
+    # Added
     site_optimizer = torch.optim.Adam(site_classifier.parameters(), lr=1e-3)
 
+    # Added
     scheduler = lr_scheduler.StepLR(site_optimizer, step_size=5, gamma=0.5)
 
 
@@ -1010,6 +1013,7 @@ if __name__ == '__main__':
         adjust_learning_rate(opts, optimizer, epoch)
 
         t1 = time.time()
+        # Changed
         loss_train, batch_time, data_time = train_new(train_loader, model, infonce, optimizer, site_optimizer, opts, epoch)
         t2 = time.time()
         writer.add_scalar("train/loss", loss_train, epoch)
@@ -1046,6 +1050,8 @@ if __name__ == '__main__':
     
         # save_file = os.path.join(save_dir, f"weights.pth")
         # save_model(model, optimizer, opts, epoch, save_file)
+            
+        # Added
         scheduler.step()
 
             
