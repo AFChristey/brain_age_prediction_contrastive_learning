@@ -384,7 +384,7 @@ class SiteClassifier(nn.Module):
 
 # Changed
 def train_new(train_loader, model, infonce, optimizer, site_optimizer, opts, epoch):
-    lambda_adv = 0.5  # Weight for adversarial loss
+    lambda_adv = 1.0  # Weight for adversarial loss
     loss_meter = AverageMeter()
     batch_time = AverageMeter()
     data_time = AverageMeter()
