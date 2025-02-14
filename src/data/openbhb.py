@@ -20,44 +20,88 @@ def bin_age(age_real: torch.Tensor):
         age_binned[age_real <= value] = value
     return age_binned.long()
 
-# reads both the imaging data (.npy file) and metadata (.tsv file)
-# dataset specifies the dataset name (train, internal_test, or external_test)
-def read_data(root, dataset, fast, path):
-    # print(f"Read {dataset.upper()}")
-    # The sep="\t" argument specifies that the values in the .tsv file are separated by tabs.
-    # print(root)
 
 
 
-    if path == "local":
-        df = pd.read_csv("data/results/labels_with_sites.csv")
-        x_arr = np.load("data/results/x_arr.npy", mmap_mode="r")
-    else:
-        df = pd.read_csv("/home/afc53/contrastive_learning_mri_images/src/data/results/labels_with_sites.csv")
-        x_arr = np.load("/home/afc53/contrastive_learning_mri_images/src/data/results/x_arr.npy", mmap_mode="r")
 
-        
 
-    
-    # "site" column is set to NaN for rows in the "external_test" split, possibly because the "site" information is not available or relevant for external test data
-    # df.loc[df["split"] == "external_test", "site"] = np.nan
+def read_data(path, dataset, fast):
+    print(f"Read {dataset.upper()}")
+    df = pd.read_csv(os.path.join(path, dataset + ".tsv"), sep="\t")
+    df.loc[df["split"] == "external_test", "site"] = np.nan
 
-    # creates a NumPy array (y_arr) containing the values of the "age" and "site" columns from the df DataFrame
     y_arr = df[["age", "site"]].values
 
-    # initializes an empty NumPy array x_arr with the shape (10, 3659572)
-    # 10 channels and 3,659,5732 features
-    # x_arr = np.zeros((10, 3659572))
-    # If fast is False, the actual MRI data (.npy file) is loaded into memory; 
-    # otherwise, the array is initialized but not fully loaded into memory (mmap_mode="r")
-    # if not fast:
+    x_arr = np.zeros((10, 3659572))
+    if not fast:
+        x_arr = np.load(os.path.join(path, dataset + ".npy"), mmap_mode="r")
     
     print("- y size [original]:", y_arr.shape)
     print("- x size [original]:", x_arr.shape)
     return x_arr, y_arr
 
-# OpenBHB is a custom PyTorch Dataset class that loads MRI data and labels (age, site) for training
+
+
 class OpenBHB(torch.utils.data.Dataset):
+    def __init__(self, root, train=True, internal=True, transform=None, 
+                 label="cont", fast=False, load_feats=None):
+        self.root = root
+
+        if train and not internal:
+            raise ValueError("Invalid configuration train=True and internal=False")
+        
+        self.train = train
+        self.internal = internal
+        
+        dataset = "train"
+        if not train:
+            if internal:
+                dataset = "internal_test"
+            else:
+                dataset = "external_test"
+        
+        self.X, self.y = read_data(root, dataset, fast)
+        self.T = transform
+        self.label = label
+        self.fast = fast
+
+        self.bias_feats = None
+        if load_feats:
+            print("Loading biased features", load_feats)
+            self.bias_feats = torch.load(load_feats, map_location="cpu")
+        
+        print(f"Read {len(self.X)} records")
+
+    def __len__(self):
+        return len(self.y)
+
+    def __getitem__(self, index):
+        if not self.fast:
+            x = self.X[index]
+        else:
+            x = self.X[0]
+
+        y = self.y[index]
+
+        if self.T is not None:
+            x = self.T(x)
+        
+        # sample, age, site
+        age, site = y[0], y[1]
+        if self.label == "bin":
+            age = bin_age(torch.tensor(age))
+        
+        if self.bias_feats is not None:
+            return x, age, self.bias_feats[index]
+        else:
+            return x, age, site
+
+
+
+
+
+# OpenBHB is a custom PyTorch Dataset class that loads MRI data and labels (age, site) for training
+class MREData(torch.utils.data.Dataset):
     # Depending on the train and internal flags, it loads the appropriate dataset (train, internal_test, or external_test)
     # root = root directory where the data is stored
     # label = specifies whether the labels should be continuous ("cont") or binned ("bin"). Defaults to "cont"
@@ -218,78 +262,6 @@ class OpenBHB(torch.utils.data.Dataset):
 
         return x, y, (sex, site, imbalance)
 
-    #     self.root = root
-
-    #     # store the train and internal flags as instance variables
-    #     self.train = train
-        
-    #     # This way, the class knows whether to load the training data, the internal test data, or the external test data
-    #     dataset = "train"
-
-
-    #     stiffness, dr, T1, age, sex, study, id, imbalance_percentages = load_samples(path)
-
-    #     print(age)
-
-
-    #     kfold = KFold(n_splits=5, shuffle=True, random_state=42)
-
-
-
-    #     # # load the data from the disk.
-    #     # self.X, self.y = read_data(root, dataset, fast, path)
-    #     # # print(len(self.X))
-    #     # # print(len(self.y))
-    #     # # print('GNEGNGJGJEJGJJ')
-    #     # # stores the transformation function (if provided) in self.T
-    #     self.T = transform
-    #     self.label = label
-    #     self.fast = fast
-
-    #     self.bias_feats = None
-
-    #     # prints the number of records (data samples) in self.X, which is the feature set
-    #     print(f"Read {len(self.X)} records")
-
-
-
-    # # len(self.y) is returned, which is the length of the labels array self.y. 
-    # # This corresponds to the number of samples in the dataset.
-    # def __len__(self):
-    #     return len(self.y)
-
-    # # method defines how to access an individual item from the dataset (i.e., a single sample) given its index
-    # def __getitem__(self, index):
-    #     # If fast is False, the feature data (self.X) is indexed using the provided index, which fetches the corresponding feature vector (MRI data) for that sample.
-    #     # self.X[0]: If fast is True, instead of fetching a specific sample from the dataset, it always fetches the first sample (self.X[0])
-    #     if not self.fast:
-    #         x = self.X[index]
-    #     else:
-    #         x = self.X[0]
-
-    #     # y will contain two values: age and site
-    #     y = self.y[index]
-
-    #     # Checks if a transformation (self.T) has been provided for the features.
-    #     # If a transformation exists, it is applied to the feature data (x).
-    #     if self.T is not None:
-    #         x = self.T(x)
-        
-    #     # This unpacks the y array into two variables: age and site.
-    #     age, site = y[0], y[1] 
-    #     #  If so, it means the task is to classify age into bins instead of predicting the exact age.
-    #     if self.label == "bin":
-    #         age = bin_age(torch.tensor(age))
-
-
-    #     # HERE NEEDS TO INCLUDE OTHER META DATA (such as site)
-        
-    #     # checks if any biased features (self.bias_feats) are available. 
-    #     # If so, it returns the transformed feature data (x), the binned or continuous age, and the corresponding biased feature for the sample at the given index.
-    #     if self.bias_feats is not None:
-    #         return x, age, self.bias_feats[index]
-    #     else:
-    #         return x, age, site
 
 
 def norm_whole_batch(batch, norm, default_value):

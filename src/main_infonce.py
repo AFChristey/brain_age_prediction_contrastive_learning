@@ -21,7 +21,7 @@ from util import AverageMeter, NViewTransform, ensure_dir, set_seed, arg2bool, s
 from util import warmup_learning_rate, adjust_learning_rate
 from util import compute_age_mae, compute_site_ba
 # from data import FeatureExtractor, OpenBHB, bin_age
-from data import OpenBHB, bin_age
+from data import OpenBHB, bin_age, MREData
 from data.transforms import Crop, Pad, Cutout
 #from main_mse import get_transforms
 from util import get_transforms
@@ -42,7 +42,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 
-
+which_data_type = 'MREData' 
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -159,27 +159,30 @@ def load_data(opts):
     T_train, T_test = get_transforms(opts)
     T_train = NViewTransform(T_train, opts.n_views)
 
-    
-    train_dataset = OpenBHB(modality='stiffness', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
+    if which_data_type == 'OpenBHB':
+        print('...')
 
-    # print('HELLO')
-    train_dataset.norm()
+    else:
+        train_dataset = MREData(modality='stiffness', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opts.batch_size, shuffle=True)
+        # print('HELLO')
+        train_dataset.norm()
 
-    train_dataset_score = OpenBHB(modality='stiffness', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opts.batch_size, shuffle=True)
 
-    train_dataset_score.norm()
-    # print('HELLO')
+        train_dataset_score = MREData(modality='stiffness', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
+
+        train_dataset_score.norm()
+        # print('HELLO')
 
 
-    train_loader_score = torch.utils.data.DataLoader(train_dataset_score, batch_size=opts.batch_size, shuffle=False)
+        train_loader_score = torch.utils.data.DataLoader(train_dataset_score, batch_size=opts.batch_size, shuffle=False)
 
-    test_dataset = OpenBHB(modality='stiffness', train=False, transform=T_test, path=opts.path, fold=0)
+        test_dataset = MREData(modality='stiffness', train=False, transform=T_test, path=opts.path, fold=0)
 
-    test_dataset.norm()
+        test_dataset.norm()
 
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=opts.batch_size, shuffle=False)
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=opts.batch_size, shuffle=False)
 
     
     # print('TEST LOADER SIZE')
@@ -261,6 +264,7 @@ def load_optimizer(model, opts):
     return optimizer
 
 def train(train_loader, model, infonce, optimizer, opts, epoch):
+    lambda_adv = 1.0  # Weight for adversarial loss
     loss = AverageMeter()
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -272,11 +276,21 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
     # print(train_loader)
     # print()
 
+    # Cross-entropy loss for classification
+    criterion_cls = nn.CrossEntropyLoss()
+
 
     for idx, (images, labels, metadata) in enumerate(train_loader):
         # print('hi')
         data_time.update(time.time() - t1)
         # print(images[0])
+
+        # Ensure site_labels is a list of site names
+        site_labels = list(metadata[1])  # Convert tuple to list if necessary
+        # Convert site labels (strings) to numeric indices
+        label_encoder = LabelEncoder()
+        site_labels = label_encoder.fit_transform(site_labels)  # Converts strings to integers
+
         if opts.path == "local":
             device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
 
@@ -284,14 +298,22 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             images = torch.cat(images, dim=0).to(device)
             bsz = labels.shape[0]
             labels = labels.float().to(device)
+
+            # Convert to torch tensor
+            site_labels = torch.tensor(site_labels, dtype=torch.long, device=device)
         else:
             # images = torch.cat(images, dim=0).to(opts.device)
             images = torch.cat(images, dim=0).to(opts.device)
             bsz = labels.shape[0]
             labels = labels.float().to(opts.device)
 
+            # Convert to torch tensor
+            site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
+
+
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
-        images = images.unsqueeze(1)  # Add channel dimension at index 1
+        if which_data_type == 'MREData':
+            images = images.unsqueeze(1)  # Add channel dimension at index 1
 
         warmup_learning_rate(opts, epoch, idx, len(train_loader), optimizer)
 
@@ -299,11 +321,16 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             # print("GNRGIRNGRIGNRIGRGNRGINGRIGNRGNRIGRIGNRGIRGRGNRGRIN")            
             # print(images.shape)
 
-            site_labels = metadata[1]
+            # # Will have to change
+            # site_labels = metadata[1]
 
-            projected = model(images)
+            # projected = model(images, classifier=True)
+            projected, site_pred = model(images, classify=True)
             projected = torch.split(projected, [bsz]*opts.n_views, dim=0)
             projected = torch.cat([f.unsqueeze(1) for f in projected], dim=1)
+
+
+
 
             if opts.loss_choice == "supcon" or opts.loss_choice == "RnC":
                 if opts.path == "local":
@@ -332,21 +359,29 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
                                             labels=labels.to(opts.device))
 
         
+            # Compute classification loss
+            class_loss = criterion_cls(site_pred, site_labels)
+
+            # Total loss = Contrastive Loss + Classification Loss
+            total_loss = running_loss - lambda_adv * class_loss
+
+        # Do I backpropagate total, or just separately?
+
         optimizer.zero_grad()
         if scaler is None:
-            running_loss.backward()
+            total_loss.backward()
             if opts.clip_grad:
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
             optimizer.step()
         else:
-            scaler.scale(running_loss).backward()
+            scaler.scale(total_loss).backward()
             if opts.clip_grad:
                 scaler.unscale_(optimizer)
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
             scaler.step(optimizer)
             scaler.update()
         
-        loss.update(running_loss.item(), bsz)
+        loss.update(total_loss.item(), bsz)
         batch_time.update(time.time() - t1)
         t1 = time.time()
         eta = batch_time.avg * (len(train_loader) - idx)
@@ -367,186 +402,174 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
 
     
-class SiteClassifier(nn.Module):
-    def __init__(self, input_dim, num_sites):
-        super(SiteClassifier, self).__init__()
-        self.fc1 = nn.Linear(input_dim, 256)
-        self.fc2 = nn.Linear(256, 128)
-        self.fc3 = nn.Linear(128, num_sites)
-        self.relu = nn.ReLU()
-
-    def forward(self, x):
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
 
 
-# Changed
-def train_new(train_loader, model, infonce, optimizer, site_optimizer, opts, epoch):
-    lambda_adv = 1.0  # Weight for adversarial loss
-    loss_meter = AverageMeter()
-    batch_time = AverageMeter()
-    data_time = AverageMeter()
+# # Changed
+# def train_new(train_loader, model, infonce, optimizer, site_optimizer, opts, epoch):
+#     lambda_adv = 1.0  # Weight for adversarial loss
+#     loss_meter = AverageMeter()
+#     batch_time = AverageMeter()
+#     data_time = AverageMeter()
 
-    scaler = torch.cuda.amp.GradScaler() if opts.amp else None
-    model.train()
+#     scaler = torch.cuda.amp.GradScaler() if opts.amp else None
+#     model.train()
 
-    t1 = time.time()
-    # print(train_loader)
-    # print()
+#     t1 = time.time()
+#     # print(train_loader)
+#     # print()
 
-    # Removed site_optimizer
+#     # Removed site_optimizer
 
-    for idx, (images, labels, metadata) in enumerate(train_loader):
-        # print('hi')
-        data_time.update(time.time() - t1)
-        # print(images[0])
-        if opts.path == "local":
-            device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+#     for idx, (images, labels, metadata) in enumerate(train_loader):
+#         # print('hi')
+#         data_time.update(time.time() - t1)
+#         # print(images[0])
+#         if opts.path == "local":
+#             device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
 
-            # images = torch.cat(images, dim=0).to(opts.device)
-            images = torch.cat(images, dim=0).to(device)
-            bsz = labels.shape[0]
-            labels = labels.float().to(device)
-            # Ensure site_labels is a list of site names
-            site_labels = list(metadata[1])  # Convert tuple to list if necessary
-            # Convert site labels (strings) to numeric indices
-            label_encoder = LabelEncoder()
-            site_labels = label_encoder.fit_transform(site_labels)  # Converts strings to integers
-            # Convert to torch tensor
-            site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
+#             # images = torch.cat(images, dim=0).to(opts.device)
+#             images = torch.cat(images, dim=0).to(device)
+#             bsz = labels.shape[0]
+#             labels = labels.float().to(device)
+#             # Ensure site_labels is a list of site names
+#             site_labels = list(metadata[1])  # Convert tuple to list if necessary
+#             # Convert site labels (strings) to numeric indices
+#             label_encoder = LabelEncoder()
+#             site_labels = label_encoder.fit_transform(site_labels)  # Converts strings to integers
+#             # Convert to torch tensor
+#             site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
 
-        else:
-            # images = torch.cat(images, dim=0).to(opts.device)
-            images = torch.cat(images, dim=0).to(opts.device)
-            bsz = labels.shape[0]
-            labels = labels.float().to(opts.device)
-            # Ensure site_labels is a list of site names
-            site_labels = list(metadata[1])  # Convert tuple to list if necessary
-            # Convert site labels (strings) to numeric indices
-            label_encoder = LabelEncoder()
-            site_labels = label_encoder.fit_transform(site_labels)  # Converts strings to integers
-            # Convert to torch tensor
-            site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
+#         else:
+#             # images = torch.cat(images, dim=0).to(opts.device)
+#             images = torch.cat(images, dim=0).to(opts.device)
+#             bsz = labels.shape[0]
+#             labels = labels.float().to(opts.device)
+#             # Ensure site_labels is a list of site names
+#             site_labels = list(metadata[1])  # Convert tuple to list if necessary
+#             # Convert site labels (strings) to numeric indices
+#             label_encoder = LabelEncoder()
+#             site_labels = label_encoder.fit_transform(site_labels)  # Converts strings to integers
+#             # Convert to torch tensor
+#             site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
 
 
-        # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
-        images = images.unsqueeze(1)  # Add channel dimension at index 1
+#         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
+#         if which_data_type == 'MREData':
+#             images = images.unsqueeze(1)  # Add channel dimension at index 1
 
-        warmup_learning_rate(opts, epoch, idx, len(train_loader), optimizer)
+#         warmup_learning_rate(opts, epoch, idx, len(train_loader), optimizer)
 
-        with torch.cuda.amp.autocast(scaler is not None):
+#         with torch.cuda.amp.autocast(scaler is not None):
 
-            projected = model(images)
-            projected = torch.split(projected, [bsz]*opts.n_views, dim=0)
-            projected = torch.cat([f.unsqueeze(1) for f in projected], dim=1)
+#             projected = model(images)
+#             projected = torch.split(projected, [bsz]*opts.n_views, dim=0)
+#             projected = torch.cat([f.unsqueeze(1) for f in projected], dim=1)
 
-            if opts.loss_choice == "supcon" or opts.loss_choice == "RnC":
-                if opts.path == "local":
-                    contrastive_loss = infonce(projected, labels.to(device).float())
-                else:
-                    contrastive_loss = infonce(projected, labels.to(opts.device).float())
+#             if opts.loss_choice == "supcon" or opts.loss_choice == "RnC":
+#                 if opts.path == "local":
+#                     contrastive_loss = infonce(projected, labels.to(device).float())
+#                 else:
+#                     contrastive_loss = infonce(projected, labels.to(opts.device).float())
 
-            elif opts.loss_choice == "dynamic":
-                if opts.path == "local":
-                    if opts.NN_nb_step_size > 0:
-                        contrastive_loss = infonce(features=projected,
-                                            labels=labels.to(device),
-                                            epoch=epoch)
+#             elif opts.loss_choice == "dynamic":
+#                 if opts.path == "local":
+#                     if opts.NN_nb_step_size > 0:
+#                         contrastive_loss = infonce(features=projected,
+#                                             labels=labels.to(device),
+#                                             epoch=epoch)
 
-                    else:
-                        contrastive_loss = infonce(features=projected,
-                                            labels=labels.to(device))
-                else:
-                    if opts.NN_nb_step_size > 0:
-                        contrastive_loss = infonce(features=projected,
-                                            labels=labels.to(opts.device),
-                                            epoch=epoch)
+#                     else:
+#                         contrastive_loss = infonce(features=projected,
+#                                             labels=labels.to(device))
+#                 else:
+#                     if opts.NN_nb_step_size > 0:
+#                         contrastive_loss = infonce(features=projected,
+#                                             labels=labels.to(opts.device),
+#                                             epoch=epoch)
 
-                    else:
-                        contrastive_loss = infonce(features=projected,
-                                            labels=labels.to(opts.device))
+#                     else:
+#                         contrastive_loss = infonce(features=projected,
+#                                             labels=labels.to(opts.device))
                         
-            # Compute adversarial site classification loss
-            # site_features = projected.detach()  # Detach so main model isn't affected by site classification
-            site_features = projected  # Don't detach to check if features change over time
+#             # Compute adversarial site classification loss
+#             # site_features = projected.detach()  # Detach so main model isn't affected by site classification
+#             site_features = projected  # Don't detach to check if features change over time
 
-            site_logits = site_classifier(site_features.mean(dim=1))  # Average over views
-            site_loss = nn.CrossEntropyLoss()(site_logits, site_labels)
-
-
-            # Compute the final loss: Adversarial Training
-
-            # print('this is contrastive loss:', contrastive_loss)
-            print('this is site loss:', site_loss)
-            total_loss = contrastive_loss - lambda_adv * site_loss  # Minimize contrastive, maximize site confusion
-            # total_loss = contrastive_loss  # I want to see if site_loss decreases now that it is not involved in total_loss. If not, then it is not learning. Why?
-            # print('this is total loss:', total_loss)
+#             site_logits = site_classifier(site_features.mean(dim=1))  # Average over views
+#             site_loss = nn.CrossEntropyLoss()(site_logits, site_labels)
 
 
-        # EXPLAIN PLEASE
-        with torch.no_grad():
-            pred_sites = torch.argmax(site_logits, dim=1)  # Predicted site labels
-            site_acc = (pred_sites == site_labels).float().mean()  # Accuracy
-        print(f"Batch {idx}: Site Classifier Accuracy = {site_acc.item():.4f}, Site Loss = {site_loss.item():.4f}")
+#             # Compute the final loss: Adversarial Training
+
+#             # print('this is contrastive loss:', contrastive_loss)
+#             print('this is site loss:', site_loss)
+#             total_loss = contrastive_loss - lambda_adv * site_loss  # Minimize contrastive, maximize site confusion
+#             # total_loss = contrastive_loss  # I want to see if site_loss decreases now that it is not involved in total_loss. If not, then it is not learning. Why?
+#             # print('this is total loss:', total_loss)
+
+
+#         # # EXPLAIN PLEASE
+#         # with torch.no_grad():
+#         #     pred_sites = torch.argmax(site_logits, dim=1)  # Predicted site labels
+#         #     site_acc = (pred_sites == site_labels).float().mean()  # Accuracy
+#         # print(f"Batch {idx}: Site Classifier Accuracy = {site_acc.item():.4f}, Site Loss = {site_loss.item():.4f}")
                 
 
-        optimizer.zero_grad()
-        site_optimizer.zero_grad()  # Also optimize the site classifier
+#         optimizer.zero_grad()
+#         site_optimizer.zero_grad()  # Also optimize the site classifier
 
-        if scaler is None:
-            total_loss.backward(retain_graph=True)  # Optimize main model to remove site information
-            site_loss.backward()  # Optimize site classifier separately
-            if opts.clip_grad:
-                nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
-                nn.utils.clip_grad_norm_(site_classifier.parameters(), max_norm=1)  # Clip site classifier gradients
+#         if scaler is None:
+#             total_loss.backward(retain_graph=True)  # Optimize main model to remove site information
+#             site_loss.backward()  # Optimize site classifier separately
+#             if opts.clip_grad:
+#                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+#                 nn.utils.clip_grad_norm_(site_classifier.parameters(), max_norm=1)  # Clip site classifier gradients
 
-            optimizer.step()
-            site_optimizer.step()  # Update site classifier
+#             optimizer.step()
+#             site_optimizer.step()  # Update site classifier
 
-        else:
-            scaler.scale(total_loss).backward(retain_graph=True)
-            scaler.scale(site_loss).backward()  # Backpropagate site classifier loss separately
+#         else:
+#             scaler.scale(total_loss).backward(retain_graph=True)
+#             scaler.scale(site_loss).backward()  # Backpropagate site classifier loss separately
 
-            if opts.clip_grad:
-                scaler.unscale_(optimizer)
-                scaler.unscale_(site_optimizer)  # Unscale site classifier gradients
+#             if opts.clip_grad:
+#                 scaler.unscale_(optimizer)
+#                 scaler.unscale_(site_optimizer)  # Unscale site classifier gradients
 
-                nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
-                nn.utils.clip_grad_norm_(site_classifier.parameters(), max_norm=1)  # Clip site classifier gradients
+#                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+#                 nn.utils.clip_grad_norm_(site_classifier.parameters(), max_norm=1)  # Clip site classifier gradients
 
-            scaler.step(optimizer)
-            scaler.step(site_optimizer)  # Update site classifier
-            scaler.update()
+#             scaler.step(optimizer)
+#             scaler.step(site_optimizer)  # Update site classifier
+#             scaler.update()
 
 
-        # # Print gradients to debug
-        # for name, param in site_classifier.named_parameters():
-        #     print(f"{name}: {param.grad}")
+#         # # Print gradients to debug
+#         # for name, param in site_classifier.named_parameters():
+#         #     print(f"{name}: {param.grad}")
 
         
-        loss_meter.update(total_loss.item(), bsz)
-        batch_time.update(time.time() - t1)
-        t1 = time.time()
-        eta = batch_time.avg * (len(train_loader) - idx)
+#         loss_meter.update(total_loss.item(), bsz)
+#         batch_time.update(time.time() - t1)
+#         t1 = time.time()
+#         eta = batch_time.avg * (len(train_loader) - idx)
 
 
-        print(f"Train: [{epoch}][{idx + 1}/{len(train_loader)}]:\t"
-                f"BT {batch_time.avg:.3f}\t"
-                f"ETA {datetime.timedelta(seconds=eta)}\t"
-                f"loss {loss_meter.avg:.3f}\t")
+#         print(f"Train: [{epoch}][{idx + 1}/{len(train_loader)}]:\t"
+#                 f"BT {batch_time.avg:.3f}\t"
+#                 f"ETA {datetime.timedelta(seconds=eta)}\t"
+#                 f"loss {loss_meter.avg:.3f}\t")
 
-        if (idx + 1) % opts.print_freq == 0:
-            print(f"Train: [{epoch}][{idx + 1}/{len(train_loader)}]:\t"
-                  f"BT {batch_time.avg:.3f}\t"
-                  f"ETA {datetime.timedelta(seconds=eta)}\t"
-                  f"loss {loss_meter.avg:.3f}\t")
+#         if (idx + 1) % opts.print_freq == 0:
+#             print(f"Train: [{epoch}][{idx + 1}/{len(train_loader)}]:\t"
+#                   f"BT {batch_time.avg:.3f}\t"
+#                   f"ETA {datetime.timedelta(seconds=eta)}\t"
+#                   f"loss {loss_meter.avg:.3f}\t")
             
-    # scheduler.step()
+#     # scheduler.step()
 
 
-    return loss_meter.avg, batch_time.avg, data_time.avg
+#     return loss_meter.avg, batch_time.avg, data_time.avg
 
 
 
@@ -714,7 +737,8 @@ def extract_features_for_umap(test_loader, model, opts, key, max_features=64):
 
 
             # Add the channel dimension if it's not there (for grayscale images, etc.)
-            images = images.unsqueeze(1)  # Add channel dimension at index 1
+            if which_data_type == 'MREData':
+                images = images.unsqueeze(1)  # Add channel dimension at index 1
 
             # Extract features from the model
             features = model.features(images)  # Get features from the model
@@ -959,21 +983,21 @@ if __name__ == '__main__':
     # visualise_umap(test_loader, model, opts)
 
 
-    # Initialize the site classifier
-    # input_dim = model.projector.output_dim  # Adjust according to your model
-    num_sites = 6  # Number of unique sites (0-5)
+    # # Initialize the site classifier
+    # # input_dim = model.projector.output_dim  # Adjust according to your model
+    # num_sites = 6  # Number of unique sites (0-5)
 
-    if opts.path == "local":
-        device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
-        site_classifier = SiteClassifier(128, num_sites).to(device)
-    else:
-        site_classifier = SiteClassifier(128, num_sites).to(opts.device)
+    # if opts.path == "local":
+    #     device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+    #     site_classifier = SiteClassifier(128, num_sites).to(device)
+    # else:
+    #     site_classifier = SiteClassifier(128, num_sites).to(opts.device)
 
-    # Added
-    site_optimizer = torch.optim.Adam(site_classifier.parameters(), lr=1e-3)
+    # # Added
+    # site_optimizer = torch.optim.Adam(site_classifier.parameters(), lr=1e-3)
 
-    # Added
-    scheduler = lr_scheduler.StepLR(site_optimizer, step_size=5, gamma=0.5)
+    # # Added
+    # scheduler = lr_scheduler.StepLR(site_optimizer, step_size=5, gamma=0.5)
 
 
     for epoch in range(1, opts.epochs + 1):
@@ -1014,7 +1038,7 @@ if __name__ == '__main__':
 
         t1 = time.time()
         # Changed
-        loss_train, batch_time, data_time = train_new(train_loader, model, infonce, optimizer, site_optimizer, opts, epoch)
+        loss_train, batch_time, data_time = train(train_loader, model, infonce, optimizer, opts, epoch)
         t2 = time.time()
         writer.add_scalar("train/loss", loss_train, epoch)
 
@@ -1052,7 +1076,7 @@ if __name__ == '__main__':
         # save_model(model, optimizer, opts, epoch, save_file)
             
         # Added
-        scheduler.step()
+        # scheduler.step()
 
             
 

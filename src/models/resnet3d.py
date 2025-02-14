@@ -221,14 +221,45 @@ model_dict = {
     'resnet101': [resnet101, 2048],
 }
 
+# class SupConResNet(nn.Module):
+#     """backbone + projection head"""
+#     def __init__(self, name='resnet50', head='mlp', feat_dim=128):
+#         super().__init__()
+#         # THIS MODELLLLLLLLLL
+#         model_fun, dim_in = model_dict[name]
+#         print(model_fun)
+#         self.encoder = model_fun()
+#         if head == 'linear':
+#             self.head = nn.Linear(dim_in, feat_dim)
+#         elif head == 'mlp':
+#             self.head = nn.Sequential(
+#                 nn.Linear(dim_in, dim_in),
+#                 nn.ReLU(inplace=True),
+#                 nn.Linear(dim_in, feat_dim)
+#             )
+#         else:
+#             raise NotImplementedError(
+#                 'head not supported: {}'.format(head))
+
+#     def forward(self, x):
+#         # ERROR HERE
+#         feat = self.encoder(x)
+
+#         feat = F.normalize(self.head(feat), dim=1)
+#         return feat
+    
+#     def features(self, x):
+#         return self.forward(x)
+    
 class SupConResNet(nn.Module):
-    """backbone + projection head"""
-    def __init__(self, name='resnet50', head='mlp', feat_dim=128):
+    """Backbone + projection head + classifier"""
+    def __init__(self, name='resnet50', head='mlp', feat_dim=128, num_sites=10):
         super().__init__()
-        # THIS MODELLLLLLLLLL
+        # Load encoder model
         model_fun, dim_in = model_dict[name]
-        print(model_fun)
         self.encoder = model_fun()
+        
+        # Projection head
         if head == 'linear':
             self.head = nn.Linear(dim_in, feat_dim)
         elif head == 'mlp':
@@ -238,56 +269,39 @@ class SupConResNet(nn.Module):
                 nn.Linear(dim_in, feat_dim)
             )
         else:
-            raise NotImplementedError(
-                'head not supported: {}'.format(head))
+            raise NotImplementedError(f'Head not supported: {head}')
+        
+        # Add Site Classifier
+        self.classifier = SiteClassifier(feat_dim, num_sites)
+
+    def forward(self, x, classify=False):
+        """Returns features and optionally classification output"""
+        feat = self.encoder(x)  # Get features from encoder
+        proj_feat = F.normalize(self.head(feat), dim=1)  # Projected features
+
+        if classify:
+            class_output = self.classifier(proj_feat)
+            return proj_feat, class_output
+        
+        return proj_feat
+
+    def features(self, x):
+        """Extracts encoder features"""
+        return self.forward(x, classify=False)
+
+
+class SiteClassifier(nn.Module):
+    """Simple MLP classifier for site classification"""
+    def __init__(self, input_dim, num_sites):
+        super(SiteClassifier, self).__init__()
+        self.fc1 = nn.Linear(input_dim, 256)
+        self.fc2 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, num_sites)
+        self.relu = nn.ReLU()
 
     def forward(self, x):
-        # ERROR HERE
-        feat = self.encoder(x)
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
 
-        feat = F.normalize(self.head(feat), dim=1)
-        return feat
-    
-    def features(self, x):
-        return self.forward(x)
-
-
-class SupRegResNet(nn.Module):
-    """encoder + regressor"""
-    def __init__(self, name='resnet50'):
-        super().__init__()
-        model_fun, dim_in = model_dict[name]
-        self.encoder = model_fun()
-        self.fc = nn.Linear(dim_in, 1)
-
-    def forward(self, x):
-        feats = self.features(x)
-        return self.fc(feats), feats
-    
-    def features(self, x):
-        return self.encoder(x)
-
-class SupCEResNet(nn.Module):
-    """encoder + classifier"""
-    def __init__(self, n_classes, name='resnet50'):
-        super().__init__()
-        model_fun, dim_in = model_dict[name]
-        self.encoder = model_fun()
-        self.fc = nn.Linear(dim_in, n_classes)
-
-    def forward(self, x):
-        return self.fc(self.encoder(x))
-    
-    def features(self, x):
-        return self.encoder(x)
-
-
-class LinearRegressor(nn.Module):
-    """Linear regressor"""
-    def __init__(self, name='resnet50'):
-        super().__init__()
-        _, feat_dim = model_dict[name]
-        self.fc = nn.Linear(feat_dim, 1)
-
-    def forward(self, features):
-        return self.fc(features)
