@@ -21,7 +21,7 @@ from util import AverageMeter, NViewTransform, ensure_dir, set_seed, arg2bool, s
 from util import warmup_learning_rate, adjust_learning_rate
 from util import compute_age_mae, compute_site_ba
 # from data import FeatureExtractor, OpenBHB, bin_age
-from data import OpenBHB, bin_age, MREData
+from data import MREData, OpenBHB, bin_age
 from data.transforms import Crop, Pad, Cutout
 #from main_mse import get_transforms
 from util import get_transforms
