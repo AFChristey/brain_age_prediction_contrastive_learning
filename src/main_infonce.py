@@ -310,6 +310,9 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             # Convert to torch tensor
             site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
 
+        site_labels = site_labels.repeat_interleave(opts.n_views)
+
+
 
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
         if which_data_type == 'MREData':
