@@ -10,6 +10,8 @@ from sklearn.model_selection import KFold
 from collections import OrderedDict
 # A utility for processing masked brain imaging data
 from nilearn.masking import unmask
+import re
+
 
 # takes a tensor of real ages and bins them into age categories
 # output is a tensor with binned age values
@@ -24,77 +26,149 @@ def bin_age(age_real: torch.Tensor):
 
 
 
-
-def read_data(path, dataset, fast):
-    print(f"Read {dataset.upper()}")
-    df = pd.read_csv(os.path.join(path, dataset + ".tsv"), sep="\t")
-    df.loc[df["split"] == "external_test", "site"] = np.nan
-
-    y_arr = df[["age", "site"]].values
-
-    x_arr = np.zeros((10, 3659572))
-    if not fast:
-        x_arr = np.load(os.path.join(path, dataset + ".npy"), mmap_mode="r")
-    
-    print("- y size [original]:", y_arr.shape)
-    print("- x size [original]:", x_arr.shape)
-    return x_arr, y_arr
-
-
-
+# OpenBHB is a custom PyTorch Dataset class that loads MRI data and labels (age, site) for training
 class OpenBHB(torch.utils.data.Dataset):
-    def __init__(self, root, train=True, internal=True, transform=None, 
-                 label="cont", fast=False, load_feats=None):
-        self.root = root
+    # Depending on the train and internal flags, it loads the appropriate dataset (train, internal_test, or external_test)
+    # root = root directory where the data is stored
+    # label = specifies whether the labels should be continuous ("cont") or binned ("bin"). Defaults to "cont"
+    # load_feats = If provided, it specifies a file to load additional biased features
+    def __init__(self, train=True, transform=None, 
+                 label="cont", fast=False, load_feats=None, path="local", fold=0):
+        # Stores the root path where the data is located as an instance variable self.root. 
+        # This will be used to locate the files later
 
-        if train and not internal:
-            raise ValueError("Invalid configuration train=True and internal=False")
-        
-        self.train = train
-        self.internal = internal
-        
-        dataset = "train"
-        if not train:
-            if internal:
-                dataset = "internal_test"
-            else:
-                dataset = "external_test"
-        
-        self.X, self.y = read_data(root, dataset, fast)
+
+        (T1, age, study, sex) = load_samples_OpenBHB(path=path)
+
+
+        kfold = KFold(n_splits=5, shuffle=True, random_state=42)
+
+        assert fold in range(5) or fold is None
+
+        if fold in range(5):
+            for fold_iter, (train_ids, test_ids) in enumerate(kfold.split(T1)):
+
+                if fold_iter == fold:
+                    T1_train, T1_test = T1[train_ids], T1[test_ids]
+                    sex_train, sex_test = sex[train_ids], sex[test_ids]
+                    age_train, age_test = age[train_ids], age[test_ids]
+                    study_train, study_test = study[train_ids], study[test_ids]
+                    # MRE_coverage_train, MRE_coverage_test = MRE_coverage[train_ids], MRE_coverage[test_ids]
+
+                else:
+                    continue
+        else:
+            T1_train, T1_test, \
+                age_train, age_test, \
+                sex_train, sex_test, \
+                study_train, study_test = train_test_split(T1, age, sex, study, test_size=0.2, random_state=42)
+
+        if train:
+            self.y = age_train
+            self.sex = sex_train
+            self.site = study_train
+            # self.MRE_coverage = MRE_coverage_train
+            self.x = T1_train
+
+        else:
+            self.y = age_test
+            self.sex = sex_test
+            self.site = study_test
+            # self.MRE_coverage = MRE_coverage_test
+            self.x = T1_test
+
+
         self.T = transform
-        self.label = label
-        self.fast = fast
-
-        self.bias_feats = None
-        if load_feats:
-            print("Loading biased features", load_feats)
-            self.bias_feats = torch.load(load_feats, map_location="cpu")
-        
-        print(f"Read {len(self.X)} records")
 
     def __len__(self):
         return len(self.y)
 
     def __getitem__(self, index):
-        if not self.fast:
-            x = self.X[index]
-        else:
-            x = self.X[0]
 
+        x = self.x[index]
         y = self.y[index]
+
+        sex = self.sex[index]
+        site = self.site[index]
+        # MRE_coverage = self.MRE_coverage[index]
 
         if self.T is not None:
             x = self.T(x)
-        
-        # sample, age, site
-        age, site = y[0], y[1]
-        if self.label == "bin":
-            age = bin_age(torch.tensor(age))
-        
-        if self.bias_feats is not None:
-            return x, age, self.bias_feats[index]
         else:
-            return x, age, site
+            x = torch.from_numpy(x).float()
+
+        return x, y, (sex, site)
+
+
+
+def load_samples_OpenBHB(path):
+
+    if path == 'local':
+        folder_path = 'data/results/OpenBHB_data/train_quasiraw'
+        tsv_path = 'data/results/OpenBHB_data/participants.tsv'
+    else:
+        folder_path = '/home/afc53/contrastive_learning_mri_images/src/data/results/OpenBHB_data/train_quasiraw'
+        tsv_path = '/home/afc53/contrastive_learning_mri_images/src/data/results/OpenBHB_data/participants.tsv'
+
+    df_participants = pd.read_csv(tsv_path, sep="\t")
+
+    # Ensure column names are correct
+    participant_column = "participant_id"  # Adjust if needed
+    age_column = "age"  # Change if the column name is different
+    site_column = "study"  # Change if needed
+    sex_column = "sex"  # Change if needed
+
+
+    # Get list of all .npy files in the folder (without sorting)
+    npy_files = [f for f in os.listdir(folder_path) if f.endswith('.npy')]
+    print(npy_files[0])
+    # Select the first 100 files (without sorting)
+    npy_files = npy_files[:100]
+
+    # Initialize lists to store T1 data and metadata
+    t1_data_list = []
+    age_list = []
+    study_list = []
+    sex_list = []
+
+    for file in npy_files:
+        file_path = os.path.join(folder_path, file)
+
+        match = re.search(r"sub-(\d+)_preproc-quasiraw_T1w.npy", file)
+        if match:
+            participant_id = match.group(1)  # Extract the ID as a string
+
+            # 🔍 Find corresponding metadata in the TSV
+            metadata_row = df_participants[df_participants[participant_column] == int(participant_id)]
+            
+            # Load T1 MRI Data
+            data = np.load(file_path, allow_pickle=True)
+
+            # Append MRI data
+            t1_data_list.append(data)
+
+            # Append metadata separately
+            age_list.append(metadata_row.iloc[0][age_column])
+            study_list.append(metadata_row.iloc[0][site_column])
+            sex_list.append(metadata_row.iloc[0][sex_column])
+
+
+    # ✅ Convert lists to structured NumPy formats
+    t1_array = np.array(t1_data_list)  # NumPy array for MRI data
+    age_array = np.array(age_list)
+    study_array = np.array(study_list)
+    sex_array = np.array(sex_list)
+
+    # # 📌 Print shapes to verify
+    # print("T1 Data Array Shape:", t1_array.shape)  # Expected: (100, 182, 218, 182) if each image is 3D
+    # print("Age Array Shape:", age_array.shape)  # Expected: (100,)
+    # print("Site Array Shape:", study_array.shape)  # Expected: (100,)
+    # print("Sex Array Shape:", sex_array.shape)  # Expected: (100,)
+
+    # print(t1_array[0])
+
+    return (t1_array, age_array, study_array, sex_array)
+
 
 
 

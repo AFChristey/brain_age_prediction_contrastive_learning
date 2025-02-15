@@ -160,7 +160,16 @@ def load_data(opts):
     T_train = NViewTransform(T_train, opts.n_views)
 
     if which_data_type == 'OpenBHB':
+
+        train_dataset = OpenBHB(train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opts.batch_size, shuffle=True)
+        train_dataset_score = OpenBHB(train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
+        train_loader_score = torch.utils.data.DataLoader(train_dataset_score, batch_size=opts.batch_size, shuffle=False)
+        test_dataset = OpenBHB(train=False, transform=T_test, path=opts.path, fold=0)
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=opts.batch_size, shuffle=False)
+
         print('...')
+
 
     else:
 
@@ -381,15 +390,16 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
                         running_loss = infonce(features=projected,
                                             labels=labels.to(opts.device))
 
-        
+
+            # print(site_labels)
             # Compute classification loss
             class_loss = criterion_cls(site_pred, site_labels)
 
             print("This is class loss:", class_loss)
 
             # Total loss = Contrastive Loss - Classification Loss
-            # total_loss = running_loss - lambda_adv * class_loss
-            total_loss =  class_loss
+            total_loss = running_loss - lambda_adv * class_loss
+            # total_loss =  class_loss
 
         # Do I backpropagate total, or just separately?
 
@@ -406,7 +416,11 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
             scaler.step(optimizer)
             scaler.update()
-        
+
+        # for name, param in model.named_parameters():
+        #     if "classifier" in name:
+        #         print(f"{name} gradient norm: {param.grad.norm().item()}")
+                
         loss.update(total_loss.item(), bsz)
         batch_time.update(time.time() - t1)
         t1 = time.time()
