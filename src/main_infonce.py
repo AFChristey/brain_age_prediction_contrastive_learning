@@ -379,8 +379,8 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             print("This is class loss:", class_loss)
 
-            # Total loss = Contrastive Loss + Classification Loss
-            total_loss = running_loss + lambda_adv * class_loss
+            # Total loss = Contrastive Loss - Classification Loss
+            total_loss = running_loss - lambda_adv * class_loss
 
         # Do I backpropagate total, or just separately?
 
