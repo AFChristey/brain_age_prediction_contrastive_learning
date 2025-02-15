@@ -381,6 +381,10 @@ class SupConResNet(nn.Module):
 
         return proj_feat
     
+    def features(self, x):
+        """Extracts encoder features"""
+        return self.forward(x, classify=False)
+    
 
 
 class SiteClassifier(nn.Module):
