@@ -163,6 +163,8 @@ def load_data(opts):
         print('...')
 
     else:
+
+        print("reading data")
         train_dataset = MREData(modality='stiffness', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
 
         # print('HELLO')
@@ -175,6 +177,8 @@ def load_data(opts):
         train_dataset_score.norm()
         # print('HELLO')
 
+        print('still reading')
+
 
         train_loader_score = torch.utils.data.DataLoader(train_dataset_score, batch_size=opts.batch_size, shuffle=False)
 
@@ -184,6 +188,8 @@ def load_data(opts):
 
         test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=opts.batch_size, shuffle=False)
 
+        print("Done reading")
+        # print(train_dataset.shape)
     
     # print('TEST LOADER SIZE')
     # print(test_internal)
@@ -264,7 +270,7 @@ def load_optimizer(model, opts):
     return optimizer
 
 def train(train_loader, model, infonce, optimizer, opts, epoch):
-    lambda_adv = 0.05  # Weight for adversarial loss
+    lambda_adv = 0.2  # Weight for adversarial loss
     loss = AverageMeter()
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -281,6 +287,8 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
 
     for idx, (images, labels, metadata) in enumerate(train_loader):
+
+        # print(images[0].shape)
         # print('hi')
         data_time.update(time.time() - t1)
         # print(images[0])

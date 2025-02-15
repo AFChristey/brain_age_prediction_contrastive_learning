@@ -253,7 +253,7 @@ model_dict = {
     
 class SupConResNet(nn.Module):
     """Backbone + projection head + classifier"""
-    def __init__(self, name='resnet50', head='mlp', feat_dim=128, num_sites=10):
+    def __init__(self, name='resnet50', head='mlp', feat_dim=128, num_sites=6):
         super().__init__()
         # Load encoder model
         model_fun, dim_in = model_dict[name]
