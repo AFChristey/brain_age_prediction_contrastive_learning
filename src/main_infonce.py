@@ -1060,9 +1060,9 @@ if __name__ == '__main__':
         writer.add_scalar("DT", data_time, epoch)
         print(f"epoch {epoch}, total time {t2-start_time:.2f}, epoch time {t2-t1:.3f} loss {loss_train:.4f}")
 
-        if epoch % 5 == 0:
-            ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
-            print("Site BA:", ba_train, ba_test)
+        # if epoch % 5 == 0:
+        #     ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
+        #     print("Site BA:", ba_train, ba_test)
 
         if epoch % opts.save_freq == 0:
             # WAS ALREADY COMMENTED OUT 
