@@ -314,7 +314,7 @@ def load_samples(path):
     sex_ATLAS = np.load(prefix_path + '/ATLAS/sex_ATLAS.npy', allow_pickle=True)
     id_ATLAS = np.load(prefix_path + '/ATLAS/id_ATLAS.npy', allow_pickle=True)
     # MRE_coverage_ATLAS = np.load(prefix_path + '/ATLAS/MRE_coverage_ATLAS.npy', allow_pickle=True)
-    study_ATLAS = np.array(['ATLAS'] * len(age_ATLAS))
+    study_ATLAS = np.array([0] * len(age_ATLAS))
 
     # stiffness_OA = np.load(prefix_path + '/Lucy_Hiscox/AD_CN/stiffness_OA.npy', allow_pickle=True)
     # dr_OA = np.load(prefix_path + '/Lucy_Hiscox/AD_CN/dr_OA.npy', allow_pickle=True)
@@ -332,7 +332,7 @@ def load_samples(path):
     sex_BMI = np.load(prefix_path + '/BMI/sex_BMI.npy', allow_pickle=True)
     id_BMI = np.load(prefix_path + '/BMI/id_BMI.npy', allow_pickle=True)
     # MRE_coverage_BMI = np.load(prefix_path + '/Curtis_Johnson/BMI/MRE_coverage_BMI.npy', allow_pickle=True)
-    study_BMI = np.array(['BMI'] * len(age_BMI))
+    study_BMI = np.array([1] * len(age_BMI))
 
     stiffness_NOVA = np.load(prefix_path + '/NOVA/stiffness_NOVA.npy', allow_pickle=True)
     dr_NOVA = np.load(prefix_path + '/NOVA/dr_NOVA.npy', allow_pickle=True)
@@ -341,7 +341,7 @@ def load_samples(path):
     sex_NOVA = np.load(prefix_path + '/NOVA/sex_NOVA.npy', allow_pickle=True)
     id_NOVA = np.load(prefix_path + '/NOVA/id_NOVA.npy', allow_pickle=True)
     # MRE_coverage_NOVA = np.load(prefix_path + '/Curtis_Johnson/NOVA/MRE_coverage_NOVA.npy', allow_pickle=True)
-    study_NOVA = np.array(['NOVA'] * len(age_NOVA))
+    study_NOVA = np.array([2] * len(age_NOVA))
 
     stiffness_NITRC_batch_1 = np.load(prefix_path + '/NITRC_batch_1/stiffness_NITRC_batch_1.npy',
                                       allow_pickle=True)
@@ -353,7 +353,7 @@ def load_samples(path):
     id_NITRC_batch_1 = np.load(prefix_path + '/NITRC_batch_1/id_NITRC_batch_1.npy', allow_pickle=True)
     # MRE_coverage_NITRC_batch_1 = np.load(prefix_path + '/Curtis_Johnson/NITRC_batch_1/MRE_coverage_NITRC_batch_1.npy',
     #                                      allow_pickle=True)
-    study_NITRC_batch_1 = np.array(['NITRC_batch_1'] * len(age_NITRC_batch_1))
+    study_NITRC_batch_1 = np.array([3] * len(age_NITRC_batch_1))
 
     stiffness_NITRC_batch_2 = np.load(prefix_path + '/NITRC_batch_2/stiffness_NITRC_batch_2.npy',
                                       allow_pickle=True)
@@ -365,7 +365,7 @@ def load_samples(path):
     id_NITRC_batch_2 = np.load(prefix_path + '/NITRC_batch_2/id_NITRC_batch_2.npy', allow_pickle=True)
     # MRE_coverage_NITRC_batch_2 = np.load(prefix_path + '/Curtis_Johnson/NITRC_batch_2/MRE_coverage_NITRC_batch_2.npy',
     #                                      allow_pickle=True)
-    study_NITRC_batch_2 = np.array(['NITRC_batch_2'] * len(age_NITRC_batch_2))
+    study_NITRC_batch_2 = np.array([4] * len(age_NITRC_batch_2))
 
     stiffness_MIMS = np.load(prefix_path + '/MIMS/stiffness_MIMS.npy', allow_pickle=True)
     dr_MIMS = np.load(prefix_path + '/MIMS/dr_MIMS.npy', allow_pickle=True)
@@ -374,7 +374,7 @@ def load_samples(path):
     sex_MIMS = np.load(prefix_path + '/MIMS/sex_MIMS.npy', allow_pickle=True)
     id_MIMS = np.load(prefix_path + '/MIMS/id_MIMS.npy', allow_pickle=True)
     # MRE_coverage_MIMS = np.load(prefix_path + '/MIMS/MRE_coverage_MIMS.npy', allow_pickle=True)
-    study_MIMS = np.array(['MIMS'] * len(age_MIMS))
+    study_MIMS = np.array([5] * len(age_MIMS))
 
 
     stiffness_all_healthy = np.concatenate((stiffness_ATLAS, stiffness_NITRC_batch_1, stiffness_NITRC_batch_2, stiffness_MIMS, stiffness_BMI, stiffness_NOVA), axis=0)

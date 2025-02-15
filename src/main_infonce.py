@@ -293,11 +293,15 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         data_time.update(time.time() - t1)
         # print(images[0])
 
+
+        # FIT LABEL ENCODER BEFORE, AND THEN TRANSFORM DURING TRAINING!!!!!!
+
+        
         # Ensure site_labels is a list of site names
         site_labels = list(metadata[1])  # Convert tuple to list if necessary
         # Convert site labels (strings) to numeric indices
-        label_encoder = LabelEncoder()
-        site_labels = label_encoder.fit_transform(site_labels)  # Converts strings to integers
+        # label_encoder = LabelEncoder()
+        # site_labels = label_encoder.fit_transform(site_labels)  # Converts strings to integers
 
         if opts.path == "local":
             device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
