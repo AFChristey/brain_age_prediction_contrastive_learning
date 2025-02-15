@@ -321,8 +321,8 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             # Convert to torch tensor
             site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
-
-        site_labels = site_labels.repeat_interleave(opts.n_views)
+        # print(site_labels)
+        # site_labels = site_labels.repeat_interleave(opts.n_views)
 
 
 
@@ -341,11 +341,19 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             # projected = model(images, classifier=True)
             projected, site_pred = model(images, classify=True)
+
+            # print(site_pred.shape)
+            # Outputs: torch.Size([64, 6])
+
+            site_pred = torch.split(site_pred, [bsz]*opts.n_views, dim=0)
             projected = torch.split(projected, [bsz]*opts.n_views, dim=0)
             projected = torch.cat([f.unsqueeze(1) for f in projected], dim=1)
+            site_pred = torch.cat([f.unsqueeze(1) for f in site_pred], dim=1)
 
+            site_pred = site_pred.mean(dim=1) 
 
-
+            # print(site_pred.shape)
+            # Outputs: torch.Size([32, 2, 6])
 
             if opts.loss_choice == "supcon" or opts.loss_choice == "RnC":
                 if opts.path == "local":
