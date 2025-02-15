@@ -279,7 +279,7 @@ def load_optimizer(model, opts):
     return optimizer
 
 def train(train_loader, model, infonce, optimizer, opts, epoch):
-    lambda_adv = 0.2  # Weight for adversarial loss
+    lambda_adv = 0.05  # Weight for adversarial loss
     loss = AverageMeter()
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -398,8 +398,8 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             print("This is class loss:", class_loss)
 
             # Total loss = Contrastive Loss - Classification Loss
-            total_loss = running_loss - lambda_adv * class_loss
-            # total_loss =  class_loss
+            # total_loss = running_loss - lambda_adv * class_loss
+            total_loss =  class_loss
 
         # Do I backpropagate total, or just separately?
 
