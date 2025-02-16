@@ -162,15 +162,30 @@ def load_data(opts):
     T_train = NViewTransform(T_train, opts.n_views)
 
     if which_data_type == 'OpenBHB':
+        start_time = time.time()
+
 
         train_dataset = OpenBHB(train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opts.batch_size, shuffle=True)
+        train_time = time.time() - start_time
+        print(f"Time to load training dataset: {train_time:.2f} seconds")
+
+        start_time = time.time()
+
         train_dataset_score = OpenBHB(train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
         train_loader_score = torch.utils.data.DataLoader(train_dataset_score, batch_size=opts.batch_size, shuffle=False)
+
+        train_score_time = time.time() - start_time
+        print(f"Time to load training dataset (score): {train_score_time:.2f} seconds")
+
+        start_time = time.time()
+
         test_dataset = OpenBHB(train=False, transform=T_test, path=opts.path, fold=0)
         test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=opts.batch_size, shuffle=False)
 
-        print('...')
+        test_time = time.time() - start_time
+        print(f"Time to load test dataset: {test_time:.2f} seconds")
+
 
 
     else:
@@ -284,7 +299,8 @@ def load_optimizer(model, opts):
     return optimizer
 
 def train(train_loader, model, infonce, optimizer, opts, epoch):
-    lambda_adv = 0.35  # Weight for adversarial loss
+    # lambda_adv = 0.35  # Weight for adversarial loss
+    lambda_adv = 0  # Weight for adversarial loss
 
     # lambda_adv = min(1.0, 0.1 * epoch)  # Increase over time
     loss = AverageMeter()
@@ -407,7 +423,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             class_loss = criterion_cls(site_pred, site_labels)
 
-            print("This is class loss:", class_loss)
+            # print("This is class loss:", class_loss)
 
             # Total loss = Contrastive Loss - Classification Loss
             total_loss = running_loss + lambda_adv * class_loss
