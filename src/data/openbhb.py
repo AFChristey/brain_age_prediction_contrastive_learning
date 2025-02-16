@@ -107,8 +107,9 @@ def load_samples_OpenBHB(path):
         folder_path = 'data/results/OpenBHB_data/train_quasiraw'
         tsv_path = 'data/results/OpenBHB_data/participants.tsv'
     else:
-        folder_path = '/home/afc53/contrastive_learning_mri_images/src/data/results/OpenBHB_data/train_quasiraw'
-        tsv_path = '/home/afc53/contrastive_learning_mri_images/src/data/results/OpenBHB_data/participants.tsv'
+        folder_path = '/rds/user/afc53/hpc-work/MRE_Data/OpenBHB_data/train_quasiraw'
+        tsv_path = '/rds/user/afc53/hpc-work/MRE_Data/OpenBHB_data/participants.tsv'
+
 
     df_participants = pd.read_csv(tsv_path, sep="\t")
 
@@ -123,7 +124,9 @@ def load_samples_OpenBHB(path):
     npy_files = [f for f in os.listdir(folder_path) if f.endswith('.npy')]
     print(npy_files[0])
     # Select the first 100 files (without sorting)
-    npy_files = npy_files[:100]
+
+    if path == 'local':
+        npy_files = npy_files[:100]
 
     # Initialize lists to store T1 data and metadata
     t1_data_list = []

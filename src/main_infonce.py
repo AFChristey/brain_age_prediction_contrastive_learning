@@ -42,7 +42,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 
-which_data_type = 'MREData' 
+which_data_type = 'OpenBHB' 
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -318,7 +318,10 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
 
             # images = torch.cat(images, dim=0).to(opts.device)
+            # print(images.shape)
             images = torch.cat(images, dim=0).to(device)
+            # print(images.shape)
+
             bsz = labels.shape[0]
             labels = labels.float().to(device)
 
@@ -335,11 +338,11 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         # print(site_labels)
         # site_labels = site_labels.repeat_interleave(opts.n_views)
 
-
-
+        # if which_data_type == 'MREData':
+        images = images.squeeze()
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
-        if which_data_type == 'MREData':
-            images = images.unsqueeze(1)  # Add channel dimension at index 1
+        # if which_data_type == 'MREData':
+        images = images.unsqueeze(1)  # Add channel dimension at index 1
 
         warmup_learning_rate(opts, epoch, idx, len(train_loader), optimizer)
 
@@ -778,10 +781,12 @@ def extract_features_for_umap(test_loader, model, opts, key, max_features=64):
                 # metadata = metadata.to(opts.device)
 
 
-            # Add the channel dimension if it's not there (for grayscale images, etc.)
-            if which_data_type == 'MREData':
-                images = images.unsqueeze(1)  # Add channel dimension at index 1
-
+            # if which_data_type == 'MREData':
+            images = images.squeeze()
+            # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
+            # if which_data_type == 'MREData':
+            images = images.unsqueeze(1)  # Add channel dimension at index 1
+            
             # Extract features from the model
             features = model.features(images)  # Get features from the model
             # print(metadata[key])

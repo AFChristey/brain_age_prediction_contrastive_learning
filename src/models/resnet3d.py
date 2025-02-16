@@ -185,7 +185,10 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        print(x.shape)
+        # print('THIS IS THE X SHAPE')
+        # OpenBHB: torch.Size([64, 1, 1, 182, 218, 182])
+        # MREData: torch.Size([64, 1, 91, 109, 91])
+        # print(x.shape)
         # THIS FUNCTION IS CAUSING AN ERROR
         x = self.conv1(x)
         # print('TEST2')
