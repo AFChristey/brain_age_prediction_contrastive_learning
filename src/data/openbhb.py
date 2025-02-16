@@ -122,11 +122,11 @@ def load_samples_OpenBHB(path):
 
     # Get list of all .npy files in the folder (without sorting)
     npy_files = [f for f in os.listdir(folder_path) if f.endswith('.npy')]
-    print(npy_files[0])
+    # print(npy_files[0])
     # Select the first 100 files (without sorting)
 
-    if path == 'local':
-        npy_files = npy_files[:100]
+    # if path == 'local':
+    npy_files = npy_files[:1000]
 
     # Initialize lists to store T1 data and metadata
     t1_data_list = []
