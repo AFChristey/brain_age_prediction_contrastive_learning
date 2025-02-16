@@ -358,6 +358,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             # site_labels = metadata[1]
 
             # projected = model(images, classifier=True)
+            images = images.contiguous()
             projected, site_pred = model(images, classify=True)
 
             # print(site_pred.shape)
@@ -794,6 +795,8 @@ def extract_features_for_umap(test_loader, model, opts, key, max_features=64):
             images = images.unsqueeze(1)  # Add channel dimension at index 1
 
             # Extract features from the model
+            images = images.contiguous()
+
             features = model.features(images)  # Get features from the model
             # print(metadata[key])
 

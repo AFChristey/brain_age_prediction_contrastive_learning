@@ -406,6 +406,8 @@ def gather_age_feats(model, dataloader, opts):
         images = images.squeeze()
         images = images.unsqueeze(1)  # Add channel dimension at index 1
         images = images.to(opts.device)
+        images = images.contiguous()
+
         features.append(model.features(images))
         age_labels.append(labels)
 
@@ -439,6 +441,8 @@ def gather_site_feats(model, dataloader, opts):
         images = images.to(opts.device)
         images = images.squeeze()
         images = images.unsqueeze(1)  # Add channel dimension at index 1
+        images = images.contiguous()
+
         features.append(model.features(images))
         site_labels.append(metadata[1])
         # print(site_labels.shape)
