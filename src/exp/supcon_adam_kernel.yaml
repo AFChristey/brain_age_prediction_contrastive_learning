@@ -4,7 +4,7 @@ save_dir:  /scratch/output/brain-age-mri
 model: resnet18
 # change back to 300
 epochs: 50
-batch_size: 4
+batch_size: 16
 lr: 1e-4
 lr_decay: step
 lr_decay_rate: 0.9

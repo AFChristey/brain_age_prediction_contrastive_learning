@@ -402,6 +402,8 @@ def gather_age_feats(model, dataloader, opts):
     for idx, (images, labels, _) in enumerate(dataloader):
         if isinstance(images, list):
             images = images[0]
+
+        images = images.squeeze()
         images = images.unsqueeze(1)  # Add channel dimension at index 1
         images = images.to(opts.device)
         features.append(model.features(images))
@@ -435,6 +437,7 @@ def gather_site_feats(model, dataloader, opts):
         if isinstance(images, list):
             images = images[0]
         images = images.to(opts.device)
+        images = images.squeeze()
         images = images.unsqueeze(1)  # Add channel dimension at index 1
         features.append(model.features(images))
         site_labels.append(metadata[1])
