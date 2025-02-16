@@ -28,6 +28,8 @@ from util import get_transforms
 
 import os
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+
 
 import matplotlib.pyplot as plt
 import umap
@@ -305,7 +307,6 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         # print(images[0])
 
 
-        # FIT LABEL ENCODER BEFORE, AND THEN TRANSFORM DURING TRAINING!!!!!!
 
         
         # Ensure site_labels is a list of site names
@@ -786,7 +787,7 @@ def extract_features_for_umap(test_loader, model, opts, key, max_features=64):
             # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
             # if which_data_type == 'MREData':
             images = images.unsqueeze(1)  # Add channel dimension at index 1
-            
+
             # Extract features from the model
             features = model.features(images)  # Get features from the model
             # print(metadata[key])
