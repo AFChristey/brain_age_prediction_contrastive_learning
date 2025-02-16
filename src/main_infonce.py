@@ -279,7 +279,7 @@ def load_optimizer(model, opts):
     return optimizer
 
 def train(train_loader, model, infonce, optimizer, opts, epoch):
-    lambda_adv = 0.3  # Weight for adversarial loss
+    lambda_adv = 0.5  # Weight for adversarial loss
 
     # lambda_adv = min(1.0, 0.1 * epoch)  # Increase over time
     loss = AverageMeter()
