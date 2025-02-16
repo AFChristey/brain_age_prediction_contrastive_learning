@@ -209,7 +209,10 @@ def load_data(opts):
 
 def load_model(opts):
     if 'resnet' in opts.model:
-        model = models.SupConResNet(opts.model, feat_dim=128)
+        if which_data_type == "OpenBHB":
+            model = models.SupConResNet(opts.model, feat_dim=128, num_sites=10)
+        else:
+            model = models.SupConResNet(opts.model, feat_dim=128)
     elif 'alexnet' in opts.model:
         model = models.SupConAlexNet(feat_dim=128)
     elif 'densenet121' in opts.model:
@@ -399,6 +402,8 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             # print(site_labels)
             # Compute classification loss
+            site_labels = site_labels - 1
+
             class_loss = criterion_cls(site_pred, site_labels)
 
             print("This is class loss:", class_loss)
