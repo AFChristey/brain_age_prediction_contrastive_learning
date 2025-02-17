@@ -377,6 +377,10 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             images = images.contiguous()
             projected, site_pred = model(images, classify=True)
 
+
+            print("Projected (mean, std):", projected.mean().item(), projected.std().item())
+
+
             # print(site_pred.shape)
             # Outputs: torch.Size([64, 6])
 
