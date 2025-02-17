@@ -126,7 +126,7 @@ def load_samples_OpenBHB(path):
     # Select the first 100 files (without sorting)
 
     # if path == 'local':
-    npy_files = npy_files[:400]
+    npy_files = npy_files[:300]
 
     # Initialize lists to store T1 data and metadata
     t1_data_list = []

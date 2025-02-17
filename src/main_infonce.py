@@ -44,7 +44,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 
-which_data_type = 'MREData' 
+which_data_type = 'OpenBHB' 
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -442,12 +442,12 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
         optimizer.zero_grad()
         if scaler is None:
-            running_loss.backward()
+            total_loss.backward()
             if opts.clip_grad:
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
             optimizer.step()
         else:
-            scaler.scale(running_loss).backward()
+            scaler.scale(total_loss).backward()
             if opts.clip_grad:
                 scaler.unscale_(optimizer)
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
@@ -458,7 +458,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         #     if "classifier" in name:
         #         print(f"{name} gradient norm: {param.grad.norm().item()}")
                 
-        loss.update(running_loss.item(), bsz)
+        loss.update(total_loss.item(), bsz)
         batch_time.update(time.time() - t1)
         t1 = time.time()
         eta = batch_time.avg * (len(train_loader) - idx)
