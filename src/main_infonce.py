@@ -876,10 +876,6 @@ def visualise_umap(test_loader, model, opts, epoch=0):
     umap_model = umap.UMAP(random_state=42)
     embedding_umap = umap_model.fit_transform(features)
 
-    # tsne_model = TSNE(n_components=2, random_state=42, perplexity=30, n_iter=1000)
-    # embedding_tsne = tsne_model.fit_transform(features)
-
-
     ages = labels  # Assuming 'labels' represents ages
 
     # Normalize the sizes based on age values for better scaling
@@ -890,48 +886,11 @@ def visualise_umap(test_loader, model, opts, epoch=0):
     umap_df = pd.DataFrame(embedding_umap, columns=['UMAP 1', 'UMAP 2'])
     umap_df[variable_of_interest] = metadata
 
-    # t SNE plot 
-
-    # tsne_df = pd.DataFrame(embedding_tsne, columns=['t-SNE 1', 't-SNE 2'])
-    # tsne_df[variable_of_interest] = metadata
-
     col_pal_str = 'hsv'
     order = 1
     color_palette = sns.color_palette(col_pal_str, len(umap_df[variable_of_interest].unique()))[::order]
     print(umap_df[variable_of_interest].unique())
 
-
-    # tSNE plot
-
-    # # Create a scatter plot using Seaborn
-    # plt.figure(figsize=(10, 8))
-    # sns.scatterplot(
-    #     data=tsne_df,
-    #     x='t-SNE 1',
-    #     y='t-SNE 2',
-    #     hue=variable_of_interest,
-    #     palette=color_palette,
-    #     size=sizes,  # Scale point size based on age
-    #     sizes=(20, 200),  # Define size range for the points
-    #     alpha=0.5  # Transparency of points
-    # )
-
-    # # Customize plot appearance
-    # plt.title('t-SNE of Feature Vectors', fontsize=16)
-    # plt.legend(title='Labels', bbox_to_anchor=(1.05, 1), loc='upper left')  # Place legend outside
-    # plt.tight_layout()
-
-
-    # if opts.path == "local":
-    #     filename = f'tsne_features_seaborn_plot_epoch_{epoch}.png'
-    #     plt.savefig(filename, dpi=300, bbox_inches='tight')  # Save with high resolution
-    #     print(f"t-SNE plot saved to '{filename}'")
-    # else:
-    #     filename = f'/home/afc53/images/tsne_features_seaborn_plot_epoch_{epoch}.png'
-    #     plt.savefig(filename, dpi=300, bbox_inches='tight')  # Save with high resolution
-    #     print(f"t-SNE plot saved to '{filename}'")
-
-    # plt.close()
 
     # Create a scatter plot using Seaborn
     plt.figure(figsize=(10, 8))
@@ -1073,38 +1032,6 @@ if __name__ == '__main__':
 
 
     for epoch in range(1, opts.epochs + 1):
-        # if epoch == 2:
-        #     visualise_umap(test_loader, model, opts, epoch)
-        # if epoch == 5:
-        #     visualise_umap(test_loader, model, opts, epoch)
-        # if epoch == 10:
-        #     visualise_umap(test_loader, model, opts, epoch)
-        # if epoch == 20:
-        #     visualise_umap(test_loader, model, opts, epoch)
-        # if epoch == 50:
-        #     visualise_umap(test_loader, model, opts, epoch)
-        # if epoch == 80:
-        #     visualise_umap(test_loader, model, opts, epoch)
-        # if epoch == 100:
-        #     visualise_umap(test_loader, model, opts, epoch)
-        # if epoch == 150:
-        #     visualise_umap(test_loader, model, opts, epoch)
-
-
-        # if epoch == 2:
-        #     visualise_umap(test_loader, model, opts, epoch)
-        # if epoch == 3:
-        #     visualise_umap(test_loader, model, opts, epoch)
-        # if epoch == 4:
-        #     visualise_umap(test_loader, model, opts, epoch)
-        # if epoch == 5:
-        #     visualise_umap(test_loader, model, opts, epoch)
-        # if epoch == 6:
-        #     visualise_umap(test_loader, model, opts, epoch)
-        # if epoch == 8:
-        #     visualise_umap(test_loader, model, opts, epoch)
-        # if epoch == 36:
-        #     visualise_umap(test_loader, model, opts, epoch)
 
         adjust_learning_rate(opts, optimizer, epoch)
 

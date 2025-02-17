@@ -143,7 +143,7 @@ def load_samples_OpenBHB(path):
 
             # 🔍 Find corresponding metadata in the TSV
             metadata_row = df_participants[df_participants[participant_column] == int(participant_id)]
-            
+            # print(metadata_row)
             # Load T1 MRI Data
             data = np.load(file_path, allow_pickle=True)
 
