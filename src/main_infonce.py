@@ -361,7 +361,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         # if which_data_type == 'MREData':
         
         # CHANGED
-        # images = images.squeeze()
+        images = images.squeeze()
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
         # if which_data_type == 'MREData':
         images = images.unsqueeze(1)  # Add channel dimension at index 1
@@ -378,7 +378,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             # projected = model(images, classifier=True)
 
             # CHANGED
-            # images = images.contiguous()
+            images = images.contiguous()
             projected, site_pred = model(images, classify=True)
 
 
@@ -442,12 +442,12 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
         optimizer.zero_grad()
         if scaler is None:
-            total_loss.backward()
+            running_loss.backward()
             if opts.clip_grad:
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
             optimizer.step()
         else:
-            scaler.scale(total_loss).backward()
+            scaler.scale(running_loss).backward()
             if opts.clip_grad:
                 scaler.unscale_(optimizer)
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
@@ -458,7 +458,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         #     if "classifier" in name:
         #         print(f"{name} gradient norm: {param.grad.norm().item()}")
                 
-        loss.update(total_loss.item(), bsz)
+        loss.update(running_loss.item(), bsz)
         batch_time.update(time.time() - t1)
         t1 = time.time()
         eta = batch_time.avg * (len(train_loader) - idx)
