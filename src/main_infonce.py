@@ -359,7 +359,9 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         # site_labels = site_labels.repeat_interleave(opts.n_views)
 
         # if which_data_type == 'MREData':
-        images = images.squeeze()
+        
+        # CHANGED
+        # images = images.squeeze()
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
         # if which_data_type == 'MREData':
         images = images.unsqueeze(1)  # Add channel dimension at index 1
@@ -374,7 +376,9 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             # site_labels = metadata[1]
 
             # projected = model(images, classifier=True)
-            images = images.contiguous()
+
+            # CHANGED
+            # images = images.contiguous()
             projected, site_pred = model(images, classify=True)
 
 
