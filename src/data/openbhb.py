@@ -540,8 +540,8 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
         self.stop = cumsum[index]
         
         self.masks = dict((key, val["path"]) for key, val in self.MASKS.items())
-        self.masks["vbm"] = "./data/masks/cat12vbm_space-MNI152_desc-gm_TPM.nii.gz"
-        self.masks["quasiraw"] = "./data/masks/quasiraw_space-MNI152_desc-brain_T1w.nii.gz"
+        self.masks["vbm"] = "/home/afc53/contrastive_learning_mri_images/src/data/masks/cat12vbm_space-MNI152_desc-gm_TPM.nii.gz"
+        self.masks["quasiraw"] = "/home/afc53/contrastive_learning_mri_images/src/data/masks/quasiraw_space-MNI152_desc-brain_T1w.nii.gz"
 
         self.mock = mock
         if mock:
