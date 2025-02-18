@@ -133,8 +133,11 @@ def load_samples_OpenBHB(path):
     # print(npy_files[0])
     # Select the first 100 files (without sorting)
 
-    # if path == 'local':
-    npy_files = npy_files[:300]
+    if path == 'local':
+        npy_files = npy_files[:50]
+    else:
+        npy_files = npy_files[:300]
+
 
     # Initialize lists to store T1 data and metadata
     t1_data_list = []
@@ -516,7 +519,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
             "thr": 0}
     }
 
-    def __init__(self, dtype, mock=False):
+    def __init__(self, dtype, path, mock=False):
         """ Init class.
         Parameters
         ----------
@@ -538,10 +541,16 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
         else:
             self.start = 0
         self.stop = cumsum[index]
+        print(self.stop)
+        print(self.start)
         
         self.masks = dict((key, val["path"]) for key, val in self.MASKS.items())
-        self.masks["vbm"] = "/home/afc53/contrastive_learning_mri_images/src/data/masks/cat12vbm_space-MNI152_desc-gm_TPM.nii.gz"
-        self.masks["quasiraw"] = "/home/afc53/contrastive_learning_mri_images/src/data/masks/quasiraw_space-MNI152_desc-brain_T1w.nii.gz"
+        if path == "local":
+            self.masks["vbm"] = "data/masks/cat12vbm_space-MNI152_desc-gm_TPM.nii.gz"
+            self.masks["quasiraw"] = "data/masks/quasiraw_space-MNI152_desc-brain_T1w.nii.gz"
+        else:
+            self.masks["vbm"] = "/home/afc53/contrastive_learning_mri_images/src/data/masks/cat12vbm_space-MNI152_desc-gm_TPM.nii.gz"
+            self.masks["quasiraw"] = "/home/afc53/contrastive_learning_mri_images/src/data/masks/quasiraw_space-MNI152_desc-brain_T1w.nii.gz"
 
         self.mock = mock
         if mock:
@@ -562,14 +571,21 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
+        print(X)
         if self.mock:
-            #print("transforming", X.shape)
+            # print("transforming", X.shape)
             data = X.reshape(self.MODALITIES[self.dtype]["shape"])
-            #print("mock data:", data.shape)
+            # print("mock data:", data.shape)
             return data
         
+        X_flat = X.flatten()
+        print("Flattened X shape:", X_flat.shape)  # Debugging step
+
+        select_X = X_flat[self.start:self.stop]
+
+        
         # print(X.shape)
-        select_X = X[self.start:self.stop]
+        # select_X = X[self.start:self.stop]
         if self.dtype in ("vbm", "quasiraw"):
             im = unmask(select_X, self.masks[self.dtype])
             select_X = im.get_fdata()

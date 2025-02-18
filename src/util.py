@@ -225,7 +225,7 @@ class AddGaussianNoiseTensor(object):
 
 
 def get_transforms_OpenBHB(opts):
-    selector = FeatureExtractor("quasiraw")
+    selector = FeatureExtractor("quasiraw", path=opts.path)
     
     if opts.tf == 'none':
         aug = transforms.Lambda(lambda x: x)
