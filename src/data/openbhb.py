@@ -541,8 +541,8 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
         else:
             self.start = 0
         self.stop = cumsum[index]
-        print(self.stop)
-        print(self.start)
+        # print(self.stop)
+        # print(self.start)
         
         self.masks = dict((key, val["path"]) for key, val in self.MASKS.items())
         if path == "local":
@@ -571,7 +571,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        print(X)
+        # print(X)
         if self.mock:
             # print("transforming", X.shape)
             data = X.reshape(self.MODALITIES[self.dtype]["shape"])
@@ -579,7 +579,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
             return data
         
         X_flat = X.flatten()
-        print("Flattened X shape:", X_flat.shape)  # Debugging step
+        # print("Flattened X shape:", X_flat.shape)  # Debugging step
 
         select_X = X_flat[self.start:self.stop]
 
