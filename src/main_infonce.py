@@ -378,8 +378,6 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             # print("GNRGIRNGRIGNRIGRGNRGINGRIGNRGNRIGRIGNRGIRGRGNRGRIN")            
             # print(images.shape)
 
-            # # Will have to change
-            # site_labels = metadata[1]
 
             # projected = model(images, classifier=True)
 
@@ -1026,7 +1024,7 @@ if __name__ == '__main__':
     start_time = time.time()
     best_acc = 0.
 
-    # visualise_umap(test_loader, model, opts)
+    visualise_umap(test_loader, model, opts)
 
 
     # # Initialize the site classifier
@@ -1047,6 +1045,20 @@ if __name__ == '__main__':
 
 
     for epoch in range(1, opts.epochs + 1):
+
+        if epoch == 2:
+            visualise_umap(test_loader, model, opts)
+
+        if epoch == 3:
+            visualise_umap(test_loader, model, opts)
+
+        if epoch == 4:
+            visualise_umap(test_loader, model, opts)
+            
+        if epoch == 5:
+            visualise_umap(test_loader, model, opts)
+
+
 
         adjust_learning_rate(opts, optimizer, epoch)
 
