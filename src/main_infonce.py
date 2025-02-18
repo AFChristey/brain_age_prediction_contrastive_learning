@@ -44,7 +44,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 
-which_data_type = 'MREData' 
+which_data_type = 'OpenBHB' 
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"

@@ -158,7 +158,6 @@ def load_samples_OpenBHB(path):
         if match:
             participant_id = match.group(1)  # Extract the ID as a string
 
-            # 🔍 Find corresponding metadata in the TSV
             metadata_row = df_participants[df_participants[participant_column] == int(participant_id)]
             # print(metadata_row)
             # Load T1 MRI Data
@@ -173,17 +172,10 @@ def load_samples_OpenBHB(path):
             sex_list.append(metadata_row.iloc[0][sex_column])
 
 
-    # ✅ Convert lists to structured NumPy formats
     t1_array = np.array(t1_data_list)  # NumPy array for MRI data
     age_array = np.array(age_list)
     study_array = np.array(study_list)
     sex_array = np.array(sex_list)
-
-    # # 📌 Print shapes to verify
-    # print("T1 Data Array Shape:", t1_array.shape)  # Expected: (100, 182, 218, 182) if each image is 3D
-    # print("Age Array Shape:", age_array.shape)  # Expected: (100,)
-    # print("Site Array Shape:", study_array.shape)  # Expected: (100,)
-    # print("Sex Array Shape:", sex_array.shape)  # Expected: (100,)
 
     # print(t1_array[0])
 
