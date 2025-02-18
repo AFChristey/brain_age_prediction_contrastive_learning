@@ -24,7 +24,7 @@ from util import compute_age_mae, compute_site_ba
 from data import MREData, OpenBHB, bin_age
 from data.transforms import Crop, Pad, Cutout
 #from main_mse import get_transforms
-from util import get_transforms
+from util import get_transforms, get_transforms_OpenBHB
 
 import os
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
@@ -158,15 +158,16 @@ def parse_arguments():
     return opts
 
 def load_data(opts):
-    T_train, T_test = get_transforms(opts)
-    T_train = NViewTransform(T_train, opts.n_views)
 
     if which_data_type == 'OpenBHB':
+        T_train, T_test = get_transforms_OpenBHB(opts)
+        T_train = NViewTransform(T_train, opts.n_views)
+
         start_time = time.time()
 
 
         train_dataset = OpenBHB(train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
-        train_dataset.norm()
+        # train_dataset.norm()
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opts.batch_size, shuffle=True)
         train_time = time.time() - start_time
         print(f"Time to load training dataset: {train_time:.2f} seconds")
@@ -174,7 +175,7 @@ def load_data(opts):
         start_time = time.time()
 
         train_dataset_score = OpenBHB(train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
-        train_dataset_score.norm()
+        # train_dataset_score.norm()
         train_loader_score = torch.utils.data.DataLoader(train_dataset_score, batch_size=opts.batch_size, shuffle=False)
 
         train_score_time = time.time() - start_time
@@ -183,7 +184,7 @@ def load_data(opts):
         start_time = time.time()
 
         test_dataset = OpenBHB(train=False, transform=T_test, path=opts.path, fold=0)
-        test_dataset.norm()
+        # test_dataset.norm()
         test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=opts.batch_size, shuffle=False)
 
         test_time = time.time() - start_time
@@ -192,6 +193,8 @@ def load_data(opts):
 
 
     else:
+        T_train, T_test = get_transforms(opts)
+        T_train = NViewTransform(T_train, opts.n_views)
 
         print("reading data")
         train_dataset = MREData(modality='stiffness', train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
