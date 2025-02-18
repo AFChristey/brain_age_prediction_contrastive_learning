@@ -84,17 +84,7 @@ class OpenBHB(torch.utils.data.Dataset):
 
         default_value = 0
 
-        if self.modality == 'T1':
-            self.x = norm_whole_batch(self.x, 'mean_std', default_value)
-
-        elif self.modality == 'dr' or self.modality == 'stiffness':
-            self.x, _, _ = normalize_mean_0_std_1(self.x,
-                                                  default_value=default_value,
-                                                  mu_nonzero=self.mu,
-                                                  sigma_nonzero=self.sigma)
-
-        else:
-            raise ValueError('Invalid modality')
+        self.x = norm_whole_batch(self.x, 'mean_std', default_value)
 
 
     def __len__(self):
@@ -316,8 +306,17 @@ class MREData(torch.utils.data.Dataset):
 
         default_value = 0
 
-        self.x = norm_whole_batch(self.x, 'mean_std', default_value)
+        if self.modality == 'T1':
+            self.x = norm_whole_batch(self.x, 'mean_std', default_value)
 
+        elif self.modality == 'dr' or self.modality == 'stiffness':
+            self.x, _, _ = normalize_mean_0_std_1(self.x,
+                                                  default_value=default_value,
+                                                  mu_nonzero=self.mu,
+                                                  sigma_nonzero=self.sigma)
+
+        else:
+            raise ValueError('Invalid modality')
 
     def __len__(self):
         return len(self.y)
