@@ -44,7 +44,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 
-which_data_type = 'OpenBHB' 
+which_data_type = 'MREData' 
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -1054,7 +1054,7 @@ if __name__ == '__main__':
 
         if epoch == 4:
             visualise_umap(test_loader, model, opts)
-            
+
         if epoch == 5:
             visualise_umap(test_loader, model, opts)
 
