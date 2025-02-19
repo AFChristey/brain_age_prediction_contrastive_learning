@@ -955,6 +955,7 @@ def visualise_umap(test_loader, model, opts, epoch=0):
 
 
 if __name__ == '__main__':
+    print('parsing arguments')
     opts = parse_arguments()
     
     set_seed(opts.trial)

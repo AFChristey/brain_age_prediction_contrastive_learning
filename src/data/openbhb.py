@@ -490,6 +490,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
     """ Select only the requested data associatedd features from the the
     input buffered data.
     """
+    print('getting modalities')
     MODALITIES = OrderedDict([
         ("vbm", {
             "shape": (1, 121, 145, 121),
@@ -527,6 +528,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
             the requested data: 'vbm', 'quasiraw', 'vbm_roi', 'desikan_roi',
             'destrieux_roi' or 'xhemi'.
         """
+        print('init modalities')
         if dtype not in self.MODALITIES:
             raise ValueError("Invalid input data type.")
         self.dtype = dtype

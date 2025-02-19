@@ -53,7 +53,7 @@ if __name__ == '__main__':
         program = "/home/afc53/contrastive_learning_mri_images/src/" + program
 
     # print(os.path.join(os.getcwd(), program))
-        
+    print('THIS PART IS RUNNING')
 
     # builds the command to run the Python program
         # 'os.getcwd()' returns the current working directory, and 'program' is the path to the script specified in the YAML file.
