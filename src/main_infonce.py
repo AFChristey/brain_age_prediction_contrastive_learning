@@ -172,7 +172,7 @@ def load_data(opts):
 
 
         train_dataset = OpenBHB(train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
-        # train_dataset.norm()
+        train_dataset.norm()
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opts.batch_size, shuffle=True)
         train_time = time.time() - start_time
         print(f"Time to load training dataset: {train_time:.2f} seconds")
@@ -180,7 +180,7 @@ def load_data(opts):
         start_time = time.time()
 
         train_dataset_score = OpenBHB(train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
-        # train_dataset_score.norm()
+        train_dataset_score.norm()
         train_loader_score = torch.utils.data.DataLoader(train_dataset_score, batch_size=opts.batch_size, shuffle=False)
 
         train_score_time = time.time() - start_time
@@ -189,7 +189,7 @@ def load_data(opts):
         start_time = time.time()
 
         test_dataset = OpenBHB(train=False, transform=T_test, path=opts.path, fold=0)
-        # test_dataset.norm()
+        test_dataset.norm()
         test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=opts.batch_size, shuffle=False)
 
         test_time = time.time() - start_time
@@ -1056,16 +1056,36 @@ if __name__ == '__main__':
     for epoch in range(1, opts.epochs + 1):
 
         if epoch == 2:
-            visualise_umap(test_loader, model, opts)
+            visualise_umap(test_loader, model, opts, epoch)
+            mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
+            # writer.add_scalar("train/mae", mae_train, epoch)
+            # writer.add_scalar("test/mae_int", mae_int, epoch)
+            # writer.add_scalar("test/mae_ext", mae_ext, epoch)
+            print("Age MAE:", mae_train, mae_test)
 
         if epoch == 3:
-            visualise_umap(test_loader, model, opts)
+            visualise_umap(test_loader, model, opts, epoch)
+            mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
+            # writer.add_scalar("train/mae", mae_train, epoch)
+            # writer.add_scalar("test/mae_int", mae_int, epoch)
+            # writer.add_scalar("test/mae_ext", mae_ext, epoch)
+            print("Age MAE:", mae_train, mae_test)
 
         if epoch == 4:
-            visualise_umap(test_loader, model, opts)
+            visualise_umap(test_loader, model, opts, epoch)
+            mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
+            # writer.add_scalar("train/mae", mae_train, epoch)
+            # writer.add_scalar("test/mae_int", mae_int, epoch)
+            # writer.add_scalar("test/mae_ext", mae_ext, epoch)
+            print("Age MAE:", mae_train, mae_test)
 
         if epoch == 5:
-            visualise_umap(test_loader, model, opts)
+            visualise_umap(test_loader, model, opts, epoch)
+            mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
+            # writer.add_scalar("train/mae", mae_train, epoch)
+            # writer.add_scalar("test/mae_int", mae_int, epoch)
+            # writer.add_scalar("test/mae_ext", mae_ext, epoch)
+            print("Age MAE:", mae_train, mae_test)
 
 
 
