@@ -9,7 +9,7 @@ import models
 from pathlib import Path
 from torchvision import transforms
 import operator
-from data import FeatureExtractor
+# from data import FeatureExtractor
 
 
 
@@ -224,43 +224,43 @@ class AddGaussianNoiseTensor(object):
         return tensor_noisy
 
 
-def get_transforms_OpenBHB(opts):
-    selector = FeatureExtractor("quasiraw", path=opts.path)
+# def get_transforms_OpenBHB(opts):
+#     selector = FeatureExtractor("quasiraw", path=opts.path)
     
-    if opts.tf == 'none':
-        aug = transforms.Lambda(lambda x: x)
+#     if opts.tf == 'none':
+#         aug = transforms.Lambda(lambda x: x)
 
-    elif opts.tf == 'crop':
-        aug = transforms.Compose([
-            Crop((1, 121, 128, 121), type="random"),
-            Pad((1, 128, 128, 128))
-        ])  
+#     elif opts.tf == 'crop':
+#         aug = transforms.Compose([
+#             Crop((1, 121, 128, 121), type="random"),
+#             Pad((1, 128, 128, 128))
+#         ])  
 
-    elif opts.tf == 'cutout':
-        aug = Cutout(patch_size=[1, 32, 32, 32], probability=0.5)
+#     elif opts.tf == 'cutout':
+#         aug = Cutout(patch_size=[1, 32, 32, 32], probability=0.5)
 
-    elif opts.tf == 'all':
-        aug = transforms.Compose([
-            Cutout(patch_size=[1, 32, 32, 32], probability=0.5),
-            Crop((1, 121, 128, 121), type="random"),
-            Pad((1, 128, 128, 128))
-        ])
+#     elif opts.tf == 'all':
+#         aug = transforms.Compose([
+#             Cutout(patch_size=[1, 32, 32, 32], probability=0.5),
+#             Crop((1, 121, 128, 121), type="random"),
+#             Pad((1, 128, 128, 128))
+#         ])
     
-    T_pre = transforms.Lambda(lambda x: selector.transform(x))
-    T_train = transforms.Compose([
-        T_pre,
-        aug,
-        transforms.Lambda(lambda x: torch.from_numpy(x).float()),
-        transforms.Normalize(mean=0.0, std=1.0)
-    ])
+#     T_pre = transforms.Lambda(lambda x: selector.transform(x))
+#     T_train = transforms.Compose([
+#         T_pre,
+#         aug,
+#         transforms.Lambda(lambda x: torch.from_numpy(x).float()),
+#         transforms.Normalize(mean=0.0, std=1.0)
+#     ])
 
-    T_test = transforms.Compose([
-        T_pre,
-        transforms.Lambda(lambda x: torch.from_numpy(x).float()),
-        transforms.Normalize(mean=0.0, std=1.0)
-    ])
+#     T_test = transforms.Compose([
+#         T_pre,
+#         transforms.Lambda(lambda x: torch.from_numpy(x).float()),
+#         transforms.Normalize(mean=0.0, std=1.0)
+#     ])
 
-    return T_train, T_test
+#     return T_train, T_test
 
 
 

@@ -24,7 +24,8 @@ from util import compute_age_mae, compute_site_ba
 from data import MREData, OpenBHB, bin_age
 from data.transforms import Crop, Pad, Cutout
 #from main_mse import get_transforms
-from util import get_transforms, get_transforms_OpenBHB
+from util import get_transforms
+# from util import get_transforms, get_transforms_OpenBHB
 
 import os
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
@@ -161,7 +162,8 @@ def load_data(opts):
 
     if which_data_type == 'OpenBHB':
         print('getting transforms')
-        T_train, T_test = get_transforms_OpenBHB(opts)
+        # T_train, T_test = get_transforms_OpenBHB(opts)
+        T_train, T_test = get_transforms(opts)
         T_train = NViewTransform(T_train, opts.n_views)
 
         print('transformed data')
