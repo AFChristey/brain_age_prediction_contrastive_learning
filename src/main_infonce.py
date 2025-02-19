@@ -44,7 +44,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 
-which_data_type = 'MREData' 
+which_data_type = 'OpenBHB' 
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -160,8 +160,11 @@ def parse_arguments():
 def load_data(opts):
 
     if which_data_type == 'OpenBHB':
+        print('getting transforms')
         T_train, T_test = get_transforms_OpenBHB(opts)
         T_train = NViewTransform(T_train, opts.n_views)
+
+        print('transformed data')
 
         start_time = time.time()
 
@@ -955,8 +958,11 @@ if __name__ == '__main__':
     opts = parse_arguments()
     
     set_seed(opts.trial)
+    print('loading data')
 
     train_loader, train_loader_score, test_loader = load_data(opts)
+
+    print('data loaded')
     if opts.path == "local":
         # Check if MPS is available
         device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
