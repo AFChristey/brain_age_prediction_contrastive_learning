@@ -11,7 +11,7 @@ import argparse
 import models
 import losses
 import time
-# import wandb
+import wandb
 import torch.utils.tensorboard
 
 from torch import nn
@@ -45,7 +45,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 
-which_data_type = 'OpenBHB' 
+which_data_type = 'MREData' 
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -1018,6 +1018,10 @@ if __name__ == '__main__':
 
     # wandb.init(project="brain-age-prediction", config=opts, name=run_name, sync_tensorboard=True,
     #           settings=wandb.Settings(code_dir="/src"), tags=['to test'])
+    
+    wandb.init(entity='afc53', project='contrastive-brain-age-prediction', config=opts, name=run_name,
+               settings=wandb.Settings(code_dir="/src"), tags=['to test'])
+
     # wandb.run.log_code(root="/src", include_fn=lambda path: path.endswith(".py"))
 
     print('Config:', opts)
@@ -1055,37 +1059,37 @@ if __name__ == '__main__':
 
     for epoch in range(1, opts.epochs + 1):
 
-        if epoch == 2:
-            visualise_umap(test_loader, model, opts, epoch)
-            mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
-            # writer.add_scalar("train/mae", mae_train, epoch)
-            # writer.add_scalar("test/mae_int", mae_int, epoch)
-            # writer.add_scalar("test/mae_ext", mae_ext, epoch)
-            print("Age MAE:", mae_train, mae_test)
+        # if epoch == 2:
+        #     visualise_umap(test_loader, model, opts, epoch)
+        #     mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
+        #     # writer.add_scalar("train/mae", mae_train, epoch)
+        #     # writer.add_scalar("test/mae_int", mae_int, epoch)
+        #     # writer.add_scalar("test/mae_ext", mae_ext, epoch)
+        #     print("Age MAE:", mae_train, mae_test)
 
-        if epoch == 3:
-            visualise_umap(test_loader, model, opts, epoch)
-            mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
-            # writer.add_scalar("train/mae", mae_train, epoch)
-            # writer.add_scalar("test/mae_int", mae_int, epoch)
-            # writer.add_scalar("test/mae_ext", mae_ext, epoch)
-            print("Age MAE:", mae_train, mae_test)
+        # if epoch == 3:
+        #     visualise_umap(test_loader, model, opts, epoch)
+        #     mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
+        #     # writer.add_scalar("train/mae", mae_train, epoch)
+        #     # writer.add_scalar("test/mae_int", mae_int, epoch)
+        #     # writer.add_scalar("test/mae_ext", mae_ext, epoch)
+        #     print("Age MAE:", mae_train, mae_test)
 
-        if epoch == 4:
-            visualise_umap(test_loader, model, opts, epoch)
-            mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
-            # writer.add_scalar("train/mae", mae_train, epoch)
-            # writer.add_scalar("test/mae_int", mae_int, epoch)
-            # writer.add_scalar("test/mae_ext", mae_ext, epoch)
-            print("Age MAE:", mae_train, mae_test)
+        # if epoch == 4:
+        #     visualise_umap(test_loader, model, opts, epoch)
+        #     mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
+        #     # writer.add_scalar("train/mae", mae_train, epoch)
+        #     # writer.add_scalar("test/mae_int", mae_int, epoch)
+        #     # writer.add_scalar("test/mae_ext", mae_ext, epoch)
+        #     print("Age MAE:", mae_train, mae_test)
 
-        if epoch == 5:
-            visualise_umap(test_loader, model, opts, epoch)
-            mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
-            # writer.add_scalar("train/mae", mae_train, epoch)
-            # writer.add_scalar("test/mae_int", mae_int, epoch)
-            # writer.add_scalar("test/mae_ext", mae_ext, epoch)
-            print("Age MAE:", mae_train, mae_test)
+        # if epoch == 5:
+        #     visualise_umap(test_loader, model, opts, epoch)
+        #     mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
+        #     # writer.add_scalar("train/mae", mae_train, epoch)
+        #     # writer.add_scalar("test/mae_int", mae_int, epoch)
+        #     # writer.add_scalar("test/mae_ext", mae_ext, epoch)
+        #     print("Age MAE:", mae_train, mae_test)
 
 
 
@@ -1095,12 +1099,17 @@ if __name__ == '__main__':
         # Changed
         loss_train, batch_time, data_time = train(train_loader, model, infonce, optimizer, opts, epoch)
         t2 = time.time()
-        writer.add_scalar("train/loss", loss_train, epoch)
+        wandb.log({"train/loss": loss_train, "lr": optimizer.param_groups[0]['lr'], "BT": batch_time, "DT": data_time,
+            "epoch": epoch})
+        # writer.add_scalar("train/loss", loss_train, epoch)
 
-        writer.add_scalar("lr", optimizer.param_groups[0]['lr'], epoch)
-        writer.add_scalar("BT", batch_time, epoch)
-        writer.add_scalar("DT", data_time, epoch)
+        # writer.add_scalar("lr", optimizer.param_groups[0]['lr'], epoch)
+        # writer.add_scalar("BT", batch_time, epoch)
+        # writer.add_scalar("DT", data_time, epoch)
         print(f"epoch {epoch}, total time {t2-start_time:.2f}, epoch time {t2-t1:.3f} loss {loss_train:.4f}")
+        mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
+        wandb.log({"train/mae": mae_train, "test/mae": mae_test, "epoch": epoch})
+
 
         # if epoch % 5 == 0:
         #     ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
@@ -1143,6 +1152,10 @@ if __name__ == '__main__':
     # writer.add_scalar("test/mae_int", mae_int, epoch)
     # writer.add_scalar("test/mae_ext", mae_ext, epoch)
     print("Age MAE:", mae_train, mae_test)
+
+    wandb.log({"train/mae": mae_train, "test/mae": mae_test, "epoch": epoch})
+    wandb.log({'mae_train': mae_train})
+    wandb.log({'mae_test': mae_test})
 
     ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
     # writer.add_scalar("train/site_ba", ba_train, epoch)
