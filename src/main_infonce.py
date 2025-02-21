@@ -1019,7 +1019,7 @@ if __name__ == '__main__':
     # wandb.init(project="brain-age-prediction", config=opts, name=run_name, sync_tensorboard=True,
     #           settings=wandb.Settings(code_dir="/src"), tags=['to test'])
     
-    wandb.init(entity='afc53', project='contrastive-brain-age-prediction', config=opts, name=run_name,
+    wandb.init(project='contrastive-brain-age-prediction', config=opts, name=run_name,
                settings=wandb.Settings(code_dir="/src"), tags=['to test'])
 
     # wandb.run.log_code(root="/src", include_fn=lambda path: path.endswith(".py"))
