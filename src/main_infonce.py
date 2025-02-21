@@ -1111,6 +1111,9 @@ if __name__ == '__main__':
         wandb.log({"train/mae": mae_train, "test/mae": mae_test, "epoch": epoch})
 
 
+        ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
+        wandb.log({"train/ba": ba_train, "test/ba": ba_test, "epoch": epoch})
+
         # if epoch % 5 == 0:
         #     ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
         #     print("Site BA:", ba_train, ba_test)
