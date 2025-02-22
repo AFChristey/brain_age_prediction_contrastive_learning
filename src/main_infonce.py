@@ -95,6 +95,8 @@ def parse_arguments():
     parser.add_argument('--alpha', type=float, help='infonce weight', default=1.)
     parser.add_argument('--sigma', type=float, help='gaussian-rbf kernel sigma / cauchy gamma', default=1)
     parser.add_argument('--n_views', type=int, help='num. of multiviews', default=2)
+    parser.add_argument('--lambda_adv', type=float, help='Weight for adversarial loss', default=0.35)
+
 
 
     # RnCLoss Parameters
@@ -970,13 +972,18 @@ def training():
     # FOR SWEEP
     config = wandb.config  # WandB will automatically inject hyperparameters
     opts.lr = config.lr  # Override argparse values with wandb sweep settings
-    opts.batch_size = config.batch_size
-    opts.temp = config.temp
+    # opts.batch_size = config.batch_size
+    # opts.temp = config.temp
     opts.weight_decay = config.weight_decay
     # opts.method = config.method
     # opts.optimizer = config.optimizer
-    opts.sigma = config.sigma
-    opts.momentum = config.momentum
+    # opts.sigma = config.sigma
+    # opts.momentum = config.momentum
+    opts.lambda_adv = config.lambda_adv  # ✅ Add this line to override lambda_adv
+    opts.lr_decay_step = config.lr_decay_step
+    opts.lr_decay_rate = config.lr_decay_rate
+
+
     
     set_seed(opts.trial)
     print('loading data')
