@@ -960,7 +960,10 @@ def training():
 
 
     # FOR SWEEP
-    wandb.init()
+    wandb.init(
+        project="contrastive-brain-age-prediction",
+        entity="afc53-university-of-cambridge"
+    )
 
     opts = parse_arguments()
 
@@ -1197,7 +1200,8 @@ if __name__ == '__main__':
     print('parsing arguments')
     
     # FOR SWEEP
-    wandb.agent("ax8niexi", function=training, count=10)
+
+    wandb.agent("ax8niexi", function=training, project="contrastive-brain-age-prediction", count=10)
 
     # Can just be:
     # training()
