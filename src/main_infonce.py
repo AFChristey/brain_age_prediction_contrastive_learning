@@ -484,7 +484,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
                   f"ETA {datetime.timedelta(seconds=eta)}\t"
                   f"loss {loss.avg:.3f}\t")
 
-    return loss.avg, batch_time.avg, data_time.avg
+    return loss.avg, class_loss, batch_time.avg, data_time.avg
 
 
     
@@ -956,9 +956,24 @@ def visualise_umap(test_loader, model, opts, epoch=0):
 
 
 
-if __name__ == '__main__':
-    print('parsing arguments')
+def training():
+
+
+    # FOR SWEEP
+    wandb.init()
+
     opts = parse_arguments()
+
+    # FOR SWEEP
+    config = wandb.config  # WandB will automatically inject hyperparameters
+    opts.lr = config.lr  # Override argparse values with wandb sweep settings
+    opts.batch_size = config.batch_size
+    opts.temp = config.temp
+    opts.weight_decay = config.weight_decay
+    # opts.method = config.method
+    # opts.optimizer = config.optimizer
+    opts.sigma = config.sigma
+    opts.momentum = config.momentum
     
     set_seed(opts.trial)
     print('loading data')
@@ -1019,10 +1034,10 @@ if __name__ == '__main__':
     # wandb.init(project="brain-age-prediction", config=opts, name=run_name, sync_tensorboard=True,
     #           settings=wandb.Settings(code_dir="/src"), tags=['to test'])
     
-    wandb.init(project='contrastive-brain-age-prediction', config=opts, name=run_name,
-               settings=wandb.Settings(code_dir="/src"), tags=['to test'])
+    # COMMENTED OUT FOR SWEEP
+    # wandb.init(project='contrastive-brain-age-prediction', config=opts, name=run_name,
+    #            settings=wandb.Settings(code_dir="/src"), tags=['to test'])
 
-    # wandb.run.log_code(root="/src", include_fn=lambda path: path.endswith(".py"))
 
     print('Config:', opts)
     print('Model:', model.__class__.__name__)
@@ -1030,7 +1045,7 @@ if __name__ == '__main__':
     print('Optimizer:', optimizer)
     print('Scheduler:', opts.lr_decay)
 
-    writer = torch.utils.tensorboard.writer.SummaryWriter("scratch/output/brain-age-mri/tensorboard/experiment_001")
+    # writer = torch.utils.tensorboard.writer.SummaryWriter("scratch/output/brain-age-mri/tensorboard/experiment_001")
     if opts.amp:
         print("Using AMP")
     
@@ -1097,9 +1112,12 @@ if __name__ == '__main__':
 
         t1 = time.time()
         # Changed
-        loss_train, batch_time, data_time = train(train_loader, model, infonce, optimizer, opts, epoch)
+        loss_train, class_loss_train, batch_time, data_time = train(train_loader, model, infonce, optimizer, opts, epoch)
         t2 = time.time()
         wandb.log({"train/loss": loss_train, "lr": optimizer.param_groups[0]['lr'], "BT": batch_time, "DT": data_time,
+            "epoch": epoch})
+        
+        wandb.log({"train/class_loss": class_loss_train, "lr": optimizer.param_groups[0]['lr'], "BT": batch_time, "DT": data_time,
             "epoch": epoch})
         # writer.add_scalar("train/loss", loss_train, epoch)
 
@@ -1144,10 +1162,9 @@ if __name__ == '__main__':
             
         # Added
         # scheduler.step()
-
             
-
-    visualise_umap(test_loader, model, opts, epoch)
+    
+    visualise_umap(test_loader, model, opts, opts.epochs)
 
     
     mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
@@ -1156,7 +1173,7 @@ if __name__ == '__main__':
     # writer.add_scalar("test/mae_ext", mae_ext, epoch)
     print("Age MAE:", mae_train, mae_test)
 
-    wandb.log({"train/mae": mae_train, "test/mae": mae_test, "epoch": epoch})
+    wandb.log({"train/mae": mae_train, "test/mae": mae_test, "epoch": opts.epochs})
     wandb.log({'mae_train': mae_train})
     wandb.log({'mae_test': mae_test})
 
@@ -1169,3 +1186,19 @@ if __name__ == '__main__':
     # challenge_metric = ba_int**0.3 * mae_ext
     # writer.add_scalar("test/score", challenge_metric, epoch)
     # print("Challenge score", challenge_metric)
+
+    # FOR SWEEP
+    wandb.finish()  # Close the WandB run
+
+
+
+
+if __name__ == '__main__':
+    print('parsing arguments')
+    
+    # FOR SWEEP
+    wandb.agent("ax8niexi", function=training, count=10)
+
+    # Can just be:
+    # training()
+            
