@@ -239,7 +239,7 @@ def load_data(opts):
 def load_model(opts):
     if 'resnet' in opts.model:
         if which_data_type == "OpenBHB":
-            model = models.SupConResNet(opts.model, feat_dim=128, num_sites=10)
+            model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70)
         else:
             model = models.SupConResNet(opts.model, feat_dim=128)
     elif 'alexnet' in opts.model:
@@ -344,6 +344,9 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         
         # Ensure site_labels is a list of site names
         site_labels = list(metadata[1])  # Convert tuple to list if necessary
+        print("EXAMPLE site labvels:", site_labels[:10])
+        site_labels = [int(label) for label in site_labels]
+
         # Convert site labels (strings) to numeric indices
         # label_encoder = LabelEncoder()
         # site_labels = label_encoder.fit_transform(site_labels)  # Converts strings to integers
