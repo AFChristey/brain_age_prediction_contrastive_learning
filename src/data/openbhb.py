@@ -52,8 +52,14 @@ def read_data(path, dataset):
  
  
 class OpenBHB(torch.utils.data.Dataset):
-    def __init__(self, root, train=True, transform=None):
-        self.root = root
+    def __init__(self, train=True, transform=None, path="local"):
+        # self.root = root
+
+        if path == "local":
+            root = "data/results/openBHB"
+        else:
+            root = "/rds/user/afc53/hpc-work/MRE_Data/openBHB"
+
         self.train = train
         
         dataset = "train" if train else "val"
