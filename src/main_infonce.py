@@ -334,7 +334,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
     for idx, (images, labels, metadata) in enumerate(train_loader):
 
-        print(images[0].shape)
+        # print(images[0].shape)
         # print('hi')
         data_time.update(time.time() - t1)
         # print(images[0])
@@ -344,7 +344,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         
         # Ensure site_labels is a list of site names
         site_labels = list(metadata[1])  # Convert tuple to list if necessary
-        print("EXAMPLE site labvels:", site_labels[:10])
+        # print("EXAMPLE site labvels:", site_labels[:10])
         site_labels = [int(label) for label in site_labels]
 
         # Convert site labels (strings) to numeric indices
