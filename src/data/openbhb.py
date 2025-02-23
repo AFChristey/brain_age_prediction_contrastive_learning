@@ -24,156 +24,212 @@ def bin_age(age_real: torch.Tensor):
 
 
 
-
-
-# OpenBHB is a custom PyTorch Dataset class that loads MRI data and labels (age, site) for training
+def read_data(path, dataset):
+    print(f"Read {dataset.upper()}")
+    df = pd.read_csv(os.path.join(path + '/' + dataset + '_labels/', dataset + "_participants.tsv"), sep="\t")
+    df['participant_id'] = df['participant_id'].astype(str)
+ 
+ 
+    if dataset == "train":
+        x_arr = np.load(os.path.join(path + '/' + dataset + '_quasiraw/' + dataset + '_quasiraw/',
+                                     dataset + "_quasiraw_2mm.npy"), mmap_mode="r")
+        participants_id = np.load(os.path.join(path + '/' + dataset + '_quasiraw/' + dataset + '_quasiraw/',
+                                               "participants_id.npy"))
+    elif dataset == "val":
+        x_arr = np.load(os.path.join(path + '/' + dataset + '_quasiraw/', dataset + "_quasiraw_2mm.npy"), mmap_mode="r")
+        participants_id = np.load(os.path.join(path + '/' + dataset + '_quasiraw/', "participants_id.npy"))
+    else:
+        raise ValueError("Invalid dataset")
+ 
+    matching_ages = df[df['participant_id'].isin(participants_id)][['participant_id', 'age', 'site', 'sex']]
+    y_arr = matching_ages[['age', 'site', 'sex']].values
+    
+    print("- y size [original]:", y_arr.shape)
+    print("- x size [original]:", x_arr.shape)
+    assert y_arr.shape[0] == x_arr.shape[0]
+ 
+    return x_arr, y_arr
+ 
+ 
 class OpenBHB(torch.utils.data.Dataset):
-    # Depending on the train and internal flags, it loads the appropriate dataset (train, internal_test, or external_test)
-    # root = root directory where the data is stored
-    # label = specifies whether the labels should be continuous ("cont") or binned ("bin"). Defaults to "cont"
-    # load_feats = If provided, it specifies a file to load additional biased features
-    def __init__(self, train=True, transform=None, 
-                 label="cont", fast=False, load_feats=None, path="local", fold=0):
-        # Stores the root path where the data is located as an instance variable self.root. 
-        # This will be used to locate the files later
-
-
-        (T1, age, study, sex) = load_samples_OpenBHB(path=path)
-
-
-        kfold = KFold(n_splits=5, shuffle=True, random_state=42)
-
-        assert fold in range(5) or fold is None
-
-        if fold in range(5):
-            for fold_iter, (train_ids, test_ids) in enumerate(kfold.split(T1)):
-
-                if fold_iter == fold:
-                    T1_train, T1_test = T1[train_ids], T1[test_ids]
-                    sex_train, sex_test = sex[train_ids], sex[test_ids]
-                    age_train, age_test = age[train_ids], age[test_ids]
-                    study_train, study_test = study[train_ids], study[test_ids]
-                    # MRE_coverage_train, MRE_coverage_test = MRE_coverage[train_ids], MRE_coverage[test_ids]
-
-                else:
-                    continue
-        else:
-            T1_train, T1_test, \
-                age_train, age_test, \
-                sex_train, sex_test, \
-                study_train, study_test = train_test_split(T1, age, sex, study, test_size=0.2, random_state=42)
-
-        if train:
-            self.y = age_train
-            self.sex = sex_train
-            self.site = study_train
-            # self.MRE_coverage = MRE_coverage_train
-            self.x = T1_train
-
-        else:
-            self.y = age_test
-            self.sex = sex_test
-            self.site = study_test
-            # self.MRE_coverage = MRE_coverage_test
-            self.x = T1_test
-
-
+    def __init__(self, root, train=True, transform=None):
+        self.root = root
+        self.train = train
+        
+        dataset = "train" if train else "val"
+        
+        self.X, self.y = read_data(root + '/' + dataset, dataset)
         self.T = transform
-
-    def norm(self):
-
-        default_value = 0
-
-        self.x = norm_whole_batch(self.x, 'mean_std', default_value)
-
-
-
+        
+        print(f"Read {len(self.X)} records")
+ 
     def __len__(self):
         return len(self.y)
-
+ 
     def __getitem__(self, index):
-
-        x = self.x[index]
+ 
+        x = self.X[index]
         y = self.y[index]
-
-        sex = self.sex[index]
-        site = self.site[index]
-        # MRE_coverage = self.MRE_coverage[index]
-
+ 
         if self.T is not None:
             x = self.T(x)
-        else:
-            x = torch.from_numpy(x).float()
-
-        return x, y, (sex, site)
-
-
-
-def load_samples_OpenBHB(path):
-
-    if path == 'local':
-        folder_path = 'data/results/OpenBHB_data/train_quasiraw'
-        tsv_path = 'data/results/OpenBHB_data/participants.tsv'
-    else:
-        folder_path = '/rds/user/afc53/hpc-work/MRE_Data/OpenBHB_data/train_quasiraw'
-        tsv_path = '/rds/user/afc53/hpc-work/MRE_Data/OpenBHB_data/participants.tsv'
+        
+        # sample, age, site
+        age, site, sex = y[0], y[1], y[2]
+ 
+        return x, age, (sex, site)
+    
 
 
-    df_participants = pd.read_csv(tsv_path, sep="\t")
 
-    # Ensure column names are correct
-    participant_column = "participant_id"  # Adjust if needed
-    age_column = "age"  # Change if the column name is different
-    site_column = "study"  # Change if needed
-    sex_column = "sex"  # Change if needed
-
-
-    # Get list of all .npy files in the folder (without sorting)
-    npy_files = [f for f in os.listdir(folder_path) if f.endswith('.npy')]
-    # print(npy_files[0])
-    # Select the first 100 files (without sorting)
-
-    if path == 'local':
-        npy_files = npy_files[:50]
-    else:
-        npy_files = npy_files[:500]
+# # OpenBHB is a custom PyTorch Dataset class that loads MRI data and labels (age, site) for training
+# class OpenBHB(torch.utils.data.Dataset):
+#     # Depending on the train and internal flags, it loads the appropriate dataset (train, internal_test, or external_test)
+#     # root = root directory where the data is stored
+#     # label = specifies whether the labels should be continuous ("cont") or binned ("bin"). Defaults to "cont"
+#     # load_feats = If provided, it specifies a file to load additional biased features
+#     def __init__(self, train=True, transform=None, 
+#                  label="cont", fast=False, load_feats=None, path="local", fold=0):
+#         # Stores the root path where the data is located as an instance variable self.root. 
+#         # This will be used to locate the files later
 
 
-    # Initialize lists to store T1 data and metadata
-    t1_data_list = []
-    age_list = []
-    study_list = []
-    sex_list = []
-
-    for file in npy_files:
-        file_path = os.path.join(folder_path, file)
-
-        match = re.search(r"sub-(\d+)_preproc-quasiraw_T1w.npy", file)
-        if match:
-            participant_id = match.group(1)  # Extract the ID as a string
-
-            metadata_row = df_participants[df_participants[participant_column] == int(participant_id)]
-            # print(metadata_row)
-            # Load T1 MRI Data
-            data = np.load(file_path, allow_pickle=True)
-
-            # Append MRI data
-            t1_data_list.append(data)
-
-            # Append metadata separately
-            age_list.append(metadata_row.iloc[0][age_column])
-            study_list.append(metadata_row.iloc[0][site_column])
-            sex_list.append(metadata_row.iloc[0][sex_column])
+#         (T1, age, study, sex) = load_samples_OpenBHB(path=path)
 
 
-    t1_array = np.array(t1_data_list)  # NumPy array for MRI data
-    age_array = np.array(age_list)
-    study_array = np.array(study_list)
-    sex_array = np.array(sex_list)
+#         kfold = KFold(n_splits=5, shuffle=True, random_state=42)
 
-    # print(t1_array[0])
+#         assert fold in range(5) or fold is None
 
-    return (t1_array, age_array, study_array, sex_array)
+#         if fold in range(5):
+#             for fold_iter, (train_ids, test_ids) in enumerate(kfold.split(T1)):
+
+#                 if fold_iter == fold:
+#                     T1_train, T1_test = T1[train_ids], T1[test_ids]
+#                     sex_train, sex_test = sex[train_ids], sex[test_ids]
+#                     age_train, age_test = age[train_ids], age[test_ids]
+#                     study_train, study_test = study[train_ids], study[test_ids]
+#                     # MRE_coverage_train, MRE_coverage_test = MRE_coverage[train_ids], MRE_coverage[test_ids]
+
+#                 else:
+#                     continue
+#         else:
+#             T1_train, T1_test, \
+#                 age_train, age_test, \
+#                 sex_train, sex_test, \
+#                 study_train, study_test = train_test_split(T1, age, sex, study, test_size=0.2, random_state=42)
+
+#         if train:
+#             self.y = age_train
+#             self.sex = sex_train
+#             self.site = study_train
+#             # self.MRE_coverage = MRE_coverage_train
+#             self.x = T1_train
+
+#         else:
+#             self.y = age_test
+#             self.sex = sex_test
+#             self.site = study_test
+#             # self.MRE_coverage = MRE_coverage_test
+#             self.x = T1_test
+
+
+#         self.T = transform
+
+#     def norm(self):
+
+#         default_value = 0
+
+#         self.x = norm_whole_batch(self.x, 'mean_std', default_value)
+
+
+
+#     def __len__(self):
+#         return len(self.y)
+
+#     def __getitem__(self, index):
+
+#         x = self.x[index]
+#         y = self.y[index]
+
+#         sex = self.sex[index]
+#         site = self.site[index]
+#         # MRE_coverage = self.MRE_coverage[index]
+
+#         if self.T is not None:
+#             x = self.T(x)
+#         else:
+#             x = torch.from_numpy(x).float()
+
+#         return x, y, (sex, site)
+
+
+
+# def load_samples_OpenBHB(path):
+
+#     if path == 'local':
+#         folder_path = 'data/results/OpenBHB_data/train_quasiraw'
+#         tsv_path = 'data/results/OpenBHB_data/participants.tsv'
+#     else:
+#         folder_path = '/rds/user/afc53/hpc-work/MRE_Data/OpenBHB_data/train_quasiraw'
+#         tsv_path = '/rds/user/afc53/hpc-work/MRE_Data/OpenBHB_data/participants.tsv'
+
+
+#     df_participants = pd.read_csv(tsv_path, sep="\t")
+
+#     # Ensure column names are correct
+#     participant_column = "participant_id"  # Adjust if needed
+#     age_column = "age"  # Change if the column name is different
+#     site_column = "study"  # Change if needed
+#     sex_column = "sex"  # Change if needed
+
+
+#     # Get list of all .npy files in the folder (without sorting)
+#     npy_files = [f for f in os.listdir(folder_path) if f.endswith('.npy')]
+#     # print(npy_files[0])
+#     # Select the first 100 files (without sorting)
+
+#     if path == 'local':
+#         npy_files = npy_files[:50]
+#     else:
+#         npy_files = npy_files[:500]
+
+
+#     # Initialize lists to store T1 data and metadata
+#     t1_data_list = []
+#     age_list = []
+#     study_list = []
+#     sex_list = []
+
+#     for file in npy_files:
+#         file_path = os.path.join(folder_path, file)
+
+#         match = re.search(r"sub-(\d+)_preproc-quasiraw_T1w.npy", file)
+#         if match:
+#             participant_id = match.group(1)  # Extract the ID as a string
+
+#             metadata_row = df_participants[df_participants[participant_column] == int(participant_id)]
+#             # print(metadata_row)
+#             # Load T1 MRI Data
+#             data = np.load(file_path, allow_pickle=True)
+
+#             # Append MRI data
+#             t1_data_list.append(data)
+
+#             # Append metadata separately
+#             age_list.append(metadata_row.iloc[0][age_column])
+#             study_list.append(metadata_row.iloc[0][site_column])
+#             sex_list.append(metadata_row.iloc[0][sex_column])
+
+
+#     t1_array = np.array(t1_data_list)  # NumPy array for MRI data
+#     age_array = np.array(age_list)
+#     study_array = np.array(study_list)
+#     sex_array = np.array(sex_list)
+
+#     # print(t1_array[0])
+
+#     return (t1_array, age_array, study_array, sex_array)
 
 
 

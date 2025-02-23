@@ -45,7 +45,8 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 
-which_data_type = 'MREData' 
+which_data_type = 'OpenBHB' 
+is_sweeping = False
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -95,7 +96,7 @@ def parse_arguments():
     parser.add_argument('--alpha', type=float, help='infonce weight', default=1.)
     parser.add_argument('--sigma', type=float, help='gaussian-rbf kernel sigma / cauchy gamma', default=1)
     parser.add_argument('--n_views', type=int, help='num. of multiviews', default=2)
-    parser.add_argument('--lambda_adv', type=float, help='Weight for adversarial loss', default=0.35)
+    parser.add_argument('--lambda_adv', type=float, help='Weight for adversarial loss', default=0)
 
 
 
@@ -174,7 +175,7 @@ def load_data(opts):
 
 
         train_dataset = OpenBHB(train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
-        train_dataset.norm()
+        # train_dataset.norm()
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opts.batch_size, shuffle=True)
         train_time = time.time() - start_time
         print(f"Time to load training dataset: {train_time:.2f} seconds")
@@ -182,7 +183,7 @@ def load_data(opts):
         start_time = time.time()
 
         train_dataset_score = OpenBHB(train=True, transform=T_train, label=opts.label, path=opts.path, fold=0)
-        train_dataset_score.norm()
+        # train_dataset_score.norm()
         train_loader_score = torch.utils.data.DataLoader(train_dataset_score, batch_size=opts.batch_size, shuffle=False)
 
         train_score_time = time.time() - start_time
@@ -191,7 +192,7 @@ def load_data(opts):
         start_time = time.time()
 
         test_dataset = OpenBHB(train=False, transform=T_test, path=opts.path, fold=0)
-        test_dataset.norm()
+        # test_dataset.norm()
         test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=opts.batch_size, shuffle=False)
 
         test_time = time.time() - start_time
@@ -312,7 +313,7 @@ def load_optimizer(model, opts):
     return optimizer
 
 def train(train_loader, model, infonce, optimizer, opts, epoch):
-    lambda_adv = 0.35  # Weight for adversarial loss
+    # lambda_adv = 0.35  # Weight for adversarial loss
     # lambda_adv = 0  # Weight for adversarial loss
 
     # lambda_adv = min(1.0, 0.1 * epoch)  # Increase over time
@@ -333,7 +334,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
     for idx, (images, labels, metadata) in enumerate(train_loader):
 
-        # print(images[0].shape)
+        print(images[0].shape)
         # print('hi')
         data_time.update(time.time() - t1)
         # print(images[0])
@@ -446,7 +447,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             # print("This is class loss:", class_loss)
 
             # Total loss = Contrastive Loss - Classification Loss
-            total_loss = running_loss + lambda_adv * class_loss
+            total_loss = running_loss + opts.lambda_adv * class_loss
             # total_loss =  class_loss
 
         # Do I backpropagate total, or just separately?
@@ -962,26 +963,28 @@ def training():
 
 
     # FOR SWEEP
-    wandb.init(
-        project="contrastive-brain-age-prediction",
-        entity="afc53-university-of-cambridge"
-    )
+    if is_sweeping:
+        wandb.init(
+            project="contrastive-brain-age-prediction",
+            entity="afc53-university-of-cambridge"
+        )
 
     opts = parse_arguments()
 
     # FOR SWEEP
-    config = wandb.config  # WandB will automatically inject hyperparameters
-    opts.lr = config.lr  # Override argparse values with wandb sweep settings
-    # opts.batch_size = config.batch_size
-    # opts.temp = config.temp
-    opts.weight_decay = config.weight_decay
-    # opts.method = config.method
-    # opts.optimizer = config.optimizer
-    # opts.sigma = config.sigma
-    # opts.momentum = config.momentum
-    opts.lambda_adv = config.lambda_adv  # ✅ Add this line to override lambda_adv
-    opts.lr_decay_step = config.lr_decay_step
-    opts.lr_decay_rate = config.lr_decay_rate
+    if is_sweeping:
+        config = wandb.config  # WandB will automatically inject hyperparameters
+        opts.lr = config.lr  # Override argparse values with wandb sweep settings
+        # opts.batch_size = config.batch_size
+        # opts.temp = config.temp
+        opts.weight_decay = config.weight_decay
+        # opts.method = config.method
+        # opts.optimizer = config.optimizer
+        # opts.sigma = config.sigma
+        # opts.momentum = config.momentum
+        opts.lambda_adv = config.lambda_adv  # ✅ Add this line to override lambda_adv
+        opts.lr_decay_step = config.lr_decay_step
+        opts.lr_decay_rate = config.lr_decay_rate
 
 
     
@@ -1045,8 +1048,9 @@ def training():
     #           settings=wandb.Settings(code_dir="/src"), tags=['to test'])
     
     # COMMENTED OUT FOR SWEEP
-    # wandb.init(project='contrastive-brain-age-prediction', config=opts, name=run_name,
-    #            settings=wandb.Settings(code_dir="/src"), tags=['to test'])
+    if is_sweeping == False:
+        wandb.init(project='contrastive-brain-age-prediction', config=opts, name=run_name,
+                settings=wandb.Settings(code_dir="/src"), tags=['to test'])
 
 
     print('Config:', opts)
@@ -1198,7 +1202,8 @@ def training():
     # print("Challenge score", challenge_metric)
 
     # FOR SWEEP
-    wandb.finish()  # Close the WandB run
+    if is_sweeping:
+        wandb.finish()  # Close the WandB run
 
 
 
@@ -1207,9 +1212,8 @@ if __name__ == '__main__':
     print('parsing arguments')
     
     # FOR SWEEP
-
-    wandb.agent("i1xk5d5g", function=training, project="contrastive-brain-age-prediction", count=15)
-
-    # Can just be:
-    # training()
+    if is_sweeping:
+        wandb.agent("i1xk5d5g", function=training, project="contrastive-brain-age-prediction", count=15)
+    else:
+        training()
             
