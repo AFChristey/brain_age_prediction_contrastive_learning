@@ -2,7 +2,7 @@ program: main_infonce.py
 data_dir: /scratch/data-registry/medical/openbhb
 save_dir:  /scratch/output/brain-age-mri
 model: resnet18
-epochs: 300
+epochs: 20
 batch_size: 32
 lr: 1e-4
 lr_decay: step

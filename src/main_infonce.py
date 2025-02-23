@@ -46,7 +46,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 which_data_type = 'OpenBHB' 
-is_sweeping = False
+is_sweeping = True
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -978,14 +978,14 @@ def training():
     if is_sweeping:
         config = wandb.config  # WandB will automatically inject hyperparameters
         opts.lr = config.lr  # Override argparse values with wandb sweep settings
-        # opts.batch_size = config.batch_size
-        # opts.temp = config.temp
+        opts.batch_size = config.batch_size
+        opts.temp = config.temp
         opts.weight_decay = config.weight_decay
         # opts.method = config.method
         # opts.optimizer = config.optimizer
-        # opts.sigma = config.sigma
+        opts.sigma = config.sigma
         # opts.momentum = config.momentum
-        opts.lambda_adv = config.lambda_adv  # ✅ Add this line to override lambda_adv
+        # opts.lambda_adv = config.lambda_adv  # ✅ Add this line to override lambda_adv
         opts.lr_decay_step = config.lr_decay_step
         opts.lr_decay_rate = config.lr_decay_rate
 
@@ -1216,7 +1216,7 @@ if __name__ == '__main__':
     
     # FOR SWEEP
     if is_sweeping:
-        wandb.agent("i1xk5d5g", function=training, project="contrastive-brain-age-prediction", count=15)
+        wandb.agent("slckmttc", function=training, project="contrastive-brain-age-prediction", count=15)
     else:
         training()
             
