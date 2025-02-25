@@ -46,7 +46,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 which_data_type = 'OpenBHB' 
-is_sweeping = True
+is_sweeping = False
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -334,7 +334,9 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
     for idx, (images, labels, metadata) in enumerate(train_loader):
 
-        # print(images[0].shape)
+        print('THIS IS SHAPE OF IMAGES')
+        print(images[0].shape)
+        print(metadata)
         # print('hi')
         data_time.update(time.time() - t1)
         # print(images[0])

@@ -40,7 +40,7 @@ def read_data(path, dataset):
     elif dataset == "val":
         x_arr = np.load(os.path.join(path + '/' + dataset + '_quasiraw/', dataset + "_quasiraw_2mm.npy"), mmap_mode="r")
         participants_id = np.load(os.path.join(path + '/' + dataset + '_quasiraw/', "participants_id.npy"))
-        x_arr = x_arr[2:3]
+        x_arr = x_arr[:1]
 
     else:
         raise ValueError("Invalid dataset")
@@ -51,7 +51,7 @@ def read_data(path, dataset):
     if dataset == "train":
         y_arr = y_arr[:1]
     if dataset == "val":
-        y_arr = y_arr[2:3]
+        y_arr = y_arr[:1]
     
 
     print("- y size [original]:", y_arr.shape)
