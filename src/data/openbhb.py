@@ -35,12 +35,12 @@ def read_data(path, dataset):
                                      dataset + "_quasiraw_2mm.npy"), mmap_mode="r")
         participants_id = np.load(os.path.join(path + '/' + dataset + '_quasiraw/' + dataset + '_quasiraw/',
                                                "participants_id.npy"))
-        x_arr = x_arr[:300]
+        x_arr = x_arr[:1]
 
     elif dataset == "val":
         x_arr = np.load(os.path.join(path + '/' + dataset + '_quasiraw/', dataset + "_quasiraw_2mm.npy"), mmap_mode="r")
         participants_id = np.load(os.path.join(path + '/' + dataset + '_quasiraw/', "participants_id.npy"))
-        x_arr = x_arr[300:500]
+        x_arr = x_arr[2:3]
 
     else:
         raise ValueError("Invalid dataset")
@@ -49,9 +49,9 @@ def read_data(path, dataset):
     y_arr = matching_ages[['age', 'site', 'sex']].values
 
     if dataset == "train":
-        y_arr = y_arr[:300]
+        y_arr = y_arr[:1]
     if dataset == "val":
-        y_arr = y_arr[300:500]
+        y_arr = y_arr[2:3]
     
 
     print("- y size [original]:", y_arr.shape)
