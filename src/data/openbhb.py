@@ -47,6 +47,11 @@ def read_data(path, dataset):
  
     matching_ages = df[df['participant_id'].isin(participants_id)][['participant_id', 'age', 'site', 'sex']]
     y_arr = matching_ages[['age', 'site', 'sex']].values
+
+    if dataset == "train":
+        y_arr = y_arr[:300]
+    if dataset == "val":
+        y_arr = y_arr[300:500]
     
 
     print("- y size [original]:", y_arr.shape)
