@@ -35,15 +35,20 @@ def read_data(path, dataset):
                                      dataset + "_quasiraw_2mm.npy"), mmap_mode="r")
         participants_id = np.load(os.path.join(path + '/' + dataset + '_quasiraw/' + dataset + '_quasiraw/',
                                                "participants_id.npy"))
+        x_arr = x_arr[:300]
+
     elif dataset == "val":
         x_arr = np.load(os.path.join(path + '/' + dataset + '_quasiraw/', dataset + "_quasiraw_2mm.npy"), mmap_mode="r")
         participants_id = np.load(os.path.join(path + '/' + dataset + '_quasiraw/', "participants_id.npy"))
+        x_arr = x_arr[300:500]
+
     else:
         raise ValueError("Invalid dataset")
  
     matching_ages = df[df['participant_id'].isin(participants_id)][['participant_id', 'age', 'site', 'sex']]
     y_arr = matching_ages[['age', 'site', 'sex']].values
     
+
     print("- y size [original]:", y_arr.shape)
     print("- x size [original]:", x_arr.shape)
     assert y_arr.shape[0] == x_arr.shape[0]
