@@ -165,8 +165,8 @@ def load_data(opts):
 
     if which_data_type == 'OpenBHB':
         print('getting transforms')
-        # T_train, T_test = get_transforms_OpenBHB(opts)
-        T_train, T_test = get_transforms(opts)
+        T_train, T_test = get_transforms_OpenBHB(opts)
+        # T_train, T_test = get_transforms(opts)
         T_train = NViewTransform(T_train, opts.n_views)
 
         print('transformed data')
