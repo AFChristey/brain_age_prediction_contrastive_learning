@@ -35,12 +35,14 @@ def read_data(path, dataset):
                                      dataset + "_quasiraw_2mm.npy"), mmap_mode="r")
         participants_id = np.load(os.path.join(path + '/' + dataset + '_quasiraw/' + dataset + '_quasiraw/',
                                                "participants_id.npy"))
-        x_arr = x_arr[:1]
+        # x_arr = x_arr[:1]
+        x_arr = x_arr[:300]
 
     elif dataset == "val":
         x_arr = np.load(os.path.join(path + '/' + dataset + '_quasiraw/', dataset + "_quasiraw_2mm.npy"), mmap_mode="r")
         participants_id = np.load(os.path.join(path + '/' + dataset + '_quasiraw/', "participants_id.npy"))
-        x_arr = x_arr[:1]
+        # x_arr = x_arr[:1]
+        x_arr = x_arr[300:500]
 
     else:
         raise ValueError("Invalid dataset")
@@ -49,9 +51,11 @@ def read_data(path, dataset):
     y_arr = matching_ages[['age', 'site', 'sex']].values
 
     if dataset == "train":
-        y_arr = y_arr[:1]
+        # y_arr = y_arr[:1]
+        y_arr = y_arr[:300]
     if dataset == "val":
-        y_arr = y_arr[:1]
+        # y_arr = y_arr[:1]
+        y_arr = y_arr[300:500]
     
 
     print("- y size [original]:", y_arr.shape)
@@ -558,112 +562,112 @@ def load_samples(path):
 
 
 
-# class FeatureExtractor(BaseEstimator, TransformerMixin):
-#     """ Select only the requested data associatedd features from the the
-#     input buffered data.
-#     """
-#     print('getting modalities')
-#     MODALITIES = OrderedDict([
-#         ("vbm", {
-#             "shape": (1, 121, 145, 121),
-#             "size": 519945}),
-#         ("quasiraw", {
-#             "shape": (1, 182, 218, 182),
-#             "size": 1827095}),
-#         ("xhemi", {
-#             "shape": (8, 163842),
-#             "size": 1310736}),
-#         ("vbm_roi", {
-#             "shape": (1, 284),
-#             "size": 284}),
-#         ("desikan_roi", {
-#             "shape": (7, 68),
-#             "size": 476}),
-#         ("destrieux_roi", {
-#             "shape": (7, 148),
-#             "size": 1036})
-#     ])
-#     MASKS = {
-#         "vbm": {
-#             "path": None,
-#             "thr": 0.05},
-#         "quasiraw": {
-#             "path": None,
-#             "thr": 0}
-#     }
+class FeatureExtractor(BaseEstimator, TransformerMixin):
+    """ Select only the requested data associatedd features from the the
+    input buffered data.
+    """
+    print('getting modalities')
+    MODALITIES = OrderedDict([
+        ("vbm", {
+            "shape": (1, 121, 145, 121),
+            "size": 519945}),
+        ("quasiraw", {
+            "shape": (1, 182, 218, 182),
+            "size": 1827095}),
+        ("xhemi", {
+            "shape": (8, 163842),
+            "size": 1310736}),
+        ("vbm_roi", {
+            "shape": (1, 284),
+            "size": 284}),
+        ("desikan_roi", {
+            "shape": (7, 68),
+            "size": 476}),
+        ("destrieux_roi", {
+            "shape": (7, 148),
+            "size": 1036})
+    ])
+    MASKS = {
+        "vbm": {
+            "path": None,
+            "thr": 0.05},
+        "quasiraw": {
+            "path": None,
+            "thr": 0}
+    }
 
-#     def __init__(self, dtype, path, mock=False):
-#         """ Init class.
-#         Parameters
-#         ----------
-#         dtype: str
-#             the requested data: 'vbm', 'quasiraw', 'vbm_roi', 'desikan_roi',
-#             'destrieux_roi' or 'xhemi'.
-#         """
-#         print('init modalities')
-#         if dtype not in self.MODALITIES:
-#             raise ValueError("Invalid input data type.")
-#         self.dtype = dtype
+    def __init__(self, dtype, path, mock=False):
+        """ Init class.
+        Parameters
+        ----------
+        dtype: str
+            the requested data: 'vbm', 'quasiraw', 'vbm_roi', 'desikan_roi',
+            'destrieux_roi' or 'xhemi'.
+        """
+        print('init modalities')
+        if dtype not in self.MODALITIES:
+            raise ValueError("Invalid input data type.")
+        self.dtype = dtype
 
-#         data_types = list(self.MODALITIES.keys())
-#         index = data_types.index(dtype)
+        data_types = list(self.MODALITIES.keys())
+        index = data_types.index(dtype)
         
-#         cumsum = np.cumsum([item["size"] for item in self.MODALITIES.values()])
+        cumsum = np.cumsum([item["size"] for item in self.MODALITIES.values()])
         
-#         if index > 0:
-#             self.start = cumsum[index - 1]
-#         else:
-#             self.start = 0
-#         self.stop = cumsum[index]
-#         # print(self.stop)
-#         # print(self.start)
+        if index > 0:
+            self.start = cumsum[index - 1]
+        else:
+            self.start = 0
+        self.stop = cumsum[index]
+        # print(self.stop)
+        # print(self.start)
         
-#         self.masks = dict((key, val["path"]) for key, val in self.MASKS.items())
-#         if path == "local":
-#             self.masks["vbm"] = "data/masks/cat12vbm_space-MNI152_desc-gm_TPM.nii.gz"
-#             self.masks["quasiraw"] = "data/masks/quasiraw_space-MNI152_desc-brain_T1w.nii.gz"
-#         else:
-#             self.masks["vbm"] = "/home/afc53/contrastive_learning_mri_images/src/data/masks/cat12vbm_space-MNI152_desc-gm_TPM.nii.gz"
-#             self.masks["quasiraw"] = "/home/afc53/contrastive_learning_mri_images/src/data/masks/quasiraw_space-MNI152_desc-brain_T1w.nii.gz"
+        self.masks = dict((key, val["path"]) for key, val in self.MASKS.items())
+        if path == "local":
+            self.masks["vbm"] = "data/masks/cat12vbm_space-MNI152_desc-gm_TPM.nii.gz"
+            self.masks["quasiraw"] = "data/masks/quasiraw_space-MNI152_desc-brain_T1w.nii.gz"
+        else:
+            self.masks["vbm"] = "/home/afc53/contrastive_learning_mri_images/src/data/masks/cat12vbm_space-MNI152_desc-gm_TPM.nii.gz"
+            self.masks["quasiraw"] = "/home/afc53/contrastive_learning_mri_images/src/data/masks/quasiraw_space-MNI152_desc-brain_T1w.nii.gz"
 
-#         self.mock = mock
-#         if mock:
-#             return
+        self.mock = mock
+        if mock:
+            return
 
-#         for key in self.masks:
-#             if self.masks[key] is None or not os.path.isfile(self.masks[key]):
-#                 raise ValueError("Impossible to find mask:", key, self.masks[key])
-#             arr = nibabel.load(self.masks[key]).get_fdata()
-#             thr = self.MASKS[key]["thr"]
-#             arr[arr <= thr] = 0
-#             arr[arr > thr] = 1
-#             # self.masks[key] = nibabel.Nifti1Image(arr.astype(int), np.eye(4))
-#             self.masks[key] = nibabel.Nifti1Image(arr.astype(np.int32), np.eye(4))
+        for key in self.masks:
+            if self.masks[key] is None or not os.path.isfile(self.masks[key]):
+                raise ValueError("Impossible to find mask:", key, self.masks[key])
+            arr = nibabel.load(self.masks[key]).get_fdata()
+            thr = self.MASKS[key]["thr"]
+            arr[arr <= thr] = 0
+            arr[arr > thr] = 1
+            # self.masks[key] = nibabel.Nifti1Image(arr.astype(int), np.eye(4))
+            self.masks[key] = nibabel.Nifti1Image(arr.astype(np.int32), np.eye(4))
 
 
-#     def fit(self, X, y):
-#         return self
+    def fit(self, X, y):
+        return self
 
-#     def transform(self, X):
-#         # print(X)
-#         if self.mock:
-#             # print("transforming", X.shape)
-#             data = X.reshape(self.MODALITIES[self.dtype]["shape"])
-#             # print("mock data:", data.shape)
-#             return data
+    def transform(self, X):
+        # print(X)
+        if self.mock:
+            # print("transforming", X.shape)
+            data = X.reshape(self.MODALITIES[self.dtype]["shape"])
+            # print("mock data:", data.shape)
+            return data
         
-#         X_flat = X.flatten()
-#         # print("Flattened X shape:", X_flat.shape)  # Debugging step
+        X_flat = X.flatten()
+        # print("Flattened X shape:", X_flat.shape)  # Debugging step
 
-#         select_X = X_flat[self.start:self.stop]
+        select_X = X_flat[self.start:self.stop]
 
         
-#         # print(X.shape)
-#         # select_X = X[self.start:self.stop]
-#         if self.dtype in ("vbm", "quasiraw"):
-#             im = unmask(select_X, self.masks[self.dtype])
-#             select_X = im.get_fdata()
-#             select_X = select_X.transpose(2, 0, 1)
-#         select_X = select_X.reshape(self.MODALITIES[self.dtype]["shape"])
-#         # print('transformed.shape', select_X.shape)
-#         return select_X
+        # print(X.shape)
+        # select_X = X[self.start:self.stop]
+        if self.dtype in ("vbm", "quasiraw"):
+            im = unmask(select_X, self.masks[self.dtype])
+            select_X = im.get_fdata()
+            select_X = select_X.transpose(2, 0, 1)
+        select_X = select_X.reshape(self.MODALITIES[self.dtype]["shape"])
+        # print('transformed.shape', select_X.shape)
+        return select_X

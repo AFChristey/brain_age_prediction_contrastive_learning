@@ -24,8 +24,8 @@ from util import compute_age_mae, compute_site_ba
 from data import MREData, OpenBHB, bin_age
 from data.transforms import Crop, Pad, Cutout
 #from main_mse import get_transforms
-from util import get_transforms
-# from util import get_transforms, get_transforms_OpenBHB
+# from util import get_transforms
+from util import get_transforms, get_transforms_OpenBHB
 
 import os
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
