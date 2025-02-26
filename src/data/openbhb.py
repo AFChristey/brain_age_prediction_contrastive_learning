@@ -665,6 +665,8 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
         # print(X.shape)
         # select_X = X[self.start:self.stop]
         if self.dtype in ("vbm", "quasiraw"):
+            print("Shape of select_X before unmask:", select_X.shape)
+            print(f"select_X shape: {select_X.shape}, expected features: {self.masks[self.dtype].shape}")
             im = unmask(select_X, self.masks[self.dtype])
             select_X = im.get_fdata()
             select_X = select_X.transpose(2, 0, 1)
