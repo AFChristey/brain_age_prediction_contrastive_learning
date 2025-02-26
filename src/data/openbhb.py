@@ -35,14 +35,14 @@ def read_data(path, dataset):
                                      dataset + "_quasiraw_2mm.npy"), mmap_mode="r")
         participants_id = np.load(os.path.join(path + '/' + dataset + '_quasiraw/' + dataset + '_quasiraw/',
                                                "participants_id.npy"))
-        # x_arr = x_arr[:1]
-        x_arr = x_arr[:300]
+        x_arr = x_arr[:1]
+        # x_arr = x_arr[:300]
 
     elif dataset == "val":
         x_arr = np.load(os.path.join(path + '/' + dataset + '_quasiraw/', dataset + "_quasiraw_2mm.npy"), mmap_mode="r")
         participants_id = np.load(os.path.join(path + '/' + dataset + '_quasiraw/', "participants_id.npy"))
-        # x_arr = x_arr[:1]
-        x_arr = x_arr[300:500]
+        x_arr = x_arr[:1]
+        # x_arr = x_arr[300:500]
 
     else:
         raise ValueError("Invalid dataset")
@@ -51,11 +51,11 @@ def read_data(path, dataset):
     y_arr = matching_ages[['age', 'site', 'sex']].values
 
     if dataset == "train":
-        # y_arr = y_arr[:1]
-        y_arr = y_arr[:300]
+        y_arr = y_arr[:1]
+        # y_arr = y_arr[:300]
     if dataset == "val":
-        # y_arr = y_arr[:1]
-        y_arr = y_arr[300:500]
+        y_arr = y_arr[:1]
+        # y_arr = y_arr[300:500]
     
 
     print("- y size [original]:", y_arr.shape)
@@ -98,7 +98,6 @@ class OpenBHB(torch.utils.data.Dataset):
         age, site, sex = y[0], y[1], y[2]
  
         return x, age, (sex, site)
-    
 
 
 

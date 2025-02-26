@@ -165,8 +165,8 @@ def load_data(opts):
 
     if which_data_type == 'OpenBHB':
         print('getting transforms')
-        T_train, T_test = get_transforms_OpenBHB(opts)
-        # T_train, T_test = get_transforms(opts)
+        # T_train, T_test = get_transforms_OpenBHB(opts)
+        T_train, T_test = get_transforms(opts)
         T_train = NViewTransform(T_train, opts.n_views)
 
         print('transformed data')
@@ -1071,7 +1071,7 @@ def training():
     start_time = time.time()
     best_acc = 0.
 
-    visualise_umap(test_loader, model, opts)
+    # visualise_umap(test_loader, model, opts)
 
 
     # # Initialize the site classifier
