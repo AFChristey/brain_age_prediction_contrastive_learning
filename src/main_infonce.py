@@ -175,7 +175,7 @@ def load_data(opts):
 
 
         train_dataset = OpenBHB(train=True, transform=T_train, path=opts.path)
-        # train_dataset.norm()
+        train_dataset.norm()
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opts.batch_size, shuffle=True)
         train_time = time.time() - start_time
         print(f"Time to load training dataset: {train_time:.2f} seconds")
@@ -183,7 +183,7 @@ def load_data(opts):
         start_time = time.time()
 
         train_dataset_score = OpenBHB(train=True, transform=T_train, path=opts.path)
-        # train_dataset_score.norm()
+        train_dataset_score.norm()
         train_loader_score = torch.utils.data.DataLoader(train_dataset_score, batch_size=opts.batch_size, shuffle=False)
 
         train_score_time = time.time() - start_time
@@ -192,7 +192,7 @@ def load_data(opts):
         start_time = time.time()
 
         test_dataset = OpenBHB(train=False, transform=T_test, path=opts.path)
-        # test_dataset.norm()
+        test_dataset.norm()
         test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=opts.batch_size, shuffle=False)
 
         test_time = time.time() - start_time
@@ -334,9 +334,9 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
     for idx, (images, labels, metadata) in enumerate(train_loader):
 
-        print('THIS IS SHAPE OF IMAGES')
-        print(images[0].shape)
-        print(metadata)
+        # print('THIS IS SHAPE OF IMAGES')
+        # print(images[0].shape)
+        # print(metadata)
         # [1,91,109,91]
         # print('hi')
         data_time.update(time.time() - t1)
@@ -386,8 +386,8 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         # if which_data_type == 'MREData':
         # images = images.unsqueeze(1)  # Add channel dimension at index 1
 
-        print('THIS IS SHAPE OF IMAGES AFTER SQUEEZING')
-        print(images[0].shape)
+        # print('THIS IS SHAPE OF IMAGES AFTER SQUEEZING')
+        # print(images[0].shape)
 
         warmup_learning_rate(opts, epoch, idx, len(train_loader), optimizer)
 
@@ -456,20 +456,20 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             # print("This is class loss:", class_loss)
 
-            # Total loss = Contrastive Loss - Classification Loss
-            total_loss = running_loss + opts.lambda_adv * class_loss
-            # total_loss =  class_loss
+            # # Total loss = Contrastive Loss - Classification Loss
+            # total_loss = running_loss + opts.lambda_adv * class_loss
+            # # total_loss =  class_loss
 
         # Do I backpropagate total, or just separately?
 
         optimizer.zero_grad()
         if scaler is None:
-            total_loss.backward()
+            running_loss.backward()
             if opts.clip_grad:
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
             optimizer.step()
         else:
-            scaler.scale(total_loss).backward()
+            scaler.scale(running_loss).backward()
             if opts.clip_grad:
                 scaler.unscale_(optimizer)
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
@@ -480,7 +480,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         #     if "classifier" in name:
         #         print(f"{name} gradient norm: {param.grad.norm().item()}")
                 
-        loss.update(total_loss.item(), bsz)
+        loss.update(running_loss.item(), bsz)
         batch_time.update(time.time() - t1)
         t1 = time.time()
         eta = batch_time.avg * (len(train_loader) - idx)
@@ -971,6 +971,7 @@ def visualise_umap(test_loader, model, opts, epoch=0):
 
 def training():
 
+    start_time = time.time()  # Start the timer
 
     # FOR SWEEP
     if is_sweeping:
@@ -1188,7 +1189,7 @@ def training():
         # scheduler.step()
             
     
-    visualise_umap(test_loader, model, opts, opts.epochs)
+    # visualise_umap(test_loader, model, opts, opts.epochs)
 
     
     mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
@@ -1210,6 +1211,10 @@ def training():
     # challenge_metric = ba_int**0.3 * mae_ext
     # writer.add_scalar("test/score", challenge_metric, epoch)
     # print("Challenge score", challenge_metric)
+
+    end_time = time.time()  # End the timer
+    elapsed_time = end_time - start_time
+    print('TOTAL TIME TAKEN: ', elapsed_time)
 
     # FOR SWEEP
     if is_sweeping:
