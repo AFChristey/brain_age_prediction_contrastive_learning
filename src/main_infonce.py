@@ -337,6 +337,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         print('THIS IS SHAPE OF IMAGES')
         print(images[0].shape)
         print(metadata)
+        # [1,91,109,91]
         # print('hi')
         data_time.update(time.time() - t1)
         # print(images[0])
@@ -383,7 +384,10 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         images = images.squeeze()
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
         # if which_data_type == 'MREData':
-        images = images.unsqueeze(1)  # Add channel dimension at index 1
+        # images = images.unsqueeze(1)  # Add channel dimension at index 1
+
+        print('THIS IS SHAPE OF IMAGES AFTER SQUEEZING')
+        print(images[0].shape)
 
         warmup_learning_rate(opts, epoch, idx, len(train_loader), optimizer)
 
@@ -444,6 +448,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             # print(site_labels)
             # Compute classification loss
+            # DO I NEEED THIS -=-=-=-=-!!!!!!!!!!!!!!!!
             if which_data_type == "OpenBHB":
                 site_labels = site_labels - 1
 
