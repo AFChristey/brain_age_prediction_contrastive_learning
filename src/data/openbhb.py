@@ -90,7 +90,7 @@ class OpenBHB(torch.utils.data.Dataset):
     def norm(self):
 
         default_value = 0
-        self.x = norm_whole_batch(self.x, 'mean_std', default_value)
+        self.X = norm_whole_batch(self.X, 'mean_std', default_value)
 
     def __getitem__(self, index):
  
