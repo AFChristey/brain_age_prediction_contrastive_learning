@@ -384,7 +384,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         images = images.squeeze()
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
         # if which_data_type == 'MREData':
-        # images = images.unsqueeze(1)  # Add channel dimension at index 1
+        images = images.unsqueeze(1)  # Add channel dimension at index 1
 
         # print('THIS IS SHAPE OF IMAGES AFTER SQUEEZING')
         # print(images[0].shape)
