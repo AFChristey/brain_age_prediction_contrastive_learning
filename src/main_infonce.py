@@ -944,11 +944,11 @@ def visualise_umap(test_loader, model, opts, epoch=0):
     plt.tight_layout()
 
     if opts.path == "local":
-        filename = f'umap_features_seaborn_plot_epoch_{epoch}.png'
+        filename = f'umap_features_seaborn_plot_epoch_{epoch}_{opts.loss_choice}.png'
         plt.savefig(filename, dpi=300, bbox_inches='tight')  # Save with high resolution
         print(f"UMAP plot saved to '{filename}'")
     else:
-        filename = f'/home/afc53/images/umap_features_seaborn_plot_epoch_{epoch}.png'
+        filename = f'/home/afc53/images/umap_features_seaborn_plot_epoch_{epoch}_{opts.loss_choice}.png'
         plt.savefig(filename, dpi=300, bbox_inches='tight')  # Save with high resolution
         print(f"UMAP plot saved to '{filename}'")
 
@@ -959,12 +959,12 @@ def visualise_umap(test_loader, model, opts, epoch=0):
         save_path = "/rds/user/afc53/hpc-work/saved_features/"
 
         # Save the original features, labels, and metadata
-        np.save(os.path.join(save_path, f'features_before_reduction_epoch_{epoch}.npy'), features)
-        np.save(os.path.join(save_path, f'labels_epoch_{epoch}.npy'), labels)
-        np.save(os.path.join(save_path, f'metadata_epoch_{epoch}.npy'), metadata)
+        np.save(os.path.join(save_path, f'features_before_reduction_epoch_{epoch}_{opts.loss_choice}.npy'), features)
+        np.save(os.path.join(save_path, f'labels_epoch_{epoch}_{opts.loss_choice}.npy'), labels)
+        np.save(os.path.join(save_path, f'metadata_epoch_{epoch}_{opts.loss_choice}.npy'), metadata)
 
         # Save UMAP and t-SNE reduced features
-        np.save(os.path.join(save_path, f'features_umap_epoch_{epoch}.npy'), embedding_umap)
+        np.save(os.path.join(save_path, f'features_umap_epoch_{epoch}_{opts.loss_choice}.npy'), embedding_umap)
         # np.save(os.path.join(save_path, f'features_tsne_epoch_{epoch}.npy'), embedding_tsne)
 
 
