@@ -1042,6 +1042,7 @@ def training():
                 f"bsz{opts.batch_size}_views{opts.n_views}_"
                 f"trainall_{opts.train_all}_"
                 f"kernel_{kernel_name}_"
+                f"method{opts.loss_choice}_"
                 # f"f{opts.alpha}_lambd{opts.lambd}_"
                 f"trial{opts.trial}")
     
