@@ -1213,6 +1213,9 @@ def training():
     # writer.add_scalar("test/score", challenge_metric, epoch)
     # print("Challenge score", challenge_metric)
 
+    visualise_umap(test_loader, model, opts)
+
+
     end_time = time.time()  # End the timer
     elapsed_time = end_time - start_time
     print('TOTAL TIME TAKEN: ', elapsed_time)
