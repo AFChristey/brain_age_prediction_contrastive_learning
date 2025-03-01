@@ -1204,6 +1204,10 @@ def training():
     wandb.log({'mae_test': mae_test})
 
     ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
+
+    wandb.log({"train/ba": ba_train, "test/ba": ba_test, "epoch": opts.epochs})
+    wandb.log({'ba_train': ba_train})
+    wandb.log({'ba_test': ba_test})
     # writer.add_scalar("train/site_ba", ba_train, epoch)
     # writer.add_scalar("test/ba_int", ba_int, epoch)
     # writer.add_scalar("test/ba_ext", ba_ext, epoch)
