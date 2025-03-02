@@ -73,10 +73,10 @@ def mmd_rbf(X, Y, gamma=1.0):
 datasets = {
     "Dynamic_BHB": ("/rds/user/afc53/hpc-work/saved_features/Dynamic_BHB/features_before_reduction_epoch_0_dynamic.npy",
                    "/rds/user/afc53/hpc-work/saved_features/Dynamic_BHB/metadata_epoch_0_dynamic.npy"),
-    "Exponential_BHB": ("/rds/user/afc53/hpc-work/saved_features/Exponential_BHB/features_before_reduction_epoch_0.npy",
-                   "/rds/user/afc53/hpc-work/saved_features/Exponential_BHB/metadata_epoch_0.npy"),
-    "RankN_BHB": ("/rds/user/afc53/hpc-work/saved_features/RankN_BHB/features_before_reduction_epoch_0_supcon.npy",
-                   "/rds/user/afc53/hpc-work/saved_features/RankN_BHB/metadata_epoch_0_supcon.npy")
+    "Exponential_BHB": ("/rds/user/afc53/hpc-work/saved_features/Exponential_BHB/features_before_reduction_epoch_0_supcon.npy",
+                   "/rds/user/afc53/hpc-work/saved_features/Exponential_BHB/metadata_epoch_0_supcon.npy"),
+    "RankN_BHB": ("/rds/user/afc53/hpc-work/saved_features/RankN_BHB/features_before_reduction_epoch_0.npy",
+                   "/rds/user/afc53/hpc-work/saved_features/RankN_BHB/metadata_epoch_0.npy")
 }
 
 
