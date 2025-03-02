@@ -71,11 +71,12 @@ def mmd_rbf(X, Y, gamma=1.0):
 
 # List of datasets
 datasets = {
-    "RankN_Stiffness": ("/rds/user/afc53/hpc-work/saved_features/RankN_Stiffness_CLASSIFICATION/features_before_reduction_epoch_100.npy",
-                   "/rds/user/afc53/hpc-work/saved_features/RankN_Stiffness_CLASSIFICATION/metadata_epoch_100.npy"),
-    "RankN_DR": ("/rds/user/afc53/hpc-work/saved_features/RankN_DR_CLASSIFICATION/features_before_reduction_epoch_100.npy",
-                   "/rds/user/afc53/hpc-work/saved_features/RankN_DR_CLASSIFICATION/metadata_epoch_100.npy")
-                
+    "Dynamic_BHB": ("/rds/user/afc53/hpc-work/saved_features/Dynamic_BHB/features_before_reduction_epoch_0_dynamic.npy",
+                   "/rds/user/afc53/hpc-work/saved_features/Dynamic_BHB/metadata_epoch_0_dynamic.npy"),
+    "Exponential_BHB": ("/rds/user/afc53/hpc-work/saved_features/Exponential_BHB/features_before_reduction_epoch_0.npy",
+                   "/rds/user/afc53/hpc-work/saved_features/Exponential_BHB/metadata_epoch_0.npy"),
+    "RankN_BHB": ("/rds/user/afc53/hpc-work/saved_features/RankN_BHB/features_before_reduction_epoch_0_supcon.npy",
+                   "/rds/user/afc53/hpc-work/saved_features/RankN_BHB/metadata_epoch_0_supcon.npy")
 }
 
 
@@ -87,9 +88,9 @@ for name, (features_path, metadata_path) in datasets.items():
     features = np.load(features_path)
     metadata = np.load(metadata_path)
     
-    # Encode site labels
-    label_encoder = LabelEncoder()
-    site_labels = label_encoder.fit_transform(metadata)
+    # # Encode site labels
+    # label_encoder = LabelEncoder()
+    # site_labels = label_encoder.fit_transform(metadata)
     
     # Silhouette Score
     sil_score = silhouette_score(features, site_labels)
