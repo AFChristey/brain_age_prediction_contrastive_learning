@@ -89,6 +89,7 @@ for name, (features_path, metadata_path) in datasets.items():
     metadata = np.load(metadata_path)
 
     site_labels = metadata
+    site_labels = site_labels - 1
     
     # # Encode site labels
     # label_encoder = LabelEncoder()
