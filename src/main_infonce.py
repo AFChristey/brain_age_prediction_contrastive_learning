@@ -1257,7 +1257,7 @@ if __name__ == '__main__':
     
     # FOR SWEEP
     if is_sweeping:
-        wandb.agent("hl61wi9u", function=training, project="contrastive-brain-age-prediction", count=10)
+        wandb.agent("bebrvjcm", function=training, project="contrastive-brain-age-prediction", count=10)
     else:
         training()
             
