@@ -239,6 +239,12 @@ def get_transforms_OpenBHB(opts):
     elif opts.tf == 'cutout':
         aug = Cutout(patch_size=[1, 32, 32, 32], probability=0.5)
 
+    elif opts.tf == 'noise':
+        aug = transforms.Compose([
+            to_tensor,
+            AddGaussianNoiseTensor(mean=0., std=opts.noise_std),
+        ])
+
     elif opts.tf == 'all':
         aug = transforms.Compose([
             Cutout(patch_size=[1, 32, 32, 32], probability=0.5),

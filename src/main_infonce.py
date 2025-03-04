@@ -46,7 +46,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 which_data_type = 'OpenBHB' 
-is_sweeping = False
+is_sweeping = True
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -85,6 +85,7 @@ def parse_arguments():
     # Data
     parser.add_argument('--train_all', type=arg2bool, help='train on all dataset including validation (int+ext)', default=True)
     parser.add_argument('--tf', type=str, help='data augmentation', choices=['none', 'crop', 'cutout', 'all'], default='none')
+    parser.add_argument('--noise_std', type=float, help='std for noise augmentation', default=0.05)
     parser.add_argument('--path', type=str, help='model ran on cluster or locally', choices=['local', 'cluster'], default='local')
     parser.add_argument('--loss_choice', type=str, help='which loss function is being tested', choices=['supcon', 'dynamic', 'RnC'], default='supcon')
     
@@ -95,6 +96,8 @@ def parse_arguments():
     parser.add_argument('--temp', type=float, help='loss temperature', default=0.1)
     parser.add_argument('--alpha', type=float, help='infonce weight', default=1.)
     parser.add_argument('--sigma', type=float, help='gaussian-rbf kernel sigma / cauchy gamma', default=1)
+    parser.add_argument('--beta1', type=float, default=0.9, help='Adam beta1')
+    parser.add_argument('--beta2', type=float, default=0.999, help='Adam beta2')
     parser.add_argument('--n_views', type=int, help='num. of multiviews', default=2)
     parser.add_argument('--lambda_adv', type=float, help='Weight for adversarial loss', default=0)
 
@@ -308,7 +311,8 @@ def load_optimizer(model, opts):
                                     momentum=opts.momentum,
                                     weight_decay=opts.weight_decay)
     else:
-        optimizer = torch.optim.Adam(model.parameters(), lr=opts.lr, weight_decay=opts.weight_decay)
+        # optimizer = torch.optim.Adam(model.parameters(), lr=opts.lr, weight_decay=opts.weight_decay)
+        optimizer = torch.optim.Adam(model.parameters(), lr=opts.lr, weight_decay=opts.weight_decay, betas=(opts.beta1, opts.beta2))
 
     return optimizer
 
@@ -457,19 +461,19 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             # print("This is class loss:", class_loss)
 
             # # Total loss = Contrastive Loss - Classification Loss
-            # total_loss = running_loss + opts.lambda_adv * class_loss
+            total_loss = running_loss + opts.lambda_adv * class_loss
             # # total_loss =  class_loss
 
         # Do I backpropagate total, or just separately?
 
         optimizer.zero_grad()
         if scaler is None:
-            running_loss.backward()
+            total_loss.backward()
             if opts.clip_grad:
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
             optimizer.step()
         else:
-            scaler.scale(running_loss).backward()
+            scaler.scale(total_loss).backward()
             if opts.clip_grad:
                 scaler.unscale_(optimizer)
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
@@ -480,7 +484,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         #     if "classifier" in name:
         #         print(f"{name} gradient norm: {param.grad.norm().item()}")
                 
-        loss.update(running_loss.item(), bsz)
+        loss.update(total_loss.item(), bsz)
         batch_time.update(time.time() - t1)
         t1 = time.time()
         eta = batch_time.avg * (len(train_loader) - idx)
@@ -984,20 +988,37 @@ def training():
 
     # FOR SWEEP
     if is_sweeping:
-        config = wandb.config  # WandB will automatically inject hyperparameters
-        opts.lr = config.lr  # Override argparse values with wandb sweep settings
-        opts.batch_size = config.batch_size
-        opts.temp = config.temp
-        opts.weight_decay = config.weight_decay
+        config = wandb.config 
+        # opts.lr = config.lr
+        # opts.batch_size = config.batch_size
+        # opts.temp = config.temp
+        # opts.weight_decay = config.weight_decay
         # opts.method = config.method
         # opts.optimizer = config.optimizer
-        opts.sigma = config.sigma
+        # opts.sigma = config.sigma
         # opts.momentum = config.momentum
-        # opts.lambda_adv = config.lambda_adv  # ✅ Add this line to override lambda_adv
-        opts.lr_decay_step = config.lr_decay_step
-        opts.lr_decay_rate = config.lr_decay_rate
+        # opts.lambda_adv = config.lambda_adv
+        # opts.lr_decay_step = config.lr_decay_step
+        # opts.lr_decay_rate = config.lr_decay_rate
+        # opts.loss_choice = config.loss_choice
+        opts.beta1 = config.beta1
+        opts.beta2 = config.beta2
+        # opts.noise_std = config.noise_std
 
-
+    # THIS IS WITH SUPCON/DYNAMIC AS YAML INITIAL
+    if opts.loss_choice == "supcon":
+        opts.method = "yaware"
+        opts.kernel = "gaussian"
+        opts.sigma = 1
+    elif opts.loss_choice == "dynamic":
+        opts.method = "expw"
+        opts.kernel = "rbf"
+        opts.sigma = 2
+    elif opts.loss_choice == "RnC":
+        opts.lr_decay_rate = 0.1
+        opts.method = "expw"
+        opts.kernel = "gaussian"
+        opts.sigma = 1
     
     set_seed(opts.trial)
     print('loading data')
@@ -1162,32 +1183,32 @@ def training():
         #     ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
         #     print("Site BA:", ba_train, ba_test)
 
-        if epoch % opts.save_freq == 0:
-            # WAS ALREADY COMMENTED OUT 
-            # save_file = os.path.join(save_dir, f"ckpt_epoch_{epoch}.pth")
-            # save_model(model, optimizer, opts, epoch, save_file)
+        # if epoch % opts.save_freq == 0:
+        #     # WAS ALREADY COMMENTED OUT 
+        #     # save_file = os.path.join(save_dir, f"ckpt_epoch_{epoch}.pth")
+        #     # save_model(model, optimizer, opts, epoch, save_file)
 
-            mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
-            # writer.add_scalar("train/mae", mae_train, epoch)
-            # writer.add_scalar("test/mae_int", mae_int, epoch)
-            # writer.add_scalar("test/mae_ext", mae_ext, epoch)
-            print("Age MAE:", mae_train, mae_test)
+        #     mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
+        #     # writer.add_scalar("train/mae", mae_train, epoch)
+        #     # writer.add_scalar("test/mae_int", mae_int, epoch)
+        #     # writer.add_scalar("test/mae_ext", mae_ext, epoch)
+        #     print("Age MAE:", mae_train, mae_test)
 
-            # ba_train, ba_int, ba_ext = compute_site_ba(model, train_loader_score, test_loader_int, test_loader_ext, opts)
-            # # writer.add_scalar("train/site_ba", ba_train, epoch)
-            # # writer.add_scalar("test/ba_int", ba_int, epoch)
-            # # writer.add_scalar("test/ba_ext", ba_ext, epoch)
-            # print("Site BA:", ba_train, ba_int, ba_ext)
+        #     # ba_train, ba_int, ba_ext = compute_site_ba(model, train_loader_score, test_loader_int, test_loader_ext, opts)
+        #     # # writer.add_scalar("train/site_ba", ba_train, epoch)
+        #     # # writer.add_scalar("test/ba_int", ba_int, epoch)
+        #     # # writer.add_scalar("test/ba_ext", ba_ext, epoch)
+        #     # print("Site BA:", ba_train, ba_int, ba_ext)
 
-            # challenge_metric = ba_int**0.3 * mae_ext
-            # writer.add_scalar("test/score", challenge_metric, epoch)
-            # print("Challenge score", challenge_metric)
+        #     # challenge_metric = ba_int**0.3 * mae_ext
+        #     # writer.add_scalar("test/score", challenge_metric, epoch)
+        #     # print("Challenge score", challenge_metric)
     
-        # save_file = os.path.join(save_dir, f"weights.pth")
-        # save_model(model, optimizer, opts, epoch, save_file)
+        # # save_file = os.path.join(save_dir, f"weights.pth")
+        # # save_model(model, optimizer, opts, epoch, save_file)
             
-        # Added
-        # scheduler.step()
+        # # Added
+        # # scheduler.step()
             
     
     # visualise_umap(test_loader, model, opts, opts.epochs)
@@ -1236,7 +1257,7 @@ if __name__ == '__main__':
     
     # FOR SWEEP
     if is_sweeping:
-        wandb.agent("slckmttc", function=training, project="contrastive-brain-age-prediction", count=15)
+        wandb.agent("hl61wi9u", function=training, project="contrastive-brain-age-prediction", count=10)
     else:
         training()
             
