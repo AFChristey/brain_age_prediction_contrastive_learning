@@ -67,32 +67,32 @@ def read_data(path, dataset):
     print("- x size [original]:", x_arr.shape)
     assert y_arr.shape[0] == x_arr.shape[0]
 
-    if dataset == "train":
-        # Convert y_arr to a DataFrame for easier manipulation
-        df_plot = pd.DataFrame(y_arr, columns=['age', 'site', 'sex', 'study'])
+    # if dataset == "train":
+    #     # Convert y_arr to a DataFrame for easier manipulation
+    #     df_plot = pd.DataFrame(y_arr, columns=['age', 'site', 'sex', 'study'])
 
-        # Ensure 'age' is integer for proper binning
-        df_plot['age'] = df_plot['age'].astype(int)
+    #     # Ensure 'age' is integer for proper binning
+    #     df_plot['age'] = df_plot['age'].astype(int)
 
-        # Count number of subjects per age per site
-        age_site_counts = df_plot.groupby(['age', 'study']).size().unstack(fill_value=0)
+    #     # Count number of subjects per age per site
+    #     age_site_counts = df_plot.groupby(['age', 'study']).size().unstack(fill_value=0)
 
-        # Plot settings
-        plt.figure(figsize=(24, 15))
-        age_site_counts.plot(kind='bar', stacked=True, colormap='tab10', width=1.2)
+    #     # Plot settings
+    #     plt.figure(figsize=(24, 15))
+    #     age_site_counts.plot(kind='bar', stacked=True, colormap='tab10', width=1.2)
 
-        # Labels and title
-        plt.xlabel("Age", fontsize=14)
-        plt.ylabel("Number of Subjects", fontsize=14)
-        plt.title("Number of Subjects vs. Age (Grouped by Study)", fontsize=16)
-        plt.legend(title="Study", bbox_to_anchor=(1.05, 1), loc='upper left')
+    #     # Labels and title
+    #     plt.xlabel("Age", fontsize=14)
+    #     plt.ylabel("Number of Subjects", fontsize=14)
+    #     plt.title("Number of Subjects vs. Age (Grouped by Study)", fontsize=16)
+    #     plt.legend(title="Study", bbox_to_anchor=(1.05, 1), loc='upper left')
 
-        # Save the plot
-        plt.tight_layout()
-        plt.savefig("/home/afc53/images/age_distribution_by_study.png", dpi=300)
+    #     # Save the plot
+    #     plt.tight_layout()
+    #     plt.savefig("/home/afc53/images/age_distribution_by_study.png", dpi=300)
 
 
-    sys.exit()
+    # sys.exit()
 
         
     return x_arr, y_arr

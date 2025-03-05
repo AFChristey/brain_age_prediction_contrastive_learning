@@ -46,7 +46,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 which_data_type = 'OpenBHB' 
-is_sweeping = False
+is_sweeping = True
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -989,10 +989,10 @@ def training():
     # FOR SWEEP
     if is_sweeping:
         config = wandb.config 
-        # opts.lr = config.lr
+        opts.lr = config.lr
         # opts.batch_size = config.batch_size
         # opts.temp = config.temp
-        # opts.weight_decay = config.weight_decay
+        opts.weight_decay = config.weight_decay
         # opts.method = config.method
         # opts.optimizer = config.optimizer
         # opts.sigma = config.sigma
@@ -1001,9 +1001,9 @@ def training():
         # opts.lr_decay_step = config.lr_decay_step
         # opts.lr_decay_rate = config.lr_decay_rate
         # opts.loss_choice = config.loss_choice
-        opts.beta1 = config.beta1
-        opts.beta2 = config.beta2
-        # opts.noise_std = config.noise_std
+        # opts.beta1 = config.beta1
+        # opts.beta2 = config.beta2
+        opts.noise_std = config.noise_std
 
     # THIS IS WITH SUPCON/DYNAMIC AS YAML INITIAL
     if opts.loss_choice == "supcon":
@@ -1257,7 +1257,7 @@ if __name__ == '__main__':
     
     # FOR SWEEP
     if is_sweeping:
-        wandb.agent("bebrvjcm", function=training, project="contrastive-brain-age-prediction", count=10)
+        wandb.agent("dpp926gj", function=training, project="contrastive-brain-age-prediction", count=12)
     else:
         training()
             

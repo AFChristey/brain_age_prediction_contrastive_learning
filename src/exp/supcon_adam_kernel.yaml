@@ -17,7 +17,6 @@ method: expw
 kernel: rbf
 sigma: 2
 trial: 0
-# CHANGE TO noise
 tf: noise
 noise_std: 0.0
 path: local
