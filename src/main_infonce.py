@@ -84,7 +84,7 @@ def parse_arguments():
 
     # Data
     parser.add_argument('--train_all', type=arg2bool, help='train on all dataset including validation (int+ext)', default=True)
-    parser.add_argument('--tf', type=str, help='data augmentation', choices=['none', 'crop', 'cutout', 'all'], default='none')
+    parser.add_argument('--tf', type=str, help='data augmentation', choices=['none', 'crop', 'cutout', 'noise', 'all'], default='none')
     parser.add_argument('--noise_std', type=float, help='std for noise augmentation', default=0.05)
     parser.add_argument('--path', type=str, help='model ran on cluster or locally', choices=['local', 'cluster'], default='local')
     parser.add_argument('--loss_choice', type=str, help='which loss function is being tested', choices=['supcon', 'dynamic', 'RnC'], default='supcon')
