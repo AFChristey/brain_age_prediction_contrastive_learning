@@ -78,7 +78,7 @@ def read_data(path, dataset):
         age_site_counts = df_plot.groupby(['age', 'study']).size().unstack(fill_value=0)
 
         # Plot settings
-        plt.figure(figsize=(18, 6))
+        plt.figure(figsize=(24, 15))
         age_site_counts.plot(kind='bar', stacked=True, colormap='tab10', width=1.2)
 
         # Labels and title
