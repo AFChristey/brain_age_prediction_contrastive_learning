@@ -999,12 +999,12 @@ def training():
         # opts.momentum = config.momentum
         # opts.lambda_adv = config.lambda_adv
         # opts.lr_decay_step = config.lr_decay_step
-        # opts.lr_decay_rate = config.lr_decay_rate
+        opts.lr_decay_rate = config.lr_decay_rate
         # opts.loss_choice = config.loss_choice
         # opts.beta1 = config.beta1
         # opts.beta2 = config.beta2
         opts.noise_std = config.noise_std
-        opts.kernel = config.kernel
+        # opts.kernel = config.kernel
 
     # THIS IS WITH SUPCON/DYNAMIC AS YAML INITIAL
     if opts.loss_choice == "supcon":
@@ -1014,7 +1014,7 @@ def training():
         # opts.kernel = "rbf"
         opts.sigma = 2
     elif opts.loss_choice == "RnC":
-        opts.lr_decay_rate = 0.1
+        # opts.lr_decay_rate = 0.1
         # opts.kernel = "gaussian"
         opts.sigma = 1
     
@@ -1255,7 +1255,7 @@ if __name__ == '__main__':
     
     # FOR SWEEP
     if is_sweeping:
-        wandb.agent("d1o9uwiq", function=training, project="contrastive-brain-age-prediction", count=12)
+        wandb.agent("uzf7f0ds", function=training, project="contrastive-brain-age-prediction", count=12)
     else:
         training()
             
