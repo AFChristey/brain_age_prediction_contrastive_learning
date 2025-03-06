@@ -1004,20 +1004,18 @@ def training():
         # opts.beta1 = config.beta1
         # opts.beta2 = config.beta2
         opts.noise_std = config.noise_std
+        opts.kernel = config.kernel
 
     # THIS IS WITH SUPCON/DYNAMIC AS YAML INITIAL
     if opts.loss_choice == "supcon":
-        opts.method = "yaware"
-        opts.kernel = "gaussian"
+        # opts.kernel = "gaussian"
         opts.sigma = 1
     elif opts.loss_choice == "dynamic":
-        opts.method = "expw"
-        opts.kernel = "rbf"
+        # opts.kernel = "rbf"
         opts.sigma = 2
     elif opts.loss_choice == "RnC":
         opts.lr_decay_rate = 0.1
-        opts.method = "expw"
-        opts.kernel = "gaussian"
+        # opts.kernel = "gaussian"
         opts.sigma = 1
     
     set_seed(opts.trial)
@@ -1238,7 +1236,7 @@ def training():
     # writer.add_scalar("test/score", challenge_metric, epoch)
     # print("Challenge score", challenge_metric)
 
-    visualise_umap(test_loader, model, opts)
+    # visualise_umap(test_loader, model, opts)
 
 
     end_time = time.time()  # End the timer
@@ -1257,7 +1255,7 @@ if __name__ == '__main__':
     
     # FOR SWEEP
     if is_sweeping:
-        wandb.agent("dpp926gj", function=training, project="contrastive-brain-age-prediction", count=12)
+        wandb.agent("d1o9uwiq", function=training, project="contrastive-brain-age-prediction", count=12)
     else:
         training()
             
