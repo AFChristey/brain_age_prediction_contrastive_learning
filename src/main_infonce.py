@@ -46,7 +46,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 which_data_type = 'OpenBHB' 
-is_sweeping = True
+is_sweeping = False
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -1236,7 +1236,7 @@ def training():
     # writer.add_scalar("test/score", challenge_metric, epoch)
     # print("Challenge score", challenge_metric)
 
-    # visualise_umap(test_loader, model, opts)
+    visualise_umap(test_loader, model, opts)
 
 
     end_time = time.time()  # End the timer

@@ -78,14 +78,21 @@ def read_data(path, dataset):
     #     age_site_counts = df_plot.groupby(['age', 'study']).size().unstack(fill_value=0)
 
     #     # Plot settings
-    #     plt.figure(figsize=(24, 15))
-    #     age_site_counts.plot(kind='bar', stacked=True, colormap='tab10', width=1.2)
+    #     # plt.figure(figsize=(24, 15))
+    #     fig, ax = plt.subplots(figsize=(12, 5))  # Increase width
+
+    #     bars = age_site_counts.plot(kind='bar', stacked=True, colormap='tab10', width=1.0, ax=ax, edgecolor="black", linewidth=1.2)
+
+
+    #     # age_site_counts.plot(kind='bar', stacked=True, colormap='tab10', width=1.2)
 
     #     # Labels and title
-    #     plt.xlabel("Age", fontsize=14)
+    #     plt.xlabel("Age (Years)", fontsize=14)
     #     plt.ylabel("Number of Subjects", fontsize=14)
     #     plt.title("Number of Subjects vs. Age (Grouped by Study)", fontsize=16)
     #     plt.legend(title="Study", bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    #     plt.xticks(np.arange(0, 61, 10), fontsize=12)
 
     #     # Save the plot
     #     plt.tight_layout()
