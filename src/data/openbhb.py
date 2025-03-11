@@ -92,11 +92,23 @@ def read_data(path, dataset):
         plt.title("Number of Subjects vs. Age (Grouped by Study)", fontsize=16)
         plt.legend(title="Study", bbox_to_anchor=(1.05, 1), loc='upper left')
 
-        # Set x-axis ticks to display only every 10 years at the end of the bars
-        tick_positions = np.arange(0, len(age_site_counts), 10) + 0.5  # Shift by 0.5 to move to the right
-        tick_labels = age_site_counts.index[np.arange(0, len(age_site_counts), 10)]  # Corresponding age values
+        # # Set x-axis ticks to display only every 10 years at the end of the bars
+        # tick_positions = np.arange(0, len(age_site_counts), 10) + 0.5  # Shift by 0.5 to move to the right
+        # tick_labels = age_site_counts.index[np.arange(0, len(age_site_counts), 10)]  # Corresponding age values
+        # ax.set_xticks(tick_positions)
+        # ax.set_xticklabels(tick_labels, rotation=0)  # Upright labels
+
+
+
+        # Ensure x-axis ticks are at fixed intervals (0, 10, 20, ..., 90)
+        min_age = 0  # Start at 0 (or you can use df_plot['age'].min())
+        max_age = 90  # End at 90 (or you can use df_plot['age'].max())
+        tick_positions = np.arange(min_age, max_age + 1, 10) + 0.5  # Shift by 0.5 to align with the right edge
+        tick_positions = tick_positions[tick_positions <= age_site_counts.shape[0]]  # Ensure valid index range
+
         ax.set_xticks(tick_positions)
-        ax.set_xticklabels(tick_labels, rotation=0)  # Upright labels
+        ax.set_xticklabels([str(int(tick - 0.5)) for tick in tick_positions], rotation=0)  # Convert to integers
+
 
 
         # Save the plot
