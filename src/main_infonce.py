@@ -464,6 +464,11 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             class_loss = criterion_cls(site_pred, site_labels)
 
+            predicted_sites = site_pred.argmax(dim=1)  # Get predicted class indices
+            site_accuracy = (predicted_sites == site_labels).float().mean().item()  # Compute accuracy
+            print(f"Batch {idx}: Site Classifier Accuracy = {site_accuracy:.4f}")
+
+
             print("This is class loss:", class_loss)
 
             # # Total loss = Contrastive Loss - Classification Loss
