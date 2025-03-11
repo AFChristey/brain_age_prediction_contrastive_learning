@@ -998,7 +998,7 @@ def training():
         # opts.optimizer = config.optimizer
         # opts.sigma = config.sigma
         # opts.momentum = config.momentum
-        # opts.lambda_adv = config.lambda_adv
+        opts.lambda_adv = config.lambda_adv
         # opts.lr_decay_step = config.lr_decay_step
         opts.lr_decay_rate = config.lr_decay_rate
         # opts.loss_choice = config.loss_choice

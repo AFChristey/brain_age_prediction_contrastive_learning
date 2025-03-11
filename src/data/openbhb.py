@@ -67,61 +67,62 @@ def read_data(path, dataset):
     print("- x size [original]:", x_arr.shape)
     assert y_arr.shape[0] == x_arr.shape[0]
 
-    if dataset == "train":
-        # Convert y_arr to a DataFrame for easier manipulation
-        df_plot = pd.DataFrame(y_arr, columns=['age', 'site', 'sex', 'study'])
+    # PLOTTING AGE DISTRIBUTION!!
+    # if dataset == "train":
+    #     # Convert y_arr to a DataFrame for easier manipulation
+    #     df_plot = pd.DataFrame(y_arr, columns=['age', 'site', 'sex', 'study'])
 
-        # Ensure 'age' is integer for proper binning
-        df_plot['age'] = df_plot['age'].astype(int)
+    #     # Ensure 'age' is integer for proper binning
+    #     df_plot['age'] = df_plot['age'].astype(int)
 
-        # Count number of subjects per age per site
-        age_site_counts = df_plot.groupby(['age', 'study']).size().unstack(fill_value=0)
+    #     # Count number of subjects per age per site
+    #     age_site_counts = df_plot.groupby(['age', 'study']).size().unstack(fill_value=0)
 
-        # Plot settings
-        # plt.figure(figsize=(24, 15))
-        fig, ax = plt.subplots(figsize=(12, 5))  # Increase width
+    #     # Plot settings
+    #     # plt.figure(figsize=(24, 15))
+    #     fig, ax = plt.subplots(figsize=(12, 5))  # Increase width
 
-        age_site_counts.plot(kind='bar', stacked=True, colormap='tab10', width=1.0, ax=ax, edgecolor="black", linewidth=1.2)
-
-
-        # age_site_counts.plot(kind='bar', stacked=True, colormap='tab10', width=1.2)
-
-        # Labels and title
-        plt.xlabel("Age (Years)", fontsize=14)
-        plt.ylabel("Number of Subjects", fontsize=14)
-        plt.title("Number of Subjects vs. Age (Grouped by Study)", fontsize=16)
-        plt.legend(title="Study", bbox_to_anchor=(1.05, 1), loc='upper left')
-
-        # # Set x-axis ticks to display only every 10 years at the end of the bars
-        # tick_positions = np.arange(0, len(age_site_counts), 10) + 0.5  # Shift by 0.5 to move to the right
-        # tick_labels = age_site_counts.index[np.arange(0, len(age_site_counts), 10)]  # Corresponding age values
-        # ax.set_xticks(tick_positions)
-        # ax.set_xticklabels(tick_labels, rotation=0)  # Upright labels
+    #     age_site_counts.plot(kind='bar', stacked=True, colormap='tab10', width=1.0, ax=ax, edgecolor="black", linewidth=1.2)
 
 
+    #     # age_site_counts.plot(kind='bar', stacked=True, colormap='tab10', width=1.2)
 
-        # Define the fixed age range for ticks (ensures 0, 10, 20, ..., 90)
-        min_age = 10  # Start at 10
-        max_age = 90  # End at 90
+    #     # Labels and title
+    #     plt.xlabel("Age (Years)", fontsize=14)
+    #     plt.ylabel("Number of Subjects", fontsize=14)
+    #     plt.title("Number of Subjects vs. Age (Grouped by Study)", fontsize=16)
+    #     plt.legend(title="Study", bbox_to_anchor=(1.05, 1), loc='upper left')
 
-        # Ensure the tick labels match exact ages present in the dataset
-        valid_ages = age_site_counts.index  # Get all unique ages in dataset
-        tick_labels = [age for age in range(min_age, max_age + 1, 10) if age in valid_ages]  # Only include valid ages
-
-        # Find tick positions corresponding to these labels
-        tick_positions = [valid_ages.get_loc(age) + 0.5 for age in tick_labels]  # Align to right edge of bar
-
-        # Set the ticks and labels
-        ax.set_xticks(tick_positions)
-        ax.set_xticklabels(tick_labels, rotation=0)  # Ensure upright labels
+    #     # # Set x-axis ticks to display only every 10 years at the end of the bars
+    #     # tick_positions = np.arange(0, len(age_site_counts), 10) + 0.5  # Shift by 0.5 to move to the right
+    #     # tick_labels = age_site_counts.index[np.arange(0, len(age_site_counts), 10)]  # Corresponding age values
+    #     # ax.set_xticks(tick_positions)
+    #     # ax.set_xticklabels(tick_labels, rotation=0)  # Upright labels
 
 
-        # Save the plot
-        plt.tight_layout()
-        plt.savefig("/home/afc53/images/age_distribution_by_study.png", dpi=300)
+
+    #     # Define the fixed age range for ticks (ensures 0, 10, 20, ..., 90)
+    #     min_age = 10  # Start at 10
+    #     max_age = 90  # End at 90
+
+    #     # Ensure the tick labels match exact ages present in the dataset
+    #     valid_ages = age_site_counts.index  # Get all unique ages in dataset
+    #     tick_labels = [age for age in range(min_age, max_age + 1, 10) if age in valid_ages]  # Only include valid ages
+
+    #     # Find tick positions corresponding to these labels
+    #     tick_positions = [valid_ages.get_loc(age) + 0.5 for age in tick_labels]  # Align to right edge of bar
+
+    #     # Set the ticks and labels
+    #     ax.set_xticks(tick_positions)
+    #     ax.set_xticklabels(tick_labels, rotation=0)  # Ensure upright labels
 
 
-    sys.exit()
+    #     # Save the plot
+    #     plt.tight_layout()
+    #     plt.savefig("/home/afc53/images/age_distribution_by_study.png", dpi=300)
+
+
+    # sys.exit()
 
         
     return x_arr, y_arr
