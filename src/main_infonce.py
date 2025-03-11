@@ -459,7 +459,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             class_loss = criterion_cls(site_pred, site_labels)
 
-            # print("This is class loss:", class_loss)
+            print("This is class loss:", class_loss)
 
             # # Total loss = Contrastive Loss - Classification Loss
             total_loss = running_loss + opts.lambda_adv * class_loss
