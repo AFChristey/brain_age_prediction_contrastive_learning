@@ -30,8 +30,6 @@ feature_sim: l2
 
 
 
-# LAST IS EXPO
-
 # Add noise to data - noise regularisation
 # noise_std
 # 0, 0.01, 0.05, 0.1, 0.5

@@ -99,7 +99,7 @@ def parse_arguments():
     parser.add_argument('--beta1', type=float, default=0.9, help='Adam beta1')
     parser.add_argument('--beta2', type=float, default=0.999, help='Adam beta2')
     parser.add_argument('--n_views', type=int, help='num. of multiviews', default=2)
-    parser.add_argument('--lambda_adv', type=float, help='Weight for adversarial loss', default=0)
+    parser.add_argument('--lambda_adv', type=float, help='Weight for adversarial loss', default=1.0)
     parser.add_argument('--grl_layer', type=float, help='turn on or off grl layer', default=True)
 
 
