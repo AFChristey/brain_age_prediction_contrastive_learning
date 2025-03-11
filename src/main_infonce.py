@@ -406,7 +406,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             # CHANGE BACK TO UNCOMMENTED
 
-            # images = images.contiguous()
+            images = images.contiguous()
 
 
             projected, site_pred = model(images, classify=True)
@@ -1181,9 +1181,8 @@ def training():
         wandb.log({"train/mae": mae_train, "test/mae": mae_test, "epoch": epoch})
 
 
-        # PUT BACK
-        # ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
-        # wandb.log({"train/ba": ba_train, "test/ba": ba_test, "epoch": epoch})
+        ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
+        wandb.log({"train/ba": ba_train, "test/ba": ba_test, "epoch": epoch})
 
         # if epoch % 5 == 0:
         #     ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
