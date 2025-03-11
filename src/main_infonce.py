@@ -100,6 +100,7 @@ def parse_arguments():
     parser.add_argument('--beta2', type=float, default=0.999, help='Adam beta2')
     parser.add_argument('--n_views', type=int, help='num. of multiviews', default=2)
     parser.add_argument('--lambda_adv', type=float, help='Weight for adversarial loss', default=0)
+    parser.add_argument('--grl_layer', type=float, help='turn on or off grl layer', default=True)
 
 
 
@@ -242,9 +243,9 @@ def load_data(opts):
 def load_model(opts):
     if 'resnet' in opts.model:
         if which_data_type == "OpenBHB":
-            model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70)
+            model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer)
         else:
-            model = models.SupConResNet(opts.model, feat_dim=128)
+            model = models.SupConResNet(opts.model, feat_dim=128, grl_layer=opts.grl_layer)
     elif 'alexnet' in opts.model:
         model = models.SupConAlexNet(feat_dim=128)
     elif 'densenet121' in opts.model:
@@ -1005,18 +1006,20 @@ def training():
         # opts.beta2 = config.beta2
         opts.noise_std = config.noise_std
         # opts.kernel = config.kernel
+        opts.grl_layer = config.grl_layer
 
-    # THIS IS WITH SUPCON/DYNAMIC AS YAML INITIAL
-    if opts.loss_choice == "supcon":
-        # opts.kernel = "gaussian"
-        opts.sigma = 1
-    elif opts.loss_choice == "dynamic":
-        # opts.kernel = "rbf"
-        opts.sigma = 2
-    elif opts.loss_choice == "RnC":
-        # opts.lr_decay_rate = 0.1
-        # opts.kernel = "gaussian"
-        opts.sigma = 1
+
+    # # THIS IS WITH SUPCON/DYNAMIC AS YAML INITIAL
+    # if opts.loss_choice == "supcon":
+    #     # opts.kernel = "gaussian"
+    #     opts.sigma = 1
+    # elif opts.loss_choice == "dynamic":
+    #     # opts.kernel = "rbf"
+    #     opts.sigma = 2
+    # elif opts.loss_choice == "RnC":
+    #     # opts.lr_decay_rate = 0.1
+    #     # opts.kernel = "gaussian"
+    #     opts.sigma = 1
     
     set_seed(opts.trial)
     print('loading data')

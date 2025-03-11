@@ -100,15 +100,20 @@ def read_data(path, dataset):
 
 
 
-        # Ensure x-axis ticks are at fixed intervals (0, 10, 20, ..., 90)
-        min_age = 0  # Start at 0 (or you can use df_plot['age'].min())
-        max_age = 90  # End at 90 (or you can use df_plot['age'].max())
-        tick_positions = np.arange(min_age, max_age + 1, 10) + 0.5  # Shift by 0.5 to align with the right edge
-        tick_positions = tick_positions[tick_positions <= age_site_counts.shape[0]]  # Ensure valid index range
+        # Define the fixed age range for ticks (ensures 0, 10, 20, ..., 90)
+        min_age = 10  # Start at 10
+        max_age = 90  # End at 90
 
+        # Ensure the tick labels match exact ages present in the dataset
+        valid_ages = age_site_counts.index  # Get all unique ages in dataset
+        tick_labels = [age for age in range(min_age, max_age + 1, 10) if age in valid_ages]  # Only include valid ages
+
+        # Find tick positions corresponding to these labels
+        tick_positions = [valid_ages.get_loc(age) + 0.5 for age in tick_labels]  # Align to right edge of bar
+
+        # Set the ticks and labels
         ax.set_xticks(tick_positions)
-        ax.set_xticklabels([str(int(tick - 0.5)) for tick in tick_positions], rotation=0)  # Convert to integers
-
+        ax.set_xticklabels(tick_labels, rotation=0)  # Ensure upright labels
 
 
         # Save the plot
