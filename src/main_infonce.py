@@ -245,7 +245,8 @@ def load_model(opts):
         if which_data_type == "OpenBHB":
             model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer)
         else:
-            model = models.SupConResNet(opts.model, feat_dim=128, grl_layer=opts.grl_layer)
+            # model = models.SupConResNet(opts.model, feat_dim=128, grl_layer=opts.grl_layer)
+            model = models.SupConResNet(opts.model, feat_dim=128)
     elif 'alexnet' in opts.model:
         model = models.SupConAlexNet(feat_dim=128)
     elif 'densenet121' in opts.model:
@@ -403,8 +404,11 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             # projected = model(images, classifier=True)
 
-            # CHANGED
-            images = images.contiguous()
+            # CHANGE BACK TO UNCOMMENTED
+
+            # images = images.contiguous()
+
+
             projected, site_pred = model(images, classify=True)
 
 
@@ -1177,8 +1181,9 @@ def training():
         wandb.log({"train/mae": mae_train, "test/mae": mae_test, "epoch": epoch})
 
 
-        ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
-        wandb.log({"train/ba": ba_train, "test/ba": ba_test, "epoch": epoch})
+        # PUT BACK
+        # ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
+        # wandb.log({"train/ba": ba_train, "test/ba": ba_test, "epoch": epoch})
 
         # if epoch % 5 == 0:
         #     ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
