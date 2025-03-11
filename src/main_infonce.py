@@ -458,9 +458,10 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             # print(site_labels)
             # Compute classification loss
+                        
             # DO I NEEED THIS -=-=-=-=-!!!!!!!!!!!!!!!!
-            if which_data_type == "OpenBHB":
-                site_labels = site_labels - 1
+            # if which_data_type == "OpenBHB":
+            #     site_labels = site_labels - 1
 
             class_loss = criterion_cls(site_pred, site_labels)
 
