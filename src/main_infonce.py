@@ -46,7 +46,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 which_data_type = 'OpenBHB' 
-is_sweeping = False
+is_sweeping = True
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -99,7 +99,7 @@ def parse_arguments():
     parser.add_argument('--beta1', type=float, default=0.9, help='Adam beta1')
     parser.add_argument('--beta2', type=float, default=0.999, help='Adam beta2')
     parser.add_argument('--n_views', type=int, help='num. of multiviews', default=2)
-    parser.add_argument('--lambda_adv', type=float, help='Weight for adversarial loss', default=1.0)
+    parser.add_argument('--lambda_adv', type=float, help='Weight for adversarial loss', default=0)
     parser.add_argument('--grl_layer', type=float, help='turn on or off grl layer', default=True)
 
 
@@ -459,15 +459,16 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             # print(site_labels)
             # Compute classification loss
                         
-            # DO I NEEED THIS -=-=-=-=-!!!!!!!!!!!!!!!!
-            # if which_data_type == "OpenBHB":
-            #     site_labels = site_labels - 1
+            if which_data_type == "OpenBHB":
+                site_labels = site_labels - 1
 
             class_loss = criterion_cls(site_pred, site_labels)
 
-            predicted_sites = site_pred.argmax(dim=1)  # Get predicted class indices
-            site_accuracy = (predicted_sites == site_labels).float().mean().item()  # Compute accuracy
-            print(f"Batch {idx}: Site Classifier Accuracy = {site_accuracy:.4f}")
+
+            # OUTPUTTING ACCURACY
+            # predicted_sites = site_pred.argmax(dim=1)  # Get predicted class indices
+            # site_accuracy = (predicted_sites == site_labels).float().mean().item()  # Compute accuracy
+            # print(f"Batch {idx}: Site Classifier Accuracy = {site_accuracy:.4f}")
 
 
             print("This is class loss:", class_loss)
@@ -480,12 +481,12 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
         optimizer.zero_grad()
         if scaler is None:
-            class_loss.backward()
+            total_loss.backward()
             if opts.clip_grad:
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
             optimizer.step()
         else:
-            scaler.scale(class_loss).backward()
+            scaler.scale(total_loss).backward()
             if opts.clip_grad:
                 scaler.unscale_(optimizer)
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
@@ -496,7 +497,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         #     if "classifier" in name:
         #         print(f"{name} gradient norm: {param.grad.norm().item()}")
                 
-        loss.update(class_loss.item(), bsz)
+        loss.update(total_loss.item(), bsz)
         batch_time.update(time.time() - t1)
         t1 = time.time()
         eta = batch_time.avg * (len(train_loader) - idx)
@@ -1017,7 +1018,7 @@ def training():
         # opts.beta2 = config.beta2
         opts.noise_std = config.noise_std
         # opts.kernel = config.kernel
-        opts.grl_layer = config.grl_layer
+        # opts.grl_layer = config.grl_layer
 
 
     # # THIS IS WITH SUPCON/DYNAMIC AS YAML INITIAL
@@ -1269,7 +1270,7 @@ if __name__ == '__main__':
     
     # FOR SWEEP
     if is_sweeping:
-        wandb.agent("uzf7f0ds", function=training, project="contrastive-brain-age-prediction", count=12)
+        wandb.agent("ws1gcwdk", function=training, project="contrastive-brain-age-prediction", count=12)
     else:
         training()
             
