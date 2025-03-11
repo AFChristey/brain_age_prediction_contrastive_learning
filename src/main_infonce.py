@@ -45,7 +45,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 
-which_data_type = 'OpenBHB' 
+which_data_type = 'MREData' 
 is_sweeping = False
 
 # import os
