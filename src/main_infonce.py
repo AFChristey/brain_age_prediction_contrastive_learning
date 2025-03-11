@@ -45,7 +45,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 
-which_data_type = 'MREData' 
+which_data_type = 'OpenBHB' 
 is_sweeping = False
 
 # import os
@@ -243,7 +243,8 @@ def load_data(opts):
 def load_model(opts):
     if 'resnet' in opts.model:
         if which_data_type == "OpenBHB":
-            model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer)
+            # model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer)
+            model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70)
         else:
             # model = models.SupConResNet(opts.model, feat_dim=128, grl_layer=opts.grl_layer)
             model = models.SupConResNet(opts.model, feat_dim=128)
