@@ -101,6 +101,7 @@ def parse_arguments():
     parser.add_argument('--n_views', type=int, help='num. of multiviews', default=2)
     parser.add_argument('--lambda_adv', type=float, help='Weight for adversarial loss', default=0)
     parser.add_argument('--grl_layer', type=float, help='turn on or off grl layer', default=True)
+    parser.add_argument('--lambda_val', type=float, help='strength of grl layer', default=0)
 
 
 
@@ -243,11 +244,11 @@ def load_data(opts):
 def load_model(opts):
     if 'resnet' in opts.model:
         if which_data_type == "OpenBHB":
-            # model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer)
-            model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70)
+            model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val)
+            # model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70)
         else:
-            # model = models.SupConResNet(opts.model, feat_dim=128, grl_layer=opts.grl_layer)
-            model = models.SupConResNet(opts.model, feat_dim=128)
+            model = models.SupConResNet(opts.model, feat_dim=128, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val)
+            # model = models.SupConResNet(opts.model, feat_dim=128)
     elif 'alexnet' in opts.model:
         model = models.SupConAlexNet(feat_dim=128)
     elif 'densenet121' in opts.model:
@@ -1018,7 +1019,8 @@ def training():
         # opts.beta2 = config.beta2
         opts.noise_std = config.noise_std
         # opts.kernel = config.kernel
-        # opts.grl_layer = config.grl_layer
+        opts.grl_layer = config.grl_layer
+        opts.lambda_val = config.lambda_val
 
 
     # # THIS IS WITH SUPCON/DYNAMIC AS YAML INITIAL
@@ -1270,7 +1272,7 @@ if __name__ == '__main__':
     
     # FOR SWEEP
     if is_sweeping:
-        wandb.agent("ws1gcwdk", function=training, project="contrastive-brain-age-prediction", count=12)
+        wandb.agent("kagphfh8", function=training, project="contrastive-brain-age-prediction", count=12)
     else:
         training()
             
