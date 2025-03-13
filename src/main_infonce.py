@@ -244,11 +244,11 @@ def load_data(opts):
 def load_model(opts):
     if 'resnet' in opts.model:
         if which_data_type == "OpenBHB":
-            # model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val)
-            model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70)
+            model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val)
+            # model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70)
         else:
-            # model = models.SupConResNet(opts.model, feat_dim=128, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val)
-            model = models.SupConResNet(opts.model, feat_dim=128)
+            model = models.SupConResNet(opts.model, feat_dim=128, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val)
+            # model = models.SupConResNet(opts.model, feat_dim=128)
     elif 'alexnet' in opts.model:
         model = models.SupConAlexNet(feat_dim=128)
     elif 'densenet121' in opts.model:
@@ -1019,8 +1019,8 @@ def training():
         # opts.beta2 = config.beta2
         opts.noise_std = config.noise_std
         # opts.kernel = config.kernel
-        # opts.grl_layer = config.grl_layer
-        # opts.lambda_val = config.lambda_val
+        opts.grl_layer = config.grl_layer
+        opts.lambda_val = config.lambda_val
 
 
     # # THIS IS WITH SUPCON/DYNAMIC AS YAML INITIAL
@@ -1272,7 +1272,7 @@ if __name__ == '__main__':
     
     # FOR SWEEP
     if is_sweeping:
-        wandb.agent("otjpguha", function=training, project="contrastive-brain-age-prediction", count=12)
+        wandb.agent("mnwa6srx", function=training, project="contrastive-brain-age-prediction", count=12)
     else:
         training()
             
