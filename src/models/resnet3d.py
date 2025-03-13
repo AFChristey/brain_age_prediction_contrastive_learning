@@ -266,99 +266,15 @@ model_dict = {
 
 
     
-# class SupConResNet(nn.Module):
-#     """Backbone + projection head + classifier"""
-#     def __init__(self, name='resnet50', head='mlp', feat_dim=128, num_sites=6):
-#         super().__init__()
-#         # Load encoder model
-#         model_fun, dim_in = model_dict[name]
-#         self.encoder = model_fun()
-        
-#         # Projection head
-#         if head == 'linear':
-#             self.head = nn.Linear(dim_in, feat_dim)
-#         elif head == 'mlp':
-#             self.head = nn.Sequential(
-#                 nn.Linear(dim_in, dim_in),
-#                 nn.ReLU(inplace=True),
-#                 nn.Linear(dim_in, feat_dim)
-#             )
-#         else:
-#             raise NotImplementedError(f'Head not supported: {head}')
-        
-#         # Add Site Classifier
-#         self.classifier = SiteClassifier(feat_dim, num_sites)
-
-#     def forward(self, x, classify=False):
-#         """Returns features and optionally classification output"""
-#         feat = self.encoder(x)  # Get features from encoder
-#         proj_feat = F.normalize(self.head(feat), dim=1)  # Projected features
-
-#         if classify:
-#             class_output = self.classifier(proj_feat)
-#             return proj_feat, class_output
-        
-#         return proj_feat
-
-#     def features(self, x):
-#         """Extracts encoder features"""
-#         return self.forward(x, classify=False)
-
-
-# class SiteClassifier(nn.Module):
-#     """Simple MLP classifier for site classification"""
-#     def __init__(self, input_dim, num_sites):
-#         super(SiteClassifier, self).__init__()
-#         self.fc1 = nn.Linear(input_dim, 256)
-#         self.fc2 = nn.Linear(256, 128)
-#         self.fc3 = nn.Linear(128, num_sites)
-#         self.relu = nn.ReLU()
-
-#     def forward(self, x):
-#         x = self.relu(self.fc1(x))
-#         x = self.relu(self.fc2(x))
-#         x = self.fc3(x)
-#         return x
-
-
-
-
-
-
-
-
-
-
-
-
-class GradientReversalFunction(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, x, lambda_=1.0):
-        ctx.lambda_ = lambda_
-        return x
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        return -ctx.lambda_ * grad_output, None
-
-class GradientReversalLayer(nn.Module):
-    def __init__(self, lambda_=1.0):
-        super().__init__()
-        self.lambda_ = lambda_
-
-    def forward(self, x):
-        return GradientReversalFunction.apply(x, self.lambda_)
-    
-
-
 class SupConResNet(nn.Module):
-    """Encoder + Projection Head + Site Classifier with GRL"""
-    def __init__(self, name='resnet50', head='mlp', feat_dim=128, num_sites=6, grl_layer=True, lambda_val=1.0):
+    """Backbone + projection head + classifier"""
+    def __init__(self, name='resnet50', head='mlp', feat_dim=128, num_sites=6):
         super().__init__()
+        # Load encoder model
         model_fun, dim_in = model_dict[name]
-        self.encoder = model_fun()  # Backbone
+        self.encoder = model_fun()
         
-        # Projection head for contrastive learning
+        # Projection head
         if head == 'linear':
             self.head = nn.Linear(dim_in, feat_dim)
         elif head == 'mlp':
@@ -370,46 +286,130 @@ class SupConResNet(nn.Module):
         else:
             raise NotImplementedError(f'Head not supported: {head}')
         
-        # Site classifier with GRL
-        self.classifier = SiteClassifier(feat_dim, num_sites, grl_layer, lambda_val)
+        # Add Site Classifier
+        self.classifier = SiteClassifier(feat_dim, num_sites)
 
     def forward(self, x, classify=False):
-        """Compute features and optionally return site classification"""
-        feat = self.encoder(x)  # Extract features
-        proj_feat = F.normalize(self.head(feat), dim=1)  # Projection
+        """Returns features and optionally classification output"""
+        feat = self.encoder(x)  # Get features from encoder
+        proj_feat = F.normalize(self.head(feat), dim=1)  # Projected features
 
         if classify:
-            site_pred = self.classifier(proj_feat)  # Site classification (with GRL)
-            return proj_feat, site_pred
-
+            class_output = self.classifier(proj_feat)
+            return proj_feat, class_output
+        
         return proj_feat
-    
+
     def features(self, x):
         """Extracts encoder features"""
         return self.forward(x, classify=False)
-    
 
 
 class SiteClassifier(nn.Module):
-    def __init__(self, input_dim, num_sites, grl_layer, lambda_val=1.0):
+    """Simple MLP classifier for site classification"""
+    def __init__(self, input_dim, num_sites):
         super(SiteClassifier, self).__init__()
-        self.use_grl = grl_layer  # Store the flag
-        self.grl = GradientReversalLayer(lambda_val) if grl_layer else None  # Apply GRL only if enabled
-
-        self.fc1 = nn.Linear(input_dim, 512)  # Increase hidden units
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 128)
-        self.fc4 = nn.Linear(128, num_sites)  # Extra layer
+        self.fc1 = nn.Linear(input_dim, 256)
+        self.fc2 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, num_sites)
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        if self.use_grl:  # Apply GRL only if enabled
-            x = self.grl(x)
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
-        x = self.relu(self.fc3(x))
-        x = self.fc4(x)
+        x = self.fc3(x)
         return x
+
+
+
+
+
+
+
+
+
+
+
+
+# class GradientReversalFunction(torch.autograd.Function):
+#     @staticmethod
+#     def forward(ctx, x, lambda_=1.0):
+#         ctx.lambda_ = lambda_
+#         return x
+
+#     @staticmethod
+#     def backward(ctx, grad_output):
+#         return -ctx.lambda_ * grad_output, None
+
+# class GradientReversalLayer(nn.Module):
+#     def __init__(self, lambda_=1.0):
+#         super().__init__()
+#         self.lambda_ = lambda_
+
+#     def forward(self, x):
+#         return GradientReversalFunction.apply(x, self.lambda_)
+    
+
+
+# class SupConResNet(nn.Module):
+#     """Encoder + Projection Head + Site Classifier with GRL"""
+#     def __init__(self, name='resnet50', head='mlp', feat_dim=128, num_sites=6, grl_layer=True, lambda_val=1.0):
+#         super().__init__()
+#         model_fun, dim_in = model_dict[name]
+#         self.encoder = model_fun()  # Backbone
+        
+#         # Projection head for contrastive learning
+#         if head == 'linear':
+#             self.head = nn.Linear(dim_in, feat_dim)
+#         elif head == 'mlp':
+#             self.head = nn.Sequential(
+#                 nn.Linear(dim_in, dim_in),
+#                 nn.ReLU(inplace=True),
+#                 nn.Linear(dim_in, feat_dim)
+#             )
+#         else:
+#             raise NotImplementedError(f'Head not supported: {head}')
+        
+#         # Site classifier with GRL
+#         self.classifier = SiteClassifier(feat_dim, num_sites, grl_layer, lambda_val)
+
+#     def forward(self, x, classify=False):
+#         """Compute features and optionally return site classification"""
+#         feat = self.encoder(x)  # Extract features
+#         proj_feat = F.normalize(self.head(feat), dim=1)  # Projection
+
+#         if classify:
+#             site_pred = self.classifier(proj_feat)  # Site classification (with GRL)
+#             return proj_feat, site_pred
+
+#         return proj_feat
+    
+#     def features(self, x):
+#         """Extracts encoder features"""
+#         return self.forward(x, classify=False)
+    
+
+
+# class SiteClassifier(nn.Module):
+#     def __init__(self, input_dim, num_sites, grl_layer, lambda_val=1.0):
+#         super(SiteClassifier, self).__init__()
+#         self.use_grl = grl_layer  # Store the flag
+#         self.grl = GradientReversalLayer(lambda_val) if grl_layer else None  # Apply GRL only if enabled
+
+#         self.fc1 = nn.Linear(input_dim, 512)  # Increase hidden units
+#         self.fc2 = nn.Linear(512, 256)
+#         self.fc3 = nn.Linear(256, 128)
+#         self.fc4 = nn.Linear(128, num_sites)  # Extra layer
+#         self.relu = nn.ReLU()
+
+#     def forward(self, x):
+#         if self.use_grl:  # Apply GRL only if enabled
+#             x = self.grl(x)
+#         x = self.relu(self.fc1(x))
+#         x = self.relu(self.fc2(x))
+#         x = self.relu(self.fc3(x))
+#         x = self.fc4(x)
+#         return x
     
 
 
