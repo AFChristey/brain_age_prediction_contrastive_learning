@@ -99,7 +99,7 @@ def parse_arguments():
     parser.add_argument('--beta1', type=float, default=0.9, help='Adam beta1')
     parser.add_argument('--beta2', type=float, default=0.999, help='Adam beta2')
     parser.add_argument('--n_views', type=int, help='num. of multiviews', default=2)
-    parser.add_argument('--lambda_adv', type=float, help='Weight for adversarial loss', default=0)
+    parser.add_argument('--lambda_adv', type=float, help='Weight for adversarial loss', default=0.1)
     parser.add_argument('--grl_layer', type=float, help='turn on or off grl layer', default=True)
     parser.add_argument('--lambda_val', type=float, help='strength of grl layer', default=0)
 
@@ -1011,7 +1011,7 @@ def training():
         # opts.optimizer = config.optimizer
         # opts.sigma = config.sigma
         # opts.momentum = config.momentum
-        opts.lambda_adv = config.lambda_adv
+        # opts.lambda_adv = config.lambda_adv
         # opts.lr_decay_step = config.lr_decay_step
         # opts.lr_decay_rate = config.lr_decay_rate
         # opts.loss_choice = config.loss_choice
@@ -1272,7 +1272,7 @@ if __name__ == '__main__':
     
     # FOR SWEEP
     if is_sweeping:
-        wandb.agent("30lr98kr", function=training, project="contrastive-brain-age-prediction", count=12)
+        wandb.agent("buw1x135", function=training, project="contrastive-brain-age-prediction", count=12)
     else:
         training()
             
