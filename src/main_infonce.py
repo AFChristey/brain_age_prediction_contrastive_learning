@@ -100,8 +100,8 @@ def parse_arguments():
     parser.add_argument('--beta2', type=float, default=0.999, help='Adam beta2')
     parser.add_argument('--n_views', type=int, help='num. of multiviews', default=2)
     parser.add_argument('--lambda_adv', type=float, help='Weight for adversarial loss', default=0)
-    # parser.add_argument('--grl_layer', type=float, help='turn on or off grl layer', default=True)
-    # parser.add_argument('--lambda_val', type=float, help='strength of grl layer', default=0)
+    parser.add_argument('--grl_layer', type=float, help='turn on or off grl layer', default=True)
+    parser.add_argument('--lambda_val', type=float, help='strength of grl layer', default=0)
 
 
 
@@ -1019,7 +1019,7 @@ def training():
         # opts.beta2 = config.beta2
         opts.noise_std = config.noise_std
         # opts.kernel = config.kernel
-        opts.grl_layer = config.grl_layer
+        # opts.grl_layer = config.grl_layer
         opts.lambda_val = config.lambda_val
 
 
@@ -1272,7 +1272,7 @@ if __name__ == '__main__':
     
     # FOR SWEEP
     if is_sweeping:
-        wandb.agent("mnwa6srx", function=training, project="contrastive-brain-age-prediction", count=12)
+        wandb.agent("ivinepw0", function=training, project="contrastive-brain-age-prediction", count=12)
     else:
         training()
             
