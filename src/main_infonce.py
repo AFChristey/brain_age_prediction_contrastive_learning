@@ -1019,7 +1019,7 @@ def training():
         # opts.beta2 = config.beta2
         opts.noise_std = config.noise_std
         # opts.kernel = config.kernel
-        # opts.grl_layer = config.grl_layer
+        opts.grl_layer = config.grl_layer
         opts.lambda_val = config.lambda_val
 
 
@@ -1272,7 +1272,7 @@ if __name__ == '__main__':
     
     # FOR SWEEP
     if is_sweeping:
-        wandb.agent("ivinepw0", function=training, project="contrastive-brain-age-prediction", count=12)
+        wandb.agent("mau92vwe", function=training, project="contrastive-brain-age-prediction", count=12)
     else:
         training()
             
