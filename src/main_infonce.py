@@ -474,8 +474,8 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             print("This is class loss:", class_loss)
 
-            # # Total loss = Contrastive Loss - Classification Loss
-            total_loss = running_loss - opts.lambda_adv * class_loss
+            # # Total loss = Contrastive Loss + Classification Loss
+            total_loss = running_loss + opts.lambda_adv * class_loss
             # # total_loss =  class_loss
 
         # Do I backpropagate total, or just separately?
@@ -1003,10 +1003,10 @@ def training():
     # FOR SWEEP
     if is_sweeping:
         config = wandb.config 
-        opts.lr = config.lr
+        # opts.lr = config.lr
         # opts.batch_size = config.batch_size
         # opts.temp = config.temp
-        opts.weight_decay = config.weight_decay
+        # opts.weight_decay = config.weight_decay
         # opts.method = config.method
         # opts.optimizer = config.optimizer
         # opts.sigma = config.sigma
@@ -1017,9 +1017,9 @@ def training():
         # opts.loss_choice = config.loss_choice
         # opts.beta1 = config.beta1
         # opts.beta2 = config.beta2
-        opts.noise_std = config.noise_std
+        # opts.noise_std = config.noise_std
         # opts.kernel = config.kernel
-        opts.grl_layer = config.grl_layer
+        # opts.grl_layer = config.grl_layer
         opts.lambda_val = config.lambda_val
 
 
@@ -1272,7 +1272,7 @@ if __name__ == '__main__':
     
     # FOR SWEEP
     if is_sweeping:
-        wandb.agent("mau92vwe", function=training, project="contrastive-brain-age-prediction", count=12)
+        wandb.agent("30lr98kr", function=training, project="contrastive-brain-age-prediction", count=12)
     else:
         training()
             
