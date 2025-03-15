@@ -46,7 +46,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 which_data_type = 'OpenBHB' 
-is_sweeping = True
+is_sweeping = False
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -1263,6 +1263,8 @@ def training():
     # FOR SWEEP
     if is_sweeping:
         wandb.finish()  # Close the WandB run
+    else:
+        return mae_test, ba_test
 
 
 
@@ -1274,5 +1276,23 @@ if __name__ == '__main__':
     if is_sweeping:
         wandb.agent("buw1x135", function=training, project="contrastive-brain-age-prediction", count=12)
     else:
-        training()
+        mae_scores = []
+        ba_scores = []
+        for i in range(5):
+            mae_test, ba_test = training()
+            mae_scores.append(mae_test)
+            ba_scores.append(ba_test)
+            wandb.log({"final_scores/ba": ba_test, "final_scores/mae": mae_test, "epoch": i})
+        mae_mean = np.mean(mae_scores)
+        ba_mean = np.mean(ba_scores)
+        print("MAE MEAN:", mae_mean)
+        print("BA MEAN:", ba_mean)
+
+        wandb.log({"mean_score/ba": ba_mean, "mean_score/mae": mae_mean})
+
+
+        
+
+        
+
             
