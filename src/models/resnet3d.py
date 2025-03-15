@@ -353,7 +353,7 @@ class GradientReversalLayer(nn.Module):
 
 class SupConResNet(nn.Module):
     """Encoder + Projection Head + Site Classifier with GRL"""
-    def __init__(self, name='resnet50', head='mlp', feat_dim=128, num_sites=6, grl_layer=True, lambda_val=1.0):
+    def __init__(self, name='resnet50', head='mlp', feat_dim=128, num_sites=6, grl_layer=1, lambda_val=1.0):
         super().__init__()
         model_fun, dim_in = model_dict[name]
         self.encoder = model_fun()  # Backbone
@@ -394,7 +394,8 @@ class SiteClassifier(nn.Module):
     def __init__(self, input_dim, num_sites, grl_layer, lambda_val=1.0):
         super(SiteClassifier, self).__init__()
         self.use_grl = grl_layer  # Store the flag
-        self.grl = GradientReversalLayer(lambda_val) if grl_layer else None  # Apply GRL only if enabled
+        self.grl = GradientReversalLayer(lambda_val) if grl_layer == 1 else None  # Apply GRL only if grl_layer == 1
+
 
         self.fc1 = nn.Linear(input_dim, 512)  # Increase hidden units
         self.fc2 = nn.Linear(512, 256)
