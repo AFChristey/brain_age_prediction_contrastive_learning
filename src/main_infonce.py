@@ -987,7 +987,7 @@ def visualise_umap(test_loader, model, opts, epoch=0):
 
 
 
-def training():
+def training(seed=0):
 
     start_time = time.time()  # Start the timer
 
@@ -1035,7 +1035,10 @@ def training():
     #     # opts.kernel = "gaussian"
     #     opts.sigma = 1
     
-    set_seed(opts.trial)
+    # CHAnged from this to (seed)
+    # set_seed(opts.trial)
+    set_seed(seed)
+
     print('loading data')
 
     train_loader, train_loader_score, test_loader = load_data(opts)
@@ -1279,7 +1282,7 @@ if __name__ == '__main__':
         mae_scores = []
         ba_scores = []
         for i in range(5):
-            mae_test, ba_test = training()
+            mae_test, ba_test = training(seed=i)
             mae_scores.append(mae_test)
             ba_scores.append(ba_test)
             wandb.log({"final_scores/ba": ba_test, "final_scores/mae": mae_test, "epoch": i})
