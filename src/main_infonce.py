@@ -46,7 +46,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 which_data_type = 'OpenBHB' 
-is_sweeping = False
+is_sweeping = True
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -475,7 +475,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             print("This is class loss:", class_loss)
 
             # # Total loss = Contrastive Loss + Classification Loss
-            total_loss = running_loss + opts.lambda_adv * class_loss
+            total_loss = running_loss - opts.lambda_adv * class_loss
             # # total_loss =  class_loss
 
         # Do I backpropagate total, or just separately?
@@ -1277,7 +1277,7 @@ if __name__ == '__main__':
     
     # FOR SWEEP
     if is_sweeping:
-        wandb.agent("buw1x135", function=training, project="contrastive-brain-age-prediction", count=12)
+        wandb.agent("iqru77mf", function=training, project="contrastive-brain-age-prediction", count=12)
     else:
         mae_scores = []
         ba_scores = []
