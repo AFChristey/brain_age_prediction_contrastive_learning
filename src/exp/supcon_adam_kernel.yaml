@@ -29,7 +29,7 @@ label_diff: l1
 feature_sim: l2
 lambda_val: 0
 lambda_adv: 0
-grl_layer: False
+grl_layer: false
 
 
 
