@@ -40,7 +40,7 @@ def run_model_with_launcher(yaml_file_path):
     """
     Run the model using the launcher script with the updated YAML configuration.
     """
-    command = f"python /home/afc/contrastive-brain-age-prediction/src/launcher.py {yaml_file_path} path=cluster"
+    command = f"python /home/afc/contrastive_learning_mri_images/src/launcher.py {yaml_file_path} path=cluster"
     subprocess.run(command, shell=True)
 
 
@@ -55,7 +55,7 @@ def run_model_with_launcher(yaml_file_path):
 
 
 def main():
-    base_yaml_file = '/home/afc53/contrastive-brain-age-prediction/src/exp/supcon_adam_kernel.yaml'
+    base_yaml_file = '/home/afc53/contrastive_learning_mri_images/src/exp/supcon_adam_kernel.yaml'
 
     with wandb.init() as run:
 
