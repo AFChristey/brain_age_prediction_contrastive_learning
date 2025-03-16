@@ -404,7 +404,7 @@ class SiteClassifier(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        if self.use_grl:  # Apply GRL only if enabled
+        if self.use_grl == 1:  # Apply GRL only if enabled
             x = self.grl(x)
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))

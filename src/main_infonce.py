@@ -100,7 +100,7 @@ def parse_arguments():
     parser.add_argument('--beta2', type=float, default=0.999, help='Adam beta2')
     parser.add_argument('--n_views', type=int, help='num. of multiviews', default=2)
     parser.add_argument('--lambda_adv', type=float, help='Weight for adversarial loss', default=0.1)
-    parser.add_argument('--grl_layer', type=float, help='turn on or off grl layer', default=1)
+    parser.add_argument('--grl_layer', type=float, help='turn on or off grl layer', default=0)
     parser.add_argument('--lambda_val', type=float, help='strength of grl layer', default=0)
 
 
@@ -1003,15 +1003,15 @@ def training(seed=0):
     # FOR SWEEP
     if is_sweeping:
         config = wandb.config 
-        # opts.lr = config.lr
+        opts.lr = config.lr
         # opts.batch_size = config.batch_size
         # opts.temp = config.temp
-        # opts.weight_decay = config.weight_decay
+        opts.weight_decay = config.weight_decay
         # opts.method = config.method
         # opts.optimizer = config.optimizer
         # opts.sigma = config.sigma
         # opts.momentum = config.momentum
-        # opts.lambda_adv = config.lambda_adv
+        opts.lambda_adv = config.lambda_adv
         # opts.lr_decay_step = config.lr_decay_step
         # opts.lr_decay_rate = config.lr_decay_rate
         # opts.loss_choice = config.loss_choice
@@ -1277,7 +1277,7 @@ if __name__ == '__main__':
     
     # FOR SWEEP
     if is_sweeping:
-        wandb.agent("iqru77mf", function=training, project="contrastive-brain-age-prediction", count=12)
+        wandb.agent("ar392dii", function=training, project="contrastive-brain-age-prediction", count=12)
     else:
         mae_scores = []
         ba_scores = []
