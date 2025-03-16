@@ -46,7 +46,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 
 which_data_type = 'OpenBHB' 
-is_sweeping = True
+# is_sweeping = True
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -987,40 +987,47 @@ def visualise_umap(test_loader, model, opts, epoch=0):
 
 
 
-def training(seed=0):
+# def training(seed=0):
+
+
+
+if __name__ == '__main__':
+    print('parsing arguments')
+
+
 
     start_time = time.time()  # Start the timer
 
-    # FOR SWEEP
-    if is_sweeping:
-        wandb.init(
-            project="contrastive-brain-age-prediction",
-            entity="afc53-university-of-cambridge"
-        )
+    # # FOR SWEEP
+    # if is_sweeping:
+    #     wandb.init(
+    #         project="contrastive-brain-age-prediction",
+    #         entity="afc53-university-of-cambridge"
+    #     )
 
     opts = parse_arguments()
 
-    # FOR SWEEP
-    if is_sweeping:
-        config = wandb.config 
-        opts.lr = config.lr
-        # opts.batch_size = config.batch_size
-        # opts.temp = config.temp
-        opts.weight_decay = config.weight_decay
-        # opts.method = config.method
-        # opts.optimizer = config.optimizer
-        # opts.sigma = config.sigma
-        # opts.momentum = config.momentum
-        opts.lambda_adv = config.lambda_adv
-        # opts.lr_decay_step = config.lr_decay_step
-        # opts.lr_decay_rate = config.lr_decay_rate
-        # opts.loss_choice = config.loss_choice
-        # opts.beta1 = config.beta1
-        # opts.beta2 = config.beta2
-        # opts.noise_std = config.noise_std
-        # opts.kernel = config.kernel
-        # opts.grl_layer = config.grl_layer
-        opts.lambda_val = config.lambda_val
+    # # FOR SWEEP
+    # if is_sweeping:
+    #     config = wandb.config 
+    #     opts.lr = config.lr
+    #     # opts.batch_size = config.batch_size
+    #     # opts.temp = config.temp
+    #     opts.weight_decay = config.weight_decay
+    #     # opts.method = config.method
+    #     # opts.optimizer = config.optimizer
+    #     # opts.sigma = config.sigma
+    #     # opts.momentum = config.momentum
+    #     opts.lambda_adv = config.lambda_adv
+    #     # opts.lr_decay_step = config.lr_decay_step
+    #     # opts.lr_decay_rate = config.lr_decay_rate
+    #     # opts.loss_choice = config.loss_choice
+    #     # opts.beta1 = config.beta1
+    #     # opts.beta2 = config.beta2
+    #     # opts.noise_std = config.noise_std
+    #     # opts.kernel = config.kernel
+    #     # opts.grl_layer = config.grl_layer
+    #     opts.lambda_val = config.lambda_val
 
 
     # # THIS IS WITH SUPCON/DYNAMIC AS YAML INITIAL
@@ -1036,8 +1043,8 @@ def training(seed=0):
     #     opts.sigma = 1
     
     # CHAnged from this to (seed)
-    # set_seed(opts.trial)
-    set_seed(seed)
+    set_seed(opts.trial)
+    # set_seed(seed)
 
     print('loading data')
 
@@ -1099,9 +1106,9 @@ def training(seed=0):
     #           settings=wandb.Settings(code_dir="/src"), tags=['to test'])
     
     # COMMENTED OUT FOR SWEEP
-    if is_sweeping == False:
-        wandb.init(project='contrastive-brain-age-prediction', config=opts, name=run_name,
-                settings=wandb.Settings(code_dir="/src"), tags=['to test'])
+    # if is_sweeping == False:
+    wandb.init(project='contrastive-brain-age-prediction', config=opts, name=run_name,
+            settings=wandb.Settings(code_dir="/src"), tags=['to test'])
 
 
     print('Config:', opts)
@@ -1263,35 +1270,31 @@ def training(seed=0):
     elapsed_time = end_time - start_time
     print('TOTAL TIME TAKEN: ', elapsed_time)
 
-    # FOR SWEEP
-    if is_sweeping:
-        wandb.finish()  # Close the WandB run
-    else:
-        return mae_test, ba_test
+    # # FOR SWEEP
+    # if is_sweeping:
+    #     wandb.finish()  # Close the WandB run
+    # else:
+    #     return mae_test, ba_test
 
 
 
 
-if __name__ == '__main__':
-    print('parsing arguments')
-    
-    # FOR SWEEP
-    if is_sweeping:
-        wandb.agent("ar392dii", function=training, project="contrastive-brain-age-prediction", count=12)
-    else:
-        mae_scores = []
-        ba_scores = []
-        for i in range(5):
-            mae_test, ba_test = training(seed=i)
-            mae_scores.append(mae_test)
-            ba_scores.append(ba_test)
-            wandb.log({"final_scores/ba": ba_test, "final_scores/mae": mae_test, "epoch": i})
-        mae_mean = np.mean(mae_scores)
-        ba_mean = np.mean(ba_scores)
-        print("MAE MEAN:", mae_mean)
-        print("BA MEAN:", ba_mean)
 
-        wandb.log({"mean_score/ba": ba_mean, "mean_score/mae": mae_mean})
+
+
+# mae_scores = []
+# ba_scores = []
+# for i in range(5):
+#     mae_test, ba_test = training(seed=i)
+#     mae_scores.append(mae_test)
+#     ba_scores.append(ba_test)
+#     wandb.log({"final_scores/ba": ba_test, "final_scores/mae": mae_test, "epoch": i})
+# mae_mean = np.mean(mae_scores)
+# ba_mean = np.mean(ba_scores)
+# print("MAE MEAN:", mae_mean)
+# print("BA MEAN:", ba_mean)
+
+# wandb.log({"mean_score/ba": ba_mean, "mean_score/mae": mae_mean})
 
 
         
