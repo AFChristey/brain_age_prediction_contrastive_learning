@@ -40,7 +40,7 @@ def run_model_with_launcher(yaml_file_path):
     """
     Run the model using the launcher script with the updated YAML configuration.
     """
-    command = f"python /home/afc/contrastive_learning_mri_images/src/launcher.py {yaml_file_path} path=cluster"
+    command = f"python /home/afc53/contrastive_learning_mri_images/src/launcher.py {yaml_file_path} path=cluster"
     subprocess.run(command, shell=True)
 
 
