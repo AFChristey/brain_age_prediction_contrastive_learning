@@ -1107,9 +1107,9 @@ if __name__ == '__main__':
     
     # COMMENTED OUT FOR SWEEP
     # if is_sweeping == False:
-    if wandb.sweep_id is None:
-        wandb.init(project='contrastive-brain-age-prediction', config=opts, name=run_name,
-                settings=wandb.Settings(code_dir="/src"), tags=['to test'])
+    # if wandb.sweep_id is None:
+    wandb.init(project='contrastive-brain-age-prediction', config=opts, name=run_name,
+            settings=wandb.Settings(code_dir="/src"), tags=['to test'])
 
 
     print('Config:', opts)
@@ -1276,9 +1276,9 @@ if __name__ == '__main__':
     #     wandb.finish()  # Close the WandB run
     # else:
     #     return mae_test, ba_test
-    if wandb.sweep_id is not None:
+    # if wandb.sweep_id is not None:
         # If it's a sweep (WandB sweep), end the current sweep run
-        wandb.finish()
+        # wandb.finish()
 
 
 
