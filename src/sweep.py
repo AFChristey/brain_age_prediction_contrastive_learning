@@ -411,7 +411,7 @@ if __name__ == '__main__':
 
     sweep_config = {
         'method': 'random',
-        "name": "classification_tuning_dynamic_negative_classloss_noGRL_part2",
+        "name": "classification_dynamic_negetive_noGRL_lambdaadv=5e-6",
         'metric': {
             'name': 'train/mae', #'mae_train'
             'goal': 'minimize'
@@ -419,13 +419,13 @@ if __name__ == '__main__':
         "parameters": {
         # "batch_size": {"values": [32, 64]},
         # "lr": {"values": [1e-4]},
-        "weight_decay": {"values": [1e-6, 1e-2]},
+        # "weight_decay": {"values": [1e-6, 1e-2]},
         # # "temp": {"values": [0.05, 0.1, 0.2]},
         # # "method": {"values": ["supcon", "yaware"]},
         # # "optimizer": {"values": ["adam", "sgd"]},
         # # "momentum": {"values": [0, 0.9, 1.0]},
         # # "sigma": {"values": [1, 2]},
-        "lambda_adv": {"values": [5e-6, 1e-5, 5e-5, 1e-4]},
+        # "lambda_adv": {"values": [5e-6, 1e-5, 5e-5, 1e-4]},
         # # "lr_decay_step": {"values": [5, 10, 15]},
         # # "lr_decay_rate": {"values": [0.5, 0.7, 0.9]},
         # # "beta1": {"values": [0.8, 0.9, 0.95]},
@@ -435,6 +435,8 @@ if __name__ == '__main__':
         # # "lr_decay_rate": {"values": [0.1, 0.9]},
         # # "grl_layer": {"values": [1, 0]},
         # "lambda_val": {"values": [0.0005, 0.005, 0.05, 0.5, 5, 50]}
+        "trial": {"values": [0, 1, 2, 3, 4]},
+
     },
     }
 
@@ -448,7 +450,7 @@ if __name__ == '__main__':
 
 
 
-    wandb.agent(sweep_id, function=main, project="contrastive-brain-age-prediction", count=4)
+    wandb.agent(sweep_id, function=main, project="contrastive-brain-age-prediction", count=5)
 
     # wandb.agent(sweep_id,
     #             function=main,
