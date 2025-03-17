@@ -27,7 +27,7 @@ NN_nb_selection: manhattan
 temp_RNC: 2
 label_diff: l1
 feature_sim: l2
-lambda_val: 0
+lambda_val: 0.5
 lambda_adv: 5e-6
 grl_layer: 0
 

@@ -1278,7 +1278,7 @@ if __name__ == '__main__':
     #     return mae_test, ba_test
     # if wandb.sweep_id is not None:
         # If it's a sweep (WandB sweep), end the current sweep run
-        # wandb.finish()
+    wandb.finish()
 
 
 
