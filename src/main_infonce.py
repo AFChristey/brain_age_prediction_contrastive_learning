@@ -1000,10 +1000,10 @@ if __name__ == '__main__':
 
     # # FOR SWEEP
     # if is_sweeping:
-    #     wandb.init(
-    #         project="contrastive-brain-age-prediction",
-    #         entity="afc53-university-of-cambridge"
-    #     )
+    wandb.init(
+        project="contrastive-brain-age-prediction",
+        entity="afc53-university-of-cambridge"
+    )
 
     opts = parse_arguments()
 
@@ -1108,8 +1108,8 @@ if __name__ == '__main__':
     # COMMENTED OUT FOR SWEEP
     # if is_sweeping == False:
     # if wandb.sweep_id is None:
-    wandb.init(project='contrastive-brain-age-prediction', config=opts, name=run_name,
-            settings=wandb.Settings(code_dir="/src"), tags=['to test'])
+    # wandb.init(project='contrastive-brain-age-prediction', config=opts, name=run_name,
+    #         settings=wandb.Settings(code_dir="/src"), tags=['to test'])
 
 
     print('Config:', opts)
