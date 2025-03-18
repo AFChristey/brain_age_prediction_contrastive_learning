@@ -107,7 +107,7 @@ def parse_arguments():
     parser.add_argument('--lambda_mmd', type=float, help='Weight for MMD loss', default=0)
     parser.add_argument('--grl_layer', type=float, help='turn on or off grl layer', default=0)
     parser.add_argument('--lambda_val', type=float, help='strength of grl layer', default=0)
-    parser.add_argument('--confound_loss', type=float, help='loss chosen for removing confound effect', default='basic')
+    parser.add_argument('--confound_loss', type=str, help='loss chosen for removing confound effect', choices=['basic', 'classification', 'mmd'], default='basic')
 
 
 
