@@ -541,8 +541,8 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             # # Total loss = Contrastive Loss + Classification Loss
             if opts.confound_loss == "classification":
-                total_loss = running_loss - opts.lambda_adv * class_loss
-                # total_loss = class_loss
+                # total_loss = running_loss - opts.lambda_adv * class_loss
+                total_loss = class_loss
             elif opts.confound_loss == "basic":
                 total_loss =  running_loss
             elif opts.confound_loss == "mmd":
