@@ -41,6 +41,8 @@ from sklearn.manifold import TSNE
 from sklearn.preprocessing import LabelEncoder
 import torch.optim.lr_scheduler as lr_scheduler
 
+import itertools
+
 
 
 
@@ -99,9 +101,13 @@ def parse_arguments():
     parser.add_argument('--beta1', type=float, default=0.9, help='Adam beta1')
     parser.add_argument('--beta2', type=float, default=0.999, help='Adam beta2')
     parser.add_argument('--n_views', type=int, help='num. of multiviews', default=2)
+
+
     parser.add_argument('--lambda_adv', type=float, help='Weight for adversarial loss', default=0.1)
+    parser.add_argument('--lambda_mmd', type=float, help='Weight for MMD loss', default=0)
     parser.add_argument('--grl_layer', type=float, help='turn on or off grl layer', default=0)
     parser.add_argument('--lambda_val', type=float, help='strength of grl layer', default=0)
+    parser.add_argument('--confound_loss', type=float, help='loss chosen for removing confound effect', default='basic')
 
 
 
@@ -320,6 +326,53 @@ def load_optimizer(model, opts):
 
     return optimizer
 
+
+# def mmd(X, Y, gamma=1.0):
+#     # def mmd_rbf(X, Y, gamma=1.0):
+#     XX = torch.exp(-gamma * torch.cdist(X, X, p=2).pow(2))
+#     YY = torch.exp(-gamma * torch.cdist(Y, Y, p=2).pow(2))
+#     XY = torch.exp(-gamma * torch.cdist(X, Y, p=2).pow(2))
+#     return XX.mean() + YY.mean() - 2 * XY.mean()
+
+def mmd(X, Y):
+    bandwidth_range=[0.2, 0.5, 0.9, 1.3]
+
+    XX, YY, XY = 0, 0, 0  # Initialize the kernel sums
+
+    for gamma in bandwidth_range:
+        XX += torch.exp(-gamma * torch.cdist(X, X, p=2).pow(2))
+        YY += torch.exp(-gamma * torch.cdist(Y, Y, p=2).pow(2))
+        XY += torch.exp(-gamma * torch.cdist(X, Y, p=2).pow(2))
+
+    # Normalize by number of kernels (optional, keeps values comparable)
+    XX /= len(bandwidth_range)
+    YY /= len(bandwidth_range)
+    XY /= len(bandwidth_range)
+
+    return XX.mean() + YY.mean() - 2 * XY.mean()
+
+def mmd_calculator(opts, projected, site_labels):
+
+    unique_sites = torch.unique(site_labels)
+
+    mmd_values = {}
+    for site_A, site_B in itertools.combinations(unique_sites, 2):
+        features_A = projected[site_labels == site_A]
+        features_B = projected[site_labels == site_B]
+
+        if features_A.shape[0] > 0 and features_B.shape[0] > 0:
+            mmd_score = mmd(features_A, features_B)
+            mmd_values[(site_A.item(), site_B.item())] = mmd_score.item()
+
+    # Mean MMD
+    mmd_value = np.mean(list(mmd_values.values())) if mmd_values else 0
+
+
+
+    return mmd_value
+
+
+
 def train(train_loader, model, infonce, optimizer, opts, epoch):
     # lambda_adv = 0.35  # Weight for adversarial loss
     # lambda_adv = 0  # Weight for adversarial loss
@@ -420,11 +473,27 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             # print(site_pred.shape)
             # Outputs: torch.Size([64, 6])
 
+            # Could do class_loss here, but would need to double the site_labels shape (either doube like 1,1,2,2,3,3 or 1,2,3,1,2,3?)
+            site_labels = site_labels.repeat_interleave(opts.n_views)
+
+            if which_data_type == "OpenBHB":
+                site_labels = site_labels - 1
+
+            class_loss = criterion_cls(site_pred, site_labels)
+
+
+            # if opts.confound_loss == "mmd":
+            mmd_loss = mmd_calculator(opts, projected, site_labels)
+            # else:
+            #     mmd_loss = 0
+
             site_pred = torch.split(site_pred, [bsz]*opts.n_views, dim=0)
             projected = torch.split(projected, [bsz]*opts.n_views, dim=0)
             projected = torch.cat([f.unsqueeze(1) for f in projected], dim=1)
             site_pred = torch.cat([f.unsqueeze(1) for f in site_pred], dim=1)
 
+
+            # Should probably not have this? LOOK ABOVE
             site_pred = site_pred.mean(dim=1) 
 
             # print(site_pred.shape)
@@ -460,10 +529,6 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             # print(site_labels)
             # Compute classification loss
                         
-            if which_data_type == "OpenBHB":
-                site_labels = site_labels - 1
-
-            class_loss = criterion_cls(site_pred, site_labels)
 
 
             # OUTPUTTING ACCURACY
@@ -475,8 +540,13 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             print("This is class loss:", class_loss)
 
             # # Total loss = Contrastive Loss + Classification Loss
-            total_loss = running_loss - opts.lambda_adv * class_loss
-            # total_loss =  class_loss
+            if opts.confound_loss == "classification":
+                total_loss = running_loss - opts.lambda_adv * class_loss
+                # total_loss = class_loss
+            elif opts.confound_loss == "basic":
+                total_loss =  running_loss
+            elif opts.confound_loss == "mmd":
+                total_loss = running_loss + opts.lambda_mmd * mmd_loss
 
         # Do I backpropagate total, or just separately?
 
@@ -514,8 +584,8 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
                   f"BT {batch_time.avg:.3f}\t"
                   f"ETA {datetime.timedelta(seconds=eta)}\t"
                   f"loss {loss.avg:.3f}\t")
-
-    return loss.avg, class_loss, batch_time.avg, data_time.avg
+    
+    return loss.avg, class_loss, mmd_loss, batch_time.avg, data_time.avg
 
 
     
@@ -1185,13 +1255,17 @@ if __name__ == '__main__':
 
         t1 = time.time()
         # Changed
-        loss_train, class_loss_train, batch_time, data_time = train(train_loader, model, infonce, optimizer, opts, epoch)
+        loss_train, class_loss_train, mmd_loss_train, batch_time, data_time = train(train_loader, model, infonce, optimizer, opts, epoch)
         t2 = time.time()
         wandb.log({"train/loss": loss_train, "lr": optimizer.param_groups[0]['lr'], "BT": batch_time, "DT": data_time,
             "epoch": epoch})
         
         wandb.log({"train/class_loss": class_loss_train, "lr": optimizer.param_groups[0]['lr'], "BT": batch_time, "DT": data_time,
             "epoch": epoch})
+        
+        wandb.log({"train/mmd_loss": mmd_loss_train, "lr": optimizer.param_groups[0]['lr'], "BT": batch_time, "DT": data_time,
+            "epoch": epoch})
+        
         # writer.add_scalar("train/loss", loss_train, epoch)
 
         # writer.add_scalar("lr", optimizer.param_groups[0]['lr'], epoch)
@@ -1264,7 +1338,7 @@ if __name__ == '__main__':
     # writer.add_scalar("test/score", challenge_metric, epoch)
     # print("Challenge score", challenge_metric)
 
-    visualise_umap(test_loader, model, opts)
+    # visualise_umap(test_loader, model, opts)
 
 
     end_time = time.time()  # End the timer
