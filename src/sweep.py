@@ -417,7 +417,7 @@ if __name__ == '__main__':
     sweep_config = {
         'method': 'random',
         # "name": "classification_tuning_dynamic_negative_classloss_noGRL_part2",
-        "name": "class_loss_only",
+        "name": "testing_wandb",
         'metric': {
             'name': 'train/mae', #'mae_train'
             'goal': 'minimize'
@@ -441,7 +441,7 @@ if __name__ == '__main__':
         # # "lr_decay_rate": {"values": [0.1, 0.9]},
         # # "grl_layer": {"values": [1, 0]},
         # "lambda_val": {"values": [0.0005, 0.005, 0.05, 0.5, 5, 50]}
-        "trial": {"values": [0]},
+        "trial": {"values": [0, 1]},
 
     },
     }
@@ -456,7 +456,7 @@ if __name__ == '__main__':
 
 
 
-    wandb.agent(sweep_id, function=main, project="contrastive-brain-age-prediction", count=1)
+    wandb.agent(sweep_id, function=main, project="contrastive-brain-age-prediction", count=2)
 
     # wandb.agent(sweep_id,
     #             function=main,

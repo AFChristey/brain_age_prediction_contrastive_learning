@@ -1068,12 +1068,23 @@ if __name__ == '__main__':
 
     start_time = time.time()  # Start the timer
 
-    # # FOR SWEEP
-    # if is_sweeping:
+
     wandb.init(
         project="contrastive-brain-age-prediction",
-        entity="afc53-university-of-cambridge"
+        entity="afc53-university-of-cambridge",
+        sync_tensorboard=True,
+        settings=wandb.Settings(code_dir="/src"),
+        tags=['to test']
     )
+
+    # # # FOR SWEEP
+    # # if is_sweeping:
+    # wandb.init(
+    #     project="contrastive-brain-age-prediction",
+    #     entity="afc53-university-of-cambridge"
+    # )
+
+    # wandb.init()
 
     opts = parse_arguments()
 
