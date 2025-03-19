@@ -472,17 +472,24 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             # print(site_pred.shape)
             # Outputs: torch.Size([64, 6])
+            
 
-            # Could do class_loss here, but would need to double the site_labels shape (either doube like 1,1,2,2,3,3 or 1,2,3,1,2,3?)
-            site_labels = site_labels.repeat(opts.n_views)
+            site_labels_MMD = site_labels.repeat(opts.n_views)
 
-            if which_data_type == "OpenBHB":
-                site_labels = site_labels - 1
+            # # CHANGE BACK 
 
-            class_loss = criterion_cls(site_pred, site_labels)
+            # # Could do class_loss here, but would need to double the site_labels shape (either doube like 1,1,2,2,3,3 or 1,2,3,1,2,3?)
+            # site_labels = site_labels.repeat(opts.n_views)
+
+            # if which_data_type == "OpenBHB":
+            #     site_labels = site_labels - 1
+
+            # class_loss = criterion_cls(site_pred, site_labels)
+
+            # # END OF CHANGE BACK
 
             # if opts.confound_loss == "mmd":
-            mmd_loss = mmd_calculator(opts, projected, site_labels)
+            mmd_loss = mmd_calculator(opts, projected, site_labels_MMD)
             # else:
             #     mmd_loss = 0
 
@@ -496,6 +503,10 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             site_pred = site_pred.mean(dim=1) 
 
 
+            if which_data_type == "OpenBHB":
+                site_labels = site_labels - 1
+
+            class_loss = criterion_cls(site_pred, site_labels)
 
 
             # print(site_pred.shape)
@@ -543,8 +554,8 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             # # Total loss = Contrastive Loss + Classification Loss
             if opts.confound_loss == "classification":
-                # total_loss = running_loss - opts.lambda_adv * class_loss
-                total_loss = class_loss
+                total_loss = running_loss - opts.lambda_adv * class_loss
+                # total_loss = class_loss
             elif opts.confound_loss == "basic":
                 total_loss =  running_loss
             elif opts.confound_loss == "mmd":
