@@ -28,7 +28,7 @@ temp_RNC: 2
 label_diff: l1
 feature_sim: l2
 lambda_val: 0.5
-lambda_adv: 1e-4
+lambda_adv: 0.1
 grl_layer: 0
 confound_loss: classification
 lambda_mmd: 0
