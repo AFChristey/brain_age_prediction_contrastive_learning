@@ -417,7 +417,7 @@ if __name__ == '__main__':
     sweep_config = {
         'method': 'random',
         # "name": "classification_tuning_dynamic_negative_classloss_noGRL_part2",
-        "name": "testing_lambda_adv=5e-5",
+        "name": "testing_lambda_adv=1e-4",
         'metric': {
             'name': 'train/mae', #'mae_train'
             'goal': 'minimize'
