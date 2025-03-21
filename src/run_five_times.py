@@ -71,7 +71,7 @@ def parse_args():
     parser.add_argument("--pretrained", type=str, default="no")
     parser.add_argument("--save_model", type=int, default=0)
     parser.add_argument("--hpams_dict", dest='hpams_dict', action=StoreDictKeyPair, default={})
-    parser.add_argument("--method", type=str, choices=["threshold", "expw", "yaware"])
+    parser.add_argument("--method", type=str, choices=["threshold", "expw", "yaware"], default="expw")
 
     return parser.parse_args()
 
