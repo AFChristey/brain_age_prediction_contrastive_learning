@@ -67,6 +67,7 @@ def parse_arguments():
     parser.add_argument('--data_dir', type=str, help='path of data dir', default='/data')
     parser.add_argument('--amp', type=arg2bool, help='use amp', default=False)
     parser.add_argument('--clip_grad', type=arg2bool, help='clip gradient to prevent nan', default=False)
+    parser.add_argument('--wandb_name', type=arg2bool, help='name of the wandb project', default='contrastive-brain-age-prediction')
 
     # Model
     parser.add_argument('--model', type=str, help='model architecture', default='resnet18')
@@ -90,6 +91,7 @@ def parse_arguments():
     parser.add_argument('--noise_std', type=float, help='std for noise augmentation', default=0.05)
     parser.add_argument('--path', type=str, help='model ran on cluster or locally', choices=['local', 'cluster'], default='local')
     parser.add_argument('--loss_choice', type=str, help='which loss function is being tested', choices=['supcon', 'dynamic', 'RnC'], default='supcon')
+    parser.add_argument('--modality', type=str, help='which type of data to use', choices=['T1', 'DR'], default='T1')
     
     # Loss 
     parser.add_argument('--method', type=str, help='loss function', choices=['supcon', 'yaware', 'threshold', 'expw'], default='supcon')
@@ -1082,13 +1084,7 @@ if __name__ == '__main__':
     start_time = time.time()  # Start the timer
 
 
-    wandb.init(
-        project="contrastive-brain-age-prediction",
-        entity="afc53-university-of-cambridge",
-        sync_tensorboard=True,
-        settings=wandb.Settings(code_dir="/src"),
-        tags=['to test']
-    )
+
 
     # # # FOR SWEEP
     # # if is_sweeping:
@@ -1100,6 +1096,15 @@ if __name__ == '__main__':
     # wandb.init()
 
     opts = parse_arguments()
+
+
+    wandb.init(
+    project=opts.wandb_name,
+    entity="afc53-university-of-cambridge",
+    sync_tensorboard=True,
+    settings=wandb.Settings(code_dir="/src"),
+    tags=['to test']
+    )
 
     # # FOR SWEEP
     # if is_sweeping:

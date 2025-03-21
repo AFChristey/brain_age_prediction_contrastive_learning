@@ -456,7 +456,7 @@ if __name__ == '__main__':
 
 
 
-    wandb.agent(sweep_id, function=main, project="contrastive-brain-age-prediction", count=1)
+    wandb.agent(sweep_id, function=main, project="contrastive-brain-age-prediction", count=5)
 
     # wandb.agent(sweep_id,
     #             function=main,
