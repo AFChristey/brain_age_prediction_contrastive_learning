@@ -70,7 +70,7 @@ def parse_args():
     parser.add_argument("--epochs", type=int, default=50)
     # parser.add_argument("--pretrained", type=str, default="no")
     # parser.add_argument("--save_model", type=int, default=0)
-    # parser.add_argument("--hpams_dict", dest='hpams_dict', action=StoreDictKeyPair, default={})
+    parser.add_argument("--hpams_dict", dest='hpams_dict', action=StoreDictKeyPair, default={})
     parser.add_argument("--method", type=str, choices=["threshold", "expw", "yaware"], default="expw")
 
     return parser.parse_args()
@@ -87,8 +87,8 @@ def run_model_with_launcher(yaml_file_path):
 if __name__ == '__main__':
     args = parse_args()
     id = 'NEW' + args.method + '_' + args.modality + '_' + args.error + '_' + str(args.epochs)
-    # for key in args.hpams_dict:
-    #     id += f"_{key}={args.hpams_dict[key]}"
+    for key in args.hpams_dict:
+        id += f"_{key}={args.hpams_dict[key]}"
 
     base_yaml_file = '/home/afc53/contrastive_learning_mri_images/src/exp/supcon_adam_kernel.yaml'
     unique_yaml_path = create_yaml(id, base_yaml_file)
