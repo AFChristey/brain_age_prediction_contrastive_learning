@@ -50,9 +50,9 @@ def update_yaml_config(file_path, i, args):
         hpams_str += f"_{key}={args.hpams_dict[key]}"
         print(f"Updated {key} to {args.hpams_dict[key]}")
 
-    data['save_model'] = args.save_model
+    # data['save_model'] = args.save_model
     data['modality'] = args.modality
-    data['pretrained'] = args.pretrained
+    # data['pretrained'] = args.pretrained
     data['method'] = args.method
     #data['wandb_name'] = 'rerun_baseline'
     #data['wandb_name'] = f"NEW-contrastive-pretrain-{args.pretrained}-finetune-{args.method}-E{args.epochs}-{args.modality}-{args.error}-5times"
@@ -68,9 +68,9 @@ def parse_args():
     parser.add_argument("--modality", type=str, default="T1")
     parser.add_argument("--error", type=str, default="trial")
     parser.add_argument("--epochs", type=int, default=50)
-    parser.add_argument("--pretrained", type=str, default="no")
-    parser.add_argument("--save_model", type=int, default=0)
-    parser.add_argument("--hpams_dict", dest='hpams_dict', action=StoreDictKeyPair, default={})
+    # parser.add_argument("--pretrained", type=str, default="no")
+    # parser.add_argument("--save_model", type=int, default=0)
+    # parser.add_argument("--hpams_dict", dest='hpams_dict', action=StoreDictKeyPair, default={})
     parser.add_argument("--method", type=str, choices=["threshold", "expw", "yaware"], default="expw")
 
     return parser.parse_args()
@@ -86,9 +86,9 @@ def run_model_with_launcher(yaml_file_path):
 
 if __name__ == '__main__':
     args = parse_args()
-    id = 'NEW' + args.method + '_' + args.modality + '_' + args.error + '_' + str(args.epochs) + '_' + args.pretrained
-    for key in args.hpams_dict:
-        id += f"_{key}={args.hpams_dict[key]}"
+    id = 'NEW' + args.method + '_' + args.modality + '_' + args.error + '_' + str(args.epochs)
+    # for key in args.hpams_dict:
+    #     id += f"_{key}={args.hpams_dict[key]}"
 
     base_yaml_file = '/home/afc53/contrastive_learning_mri_images/src/exp/supcon_adam_kernel.yaml'
     unique_yaml_path = create_yaml(id, base_yaml_file)

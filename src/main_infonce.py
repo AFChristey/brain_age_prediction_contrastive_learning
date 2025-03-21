@@ -68,6 +68,7 @@ def parse_arguments():
     parser.add_argument('--amp', type=arg2bool, help='use amp', default=False)
     parser.add_argument('--clip_grad', type=arg2bool, help='clip gradient to prevent nan', default=False)
     parser.add_argument('--wandb_name', type=str, help='name of the wandb project', default='contrastive-brain-age-prediction')
+    parser.add_argument('--error', type=str, help='_______', default='trial')
 
     # Model
     parser.add_argument('--model', type=str, help='model architecture', default='resnet18')
