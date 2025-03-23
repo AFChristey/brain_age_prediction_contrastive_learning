@@ -1102,7 +1102,7 @@ if __name__ == '__main__':
     wandb.init(
     project=opts.wandb_name,
     entity="afc53-university-of-cambridge",
-    sync_tensorboard=True,
+    # sync_tensorboard=True,
     settings=wandb.Settings(code_dir="/src"),
     tags=['to test']
     )
@@ -1382,7 +1382,7 @@ if __name__ == '__main__':
     #     return mae_test, ba_test
     # if wandb.sweep_id is not None:
         # If it's a sweep (WandB sweep), end the current sweep run
-    wandb.finish()
+    # wandb.finish()
 
 
 
