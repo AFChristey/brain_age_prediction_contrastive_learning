@@ -1105,46 +1105,12 @@ if __name__ == '__main__':
     # sync_tensorboard=True,
     settings=wandb.Settings(code_dir="/src"),
     tags=['to test'],
+    reinit=True,
     config=opts
     )
 
     config = wandb.config
 
-    # # FOR SWEEP
-    # if is_sweeping:
-    #     config = wandb.config 
-    #     opts.lr = config.lr
-    #     # opts.batch_size = config.batch_size
-    #     # opts.temp = config.temp
-    #     opts.weight_decay = config.weight_decay
-    #     # opts.method = config.method
-    #     # opts.optimizer = config.optimizer
-    #     # opts.sigma = config.sigma
-    #     # opts.momentum = config.momentum
-    #     opts.lambda_adv = config.lambda_adv
-    #     # opts.lr_decay_step = config.lr_decay_step
-    #     # opts.lr_decay_rate = config.lr_decay_rate
-    #     # opts.loss_choice = config.loss_choice
-    #     # opts.beta1 = config.beta1
-    #     # opts.beta2 = config.beta2
-    #     # opts.noise_std = config.noise_std
-    #     # opts.kernel = config.kernel
-    #     # opts.grl_layer = config.grl_layer
-    #     opts.lambda_val = config.lambda_val
-
-
-    # # THIS IS WITH SUPCON/DYNAMIC AS YAML INITIAL
-    # if opts.loss_choice == "supcon":
-    #     # opts.kernel = "gaussian"
-    #     opts.sigma = 1
-    # elif opts.loss_choice == "dynamic":
-    #     # opts.kernel = "rbf"
-    #     opts.sigma = 2
-    # elif opts.loss_choice == "RnC":
-    #     # opts.lr_decay_rate = 0.1
-    #     # opts.kernel = "gaussian"
-    #     opts.sigma = 1
-    
     # CHAnged from this to (seed)
     set_seed(opts.trial)
     # set_seed(seed)
@@ -1385,7 +1351,7 @@ if __name__ == '__main__':
     #     return mae_test, ba_test
     # if wandb.sweep_id is not None:
         # If it's a sweep (WandB sweep), end the current sweep run
-    # wandb.finish()
+    wandb.finish()
 
 
 
