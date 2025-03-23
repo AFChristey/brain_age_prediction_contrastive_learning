@@ -1104,8 +1104,11 @@ if __name__ == '__main__':
     entity="afc53-university-of-cambridge",
     # sync_tensorboard=True,
     settings=wandb.Settings(code_dir="/src"),
-    tags=['to test']
+    tags=['to test'],
+    config=opts
     )
+
+    config = wandb.config
 
     # # FOR SWEEP
     # if is_sweeping:
