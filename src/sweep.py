@@ -62,17 +62,19 @@ def run_model_with_launcher(yaml_file_path):
 def main():
     base_yaml_file = '/home/afc53/contrastive_learning_mri_images/src/exp/supcon_adam_kernel.yaml'
 
-    with wandb.init() as run:
+    # with wandb.init() as run:
+    run = wandb.run  # <- get current run instead of re-initializing
 
-        sweep_id = run.sweep_id
-        config = {k: v for k, v in run.config.items()}
 
-        # config['wandb_name'] = f"{config['NN_nb_selection']}_{config['end_NN_nb']}_{config['NN_nb_step_size']}_" + str(run.id)
+    sweep_id = run.sweep_id
+    config = {k: v for k, v in run.config.items()}
 
-        unique_sweep_yaml_path = get_or_create_yaml(sweep_id, base_yaml_file)
-        update_yaml_config(unique_sweep_yaml_path, config)
+    # config['wandb_name'] = f"{config['NN_nb_selection']}_{config['end_NN_nb']}_{config['NN_nb_step_size']}_" + str(run.id)
 
-        run_model_with_launcher(unique_sweep_yaml_path)
+    unique_sweep_yaml_path = get_or_create_yaml(sweep_id, base_yaml_file)
+    update_yaml_config(unique_sweep_yaml_path, config)
+
+    run_model_with_launcher(unique_sweep_yaml_path)
 
 
 if __name__ == '__main__':
@@ -81,7 +83,7 @@ if __name__ == '__main__':
     sweep_config = {
         'method': 'random',
         # "name": "classification_tuning_dynamic_negative_classloss_noGRL_part2",
-        "name": "added_config_test_2",
+        "name": "added_config_test_3",
         'metric': {
             'name': 'train/mae', #'mae_train'
             'goal': 'minimize'
