@@ -802,7 +802,7 @@ if __name__ == '__main__':
     # sync_tensorboard=True,
     settings=wandb.Settings(code_dir="/src"),
     tags=['to test'],
-    reinit=True,
+    # reinit=True,
     config=opts
     )
 
@@ -1048,7 +1048,7 @@ if __name__ == '__main__':
     #     return mae_test, ba_test
     # if wandb.sweep_id is not None:
         # If it's a sweep (WandB sweep), end the current sweep run
-    # wandb.finish()
+    wandb.finish()
 
 
 
