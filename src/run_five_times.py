@@ -97,7 +97,7 @@ def main():
     sweep_id = run.id
     unique_yaml_path = create_yaml(sweep_id, base_yaml_file)
 
-    update_yaml_config(unique_yaml_path, i, args, config)
+    update_yaml_config(unique_yaml_path, i, args)
     run_model_with_launcher(unique_yaml_path)
 
 
