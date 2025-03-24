@@ -88,7 +88,8 @@ def run_model_with_launcher(yaml_file_path):
 
 def main():
     args = parse_args()
-    run = wandb.run
+    run = wandb.init()  # Required for this structure
+
     config = run.config
     i = config.i  # Swept value
     base_yaml_file = '/home/afc53/contrastive_learning_mri_images/src/exp/supcon_adam_kernel.yaml'
