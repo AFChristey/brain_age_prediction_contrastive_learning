@@ -49,14 +49,14 @@ def run_model_with_launcher(yaml_file_path):
     subprocess.run(command, shell=True)
 
 
-# def parse_args():
-#     parser = argparse.ArgumentParser(description="select sweep")
+def parse_args():
+    parser = argparse.ArgumentParser(description="select sweep")
 
-#     parser.add_argument("--sweep", type=str)
-#     parser.add_argument("--modality", type=str, default="T1")
-#     parser.add_argument("--NN_nb_selection", type=str, default="similarity")
+    parser.add_argument("--sweep", type=str)
+    parser.add_argument("--modality", type=str, default="T1")
+    parser.add_argument("--NN_nb_selection", type=str, default="similarity")
 
-#     return parser.parse_args()
+    return parser.parse_args()
 
 
 def main():
@@ -69,7 +69,7 @@ def main():
         sweep_id = run.sweep_id
         config = {k: v for k, v in run.config.items()}
 
-        # config['wandb_name'] = f"{config['NN_nb_selection']}_{config['end_NN_nb']}_{config['NN_nb_step_size']}_" + str(run.id)
+        config['wandb_name'] = f"{config['NN_nb_selection']}_" + str(run.id)
 
         unique_sweep_yaml_path = get_or_create_yaml(sweep_id, base_yaml_file)
         update_yaml_config(unique_sweep_yaml_path, config)
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     sweep_config = {
         'method': 'random',
         # "name": "classification_tuning_dynamic_negative_classloss_noGRL_part2",
-        "name": "added_config_test_3",
+        "name": "testing_1",
         'metric': {
             'name': 'train/mae', #'mae_train'
             'goal': 'minimize'
@@ -112,6 +112,9 @@ if __name__ == '__main__':
     },
     }
 
+    # args = parse_args()
+
+
     # sweep_id = wandb.sweep(sweep_config,
     #                        entity='jakobwandb',
     #                        #project='seedsNEW-pretrained-expw-finetune-sweeps-' + args.sweep + '-' + args.modality)
@@ -122,7 +125,7 @@ if __name__ == '__main__':
 
 
 
-    wandb.agent(sweep_id, function=main, project="contrastive-brain-age-prediction", count=5)
+    wandb.agent(sweep_id, function=main, count=5)
 
     # wandb.agent(sweep_id,
     #             function=main,
