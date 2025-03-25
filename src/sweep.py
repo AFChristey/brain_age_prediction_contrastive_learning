@@ -69,7 +69,7 @@ def main():
         sweep_id = run.sweep_id
         config = {k: v for k, v in run.config.items()}
 
-        config['wandb_name'] = f"{config['NN_nb_selection']}_" + str(run.id)
+        config['wandb_name'] = str(run.id)
 
         unique_sweep_yaml_path = get_or_create_yaml(sweep_id, base_yaml_file)
         update_yaml_config(unique_sweep_yaml_path, config)
