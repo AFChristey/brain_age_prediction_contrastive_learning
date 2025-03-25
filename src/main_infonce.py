@@ -1099,9 +1099,9 @@ if __name__ == '__main__':
 
         sweep_id = wandb.sweep(sweep_config, project="contrastive-brain-age-prediction")
 
+        print(sweep_id)
 
-
-        wandb.agent(sweep_id, function=training(), count=5)
+        wandb.agent(sweep_id, function=training, count=5)
 
     else:
         training()
