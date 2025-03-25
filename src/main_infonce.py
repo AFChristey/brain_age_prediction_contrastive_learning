@@ -48,7 +48,7 @@ import itertools
 
 
 which_data_type = 'OpenBHB' 
-# is_sweeping = True
+is_sweeping = True
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -770,11 +770,7 @@ def visualise_umap(test_loader, model, opts, epoch=0):
 
 
 
-# def training(seed=0):
-
-
-
-if __name__ == '__main__':
+def training(seed=0):
     print('parsing arguments')
 
 
@@ -803,10 +799,12 @@ if __name__ == '__main__':
     settings=wandb.Settings(code_dir="/src"),
     tags=['to test'],
     # reinit=True,
-    config=opts
+    # config=opts
     )
 
     config = wandb.config
+    opts.trial = config.trial
+    print(opts.trial)
 
     # CHAnged from this to (seed)
     set_seed(opts.trial)
@@ -1051,6 +1049,62 @@ if __name__ == '__main__':
     wandb.finish()
 
 
+
+
+
+
+if __name__ == '__main__':
+
+    if is_sweeping == True:
+        sweep_config = {
+            'method': 'random',
+            # "name": "classification_tuning_dynamic_negative_classloss_noGRL_part2",
+            "name": "trying_old_method_part_2",
+            'metric': {
+                'name': 'train/mae', #'mae_train'
+                'goal': 'minimize'
+            },
+            "parameters": {
+            # "batch_size": {"values": [32, 64]},
+            # "lr": {"values": [1e-4]},
+            # "weight_decay": {"values": [1e-6, 1e-2]},
+            # # "temp": {"values": [0.05, 0.1, 0.2]},
+            # # "method": {"values": ["supcon", "yaware"]},
+            # # "optimizer": {"values": ["adam", "sgd"]},
+            # # "momentum": {"values": [0, 0.9, 1.0]},
+            # # "sigma": {"values": [1, 2]},
+            # "lambda_adv": {"values": [5e-6, 1e-5, 5e-5, 1e-4]},
+            # # "lr_decay_step": {"values": [5, 10, 15]},
+            # # "lr_decay_rate": {"values": [0.5, 0.7, 0.9]},
+            # # "beta1": {"values": [0.8, 0.9, 0.95]},
+            # # "beta2": {"values": [0.99, 0.999, 0.9999]}    
+            # # "noise_std": {"values": [0, 0.01, 0.05, 0.1]},
+            # # "kernel": {"values": ["gaussian", "rbf"]},
+            # # "lr_decay_rate": {"values": [0.1, 0.9]},
+            # # "grl_layer": {"values": [1, 0]},
+            # "lambda_val": {"values": [0.0005, 0.005, 0.05, 0.5, 5, 50]}
+            "trial": {"values": [0,1,2,3,4]},
+
+        },
+        }
+
+        # args = parse_args()
+
+
+        # sweep_id = wandb.sweep(sweep_config,
+        #                        entity='jakobwandb',
+        #                        #project='seedsNEW-pretrained-expw-finetune-sweeps-' + args.sweep + '-' + args.modality)
+        #                        project='MICCAI_suppl')
+        
+
+        sweep_id = wandb.sweep(sweep_config, project="contrastive-brain-age-prediction")
+
+
+
+        wandb.agent(sweep_id, function=training(), count=5)
+
+    else:
+        training()
 
 
 
