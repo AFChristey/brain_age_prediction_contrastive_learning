@@ -1,6 +1,8 @@
 import yaml
 import subprocess
 import argparse
+import wandb
+
 
 
 class StoreDictKeyPair(argparse.Action):
@@ -84,16 +86,44 @@ def run_model_with_launcher(yaml_file_path):
     subprocess.run(command, shell=True)
 
 
-if __name__ == '__main__':
+def main():
     args = parse_args()
-    id = 'NEW' + args.method + '_' + args.modality + '_' + args.error + '_' + str(args.epochs)
-    for key in args.hpams_dict:
-        id += f"_{key}={args.hpams_dict[key]}"
+    run = wandb.init()  # Required for this structure
 
+    config = run.config
+    i = config.i  # Swept value
     base_yaml_file = '/home/afc53/contrastive_learning_mri_images/src/exp/supcon_adam_kernel.yaml'
-    unique_yaml_path = create_yaml(id, base_yaml_file)
 
-    for i in range(5):
-        update_yaml_config(unique_yaml_path, i, args)
-        run_model_with_launcher(unique_yaml_path)
+    sweep_id = run.id
+    unique_yaml_path = create_yaml(sweep_id, base_yaml_file)
 
+    update_yaml_config(unique_yaml_path, i, args)
+    run_model_with_launcher(unique_yaml_path)
+
+
+    # # Make a fresh YAML copy
+    # if not os.path.exists(unique_yaml_path):
+    #     with open(base_yaml_file) as f:
+    #         config_data = yaml.load(f, Loader=yaml.SafeLoader)
+    #     with open(unique_yaml_path, 'w') as f:
+    #         yaml.dump(config_data, f, default_flow_style=False)
+
+    # # Update and run
+    # update_yaml_config(unique_yaml_path, i, args, config)
+    # run_model_with_launcher(unique_yaml_path)
+
+
+if __name__ == '__main__':
+
+    # Define the sweep config
+    sweep_config = {
+        'method': 'grid',
+        'name': 'sweep_over_i',
+        'metric': {'name': 'train/mae', 'goal': 'minimize'},
+        'parameters': {
+            'i': {'values': [0, 1, 2, 3, 4]}
+        }
+    }
+
+    sweep_id = wandb.sweep(sweep_config, project="contrastive-brain-age-prediction")
+    wandb.agent(sweep_id, function=main, count=5)

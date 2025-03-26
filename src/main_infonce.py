@@ -48,7 +48,7 @@ import itertools
 
 
 which_data_type = 'OpenBHB' 
-is_sweeping = True
+is_sweeping = False
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -802,13 +802,14 @@ def training(seed=0):
     # config=opts
     )
 
-    config = wandb.config
-    # opts.trial = config.trial
+    if is_sweeping:
+        config = wandb.config
+        # opts.trial = config.trial
 
-    opts.lambda_mmd = config.lambda_mmd
-    opts.lr = config.lr
-    opts.weight_decay = config.weight_decay
-    
+        opts.lambda_mmd = config.lambda_mmd
+        opts.lr = config.lr
+        opts.weight_decay = config.weight_decay
+        
 
 
     print(opts.trial)
