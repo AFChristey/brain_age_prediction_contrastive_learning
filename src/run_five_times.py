@@ -56,7 +56,7 @@ def update_yaml_config(file_path, i, args):
     data['method'] = args.method
     #data['wandb_name'] = 'rerun_baseline'
     #data['wandb_name'] = f"NEW-contrastive-pretrain-{args.pretrained}-finetune-{args.method}-E{args.epochs}-{args.modality}-{args.error}-5times"
-    data['wandb_name'] = f"NEW-contrastive-pretrain-finetune-{args.method}-{hpams_str}-{args.modality}-{args.error}-5times_basic"
+    data['wandb_name'] = f"NEW-contrastive-pretrain-finetune-{args.method}-{hpams_str}-{args.modality}-{args.error}-5times_RnC_Classification"
 
     with open(file_path, 'w') as f:
         yaml.dump(data, f, default_flow_style=False)
