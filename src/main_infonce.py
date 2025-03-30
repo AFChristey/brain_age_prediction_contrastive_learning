@@ -810,8 +810,8 @@ def training(seed=0):
         # opts.trial = config.trial
 
         opts.lambda_mmd = config.lambda_mmd
-        opts.lr = config.lr
-        opts.weight_decay = config.weight_decay
+        # opts.lr = config.lr
+        # opts.weight_decay = config.weight_decay
         
 
 
