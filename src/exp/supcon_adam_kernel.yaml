@@ -66,7 +66,7 @@ feature_sim: l2
 lambda_val: 0
 lambda_adv: 5e-4
 grl_layer: 0
-confound_loss: classification
+confound_loss: mmd
 lambda_mmd: 0
 
 

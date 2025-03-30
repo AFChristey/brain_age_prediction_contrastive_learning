@@ -48,7 +48,7 @@ import itertools
 
 
 which_data_type = 'OpenBHB' 
-is_sweeping = False
+is_sweeping = True
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -477,7 +477,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             # Outputs: torch.Size([64, 6])
             
 
-            site_labels_MMD = site_labels.repeat(opts.n_views)
+            # site_labels_MMD = site_labels.repeat(opts.n_views)
 
             # # CHANGE BACK 
 
@@ -492,7 +492,6 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             # # END OF CHANGE BACK
 
             # if opts.confound_loss == "mmd":
-            mmd_loss = mmd_calculator(opts, projected, site_labels_MMD)
             # else:
             #     mmd_loss = 0
 
@@ -504,6 +503,10 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             # Should probably not have this? LOOK ABOVE
             site_pred = site_pred.mean(dim=1) 
+            projected_mmd = projected.mean(dim=1) 
+
+
+            mmd_loss = mmd_calculator(opts, projected_mmd, site_labels)
 
 
             if which_data_type == "OpenBHB":
@@ -1067,7 +1070,7 @@ if __name__ == '__main__':
         sweep_config = {
             'method': 'random',
             # "name": "classification_tuning_dynamic_negative_classloss_noGRL_part2",
-            "name": "tuning_of_mmd_RnC_OpenBHB",
+            "name": "tuning_of_mmd_RnC_OpenBHB_1.0",
             'metric': {
                 'name': 'train/mae', #'mae_train'
                 'goal': 'minimize'
