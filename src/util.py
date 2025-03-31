@@ -446,7 +446,9 @@ def gather_age_feats(model, dataloader, opts):
             images = images[0]
 
         images = images.squeeze()
-        images = images.unsqueeze(1)  # Add channel dimension at index 1
+
+        if opts.modality == "OpenBHB":
+            images = images.unsqueeze(1)  # Add channel dimension at index 1
         images = images.to(opts.device)
         images = images.contiguous()
 
@@ -482,7 +484,8 @@ def gather_site_feats(model, dataloader, opts):
             images = images[0]
         images = images.to(opts.device)
         images = images.squeeze()
-        images = images.unsqueeze(1)  # Add channel dimension at index 1
+        if opts.modality == "OpenBHB":
+            images = images.unsqueeze(1)  # Add channel dimension at index 1
         images = images.contiguous()
 
         features.append(model.features(images))
