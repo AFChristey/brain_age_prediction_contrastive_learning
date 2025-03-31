@@ -51,6 +51,7 @@ from sklearn.feature_selection import mutual_info_classif
 
 
 which_data_type = 'OpenBHB' 
+# which_data_type = 'MRE' 
 is_sweeping = False
 
 # import os
@@ -95,7 +96,7 @@ def parse_arguments():
     parser.add_argument('--noise_std', type=float, help='std for noise augmentation', default=0.05)
     parser.add_argument('--path', type=str, help='model ran on cluster or locally', choices=['local', 'cluster'], default='local')
     parser.add_argument('--loss_choice', type=str, help='which loss function is being tested', choices=['supcon', 'dynamic', 'RnC'], default='supcon')
-    parser.add_argument('--modality', type=str, help='which type of data to use', choices=['T1', 'DR'], default='T1')
+    parser.add_argument('--modality', type=str, help='which type of data to use', choices=['OpenBHB', 'MRE'], default='OpenBHB')
     
     # Loss 
     parser.add_argument('--method', type=str, help='loss function', choices=['supcon', 'yaware', 'threshold', 'expw'], default='supcon')
@@ -815,7 +816,7 @@ def visualise_umap(test_loader, model, opts, epoch=0):
         plt.savefig(filename, dpi=300, bbox_inches='tight')  # Save with high resolution
         print(f"UMAP plot saved to '{filename}'")
     else:
-        filename = f'/home/afc53/images/umap_features_seaborn_plot_epoch_{epoch}_{opts.loss_choice}_OpenBHB_{opts.confound_loss}.png'
+        filename = f'/home/afc53/images/umap_features_seaborn_plot_epoch_{epoch}_{opts.loss_choice}_{which_data_type}_{opts.confound_loss}.png'
         plt.savefig(filename, dpi=300, bbox_inches='tight')  # Save with high resolution
         print(f"UMAP plot saved to '{filename}'")
 
@@ -826,12 +827,12 @@ def visualise_umap(test_loader, model, opts, epoch=0):
         save_path = "/rds/user/afc53/hpc-work/saved_features/"
 
         # Save the original features, labels, and metadata
-        np.save(os.path.join(save_path, f'features_before_reduction_epoch_{epoch}_{opts.loss_choice}.npy'), features)
-        np.save(os.path.join(save_path, f'labels_epoch_{epoch}_{opts.loss_choice}.npy'), labels)
-        np.save(os.path.join(save_path, f'metadata_epoch_{epoch}_{opts.loss_choice}.npy'), metadata)
+        np.save(os.path.join(save_path, f'features_before_reduction_epoch_{epoch}_{opts.loss_choice}_{which_data_type}_{opts.confound_loss}.npy'), features)
+        np.save(os.path.join(save_path, f'labels_epoch_{epoch}_{opts.loss_choice}_{which_data_type}_{opts.confound_loss}.npy'), labels)
+        np.save(os.path.join(save_path, f'metadata_epoch_{epoch}_{opts.loss_choice}_{which_data_type}_{opts.confound_loss}.npy'), metadata)
 
         # Save UMAP and t-SNE reduced features
-        np.save(os.path.join(save_path, f'features_umap_epoch_{epoch}_{opts.loss_choice}.npy'), embedding_umap)
+        np.save(os.path.join(save_path, f'features_umap_epoch_{epoch}_{opts.loss_choice}_{which_data_type}_{opts.confound_loss}.npy'), embedding_umap)
         # np.save(os.path.join(save_path, f'features_tsne_epoch_{epoch}.npy'), embedding_tsne)
 
 

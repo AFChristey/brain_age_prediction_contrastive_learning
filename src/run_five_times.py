@@ -54,9 +54,12 @@ def update_yaml_config(file_path, i, args):
     data['modality'] = args.modality
     # data['pretrained'] = args.pretrained
     data['method'] = args.method
+
+    data['confound_loss'] = args.confound_loss
+    data['loss_choice'] = args.loss_choice
     #data['wandb_name'] = 'rerun_baseline'
     #data['wandb_name'] = f"NEW-contrastive-pretrain-{args.pretrained}-finetune-{args.method}-E{args.epochs}-{args.modality}-{args.error}-5times"
-    data['wandb_name'] = "5times_RnC_OpenBHB_Basic"
+    data['wandb_name'] = f"5times_{args.loss_choice}_{args.modality}_{args.confound_loss}"
 
     with open(file_path, 'w') as f:
         yaml.dump(data, f, default_flow_style=False)
@@ -65,8 +68,10 @@ def update_yaml_config(file_path, i, args):
 def parse_args():
     parser = argparse.ArgumentParser(description="select sweep")
 
-    parser.add_argument("--modality", type=str, default="T1")
+    parser.add_argument("--modality", type=str, default="OpenBHB")
     parser.add_argument("--error", type=str, default="trial")
+    parser.add_argument("--confound_loss", type=str, default="basic")
+    parser.add_argument("--loss_choice", type=str, default="dynamic")
     parser.add_argument("--epochs", type=int, default=50)
     # parser.add_argument("--pretrained", type=str, default="no")
     # parser.add_argument("--save_model", type=int, default=0)
