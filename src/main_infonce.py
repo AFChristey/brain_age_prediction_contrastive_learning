@@ -43,12 +43,15 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 import itertools
 
+from sklearn.metrics import silhouette_score
+from sklearn.feature_selection import mutual_info_classif
+
 
 
 
 
 which_data_type = 'OpenBHB' 
-is_sweeping = True
+is_sweeping = False
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -697,6 +700,24 @@ def extract_features_for_umap(test_loader, model, opts, key, max_features=64):
     return all_features, all_labels, all_metadata
 
 
+
+
+
+
+
+# Define the MMD function
+def mmd_rbf(X, Y, gamma=1.0):
+    XX = torch.exp(-gamma * torch.cdist(X, X, p=2).pow(2))
+    YY = torch.exp(-gamma * torch.cdist(Y, Y, p=2).pow(2))
+    XY = torch.exp(-gamma * torch.cdist(X, Y, p=2).pow(2))
+    return XX.mean() + YY.mean() - 2 * XY.mean()
+
+
+
+
+
+
+
 def visualise_umap(test_loader, model, opts, epoch=0):
     key = 1
     variable_of_interest = str(key)
@@ -706,6 +727,48 @@ def visualise_umap(test_loader, model, opts, epoch=0):
     print(f"Features shape: {features.shape}")
     print(f"Labels shape: {labels.shape}")
     print(f"Metadata shape: {metadata.shape}")
+
+    metadata = metadata - 1
+
+
+    sil_score = silhouette_score(features, metadata)
+    
+    # Mutual Information
+    mi_score = mutual_info_classif(features, metadata).mean()
+    
+    # Convert to tensors
+    site_labels = torch.tensor(metadata, dtype=torch.long)
+    features = torch.tensor(features, dtype=torch.float32)
+    
+    # Unique site labels
+    unique_sites = torch.unique(site_labels)
+    
+    # MMD Calculation
+    mmd_scores = {}
+    for site_A, site_B in itertools.combinations(unique_sites, 2):
+        features_A = features[site_labels == site_A]
+        features_B = features[site_labels == site_B]
+
+        if features_A.shape[0] > 0 and features_B.shape[0] > 0:
+            mmd_score = mmd_rbf(features_A, features_B)
+            mmd_scores[(site_A.item(), site_B.item())] = mmd_score.item()
+
+    # Mean MMD
+    mean_mmd_score = np.mean(list(mmd_scores.values())) if mmd_scores else 0
+
+    # results = {
+    #     "Silhouette Score": sil_score,
+    #     "Mutual Information Score": mi_score,
+    #     "MMD Scores": mmd_scores,
+    #     "Mean MMD Score": mean_mmd_score
+    # }
+
+    wandb.log({'sil_score': sil_score})
+    wandb.log({'mi_score': mi_score})
+    wandb.log({'mmd_score': mean_mmd_score})
+
+
+
 
     # Perform UMAP dimensionality reduction
     umap_model = umap.UMAP(random_state=42)
@@ -752,7 +815,7 @@ def visualise_umap(test_loader, model, opts, epoch=0):
         plt.savefig(filename, dpi=300, bbox_inches='tight')  # Save with high resolution
         print(f"UMAP plot saved to '{filename}'")
     else:
-        filename = f'/home/afc53/images/umap_features_seaborn_plot_epoch_{epoch}_{opts.loss_choice}.png'
+        filename = f'/home/afc53/images/umap_features_seaborn_plot_epoch_{epoch}_{opts.loss_choice}_OpenBHB_{opts.confound_loss}.png'
         plt.savefig(filename, dpi=300, bbox_inches='tight')  # Save with high resolution
         print(f"UMAP plot saved to '{filename}'")
 
@@ -1043,7 +1106,7 @@ def training(seed=0):
     # writer.add_scalar("test/score", challenge_metric, epoch)
     # print("Challenge score", challenge_metric)
 
-    # visualise_umap(test_loader, model, opts)
+    visualise_umap(test_loader, model, opts)
 
 
     end_time = time.time()  # End the timer
