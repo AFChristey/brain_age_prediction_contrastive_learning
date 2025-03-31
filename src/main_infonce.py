@@ -452,7 +452,9 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         images = images.squeeze()
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
         # if which_data_type == 'MREData':
-        images = images.unsqueeze(1)  # Add channel dimension at index 1
+
+        if opts.modality == "OpenBHB":
+            images = images.unsqueeze(1)  # Add channel dimension at index 1
 
         # print('THIS IS SHAPE OF IMAGES AFTER SQUEEZING')
         # print(images[0].shape)
@@ -647,7 +649,8 @@ def extract_features_for_umap(test_loader, model, opts, key, max_features=64):
             images = images.squeeze()
             # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
             # if which_data_type == 'MREData':
-            images = images.unsqueeze(1)  # Add channel dimension at index 1
+            if opts.modality == "OpenBHB":
+                images = images.unsqueeze(1)  # Add channel dimension at index 1
 
             # Extract features from the model
             images = images.contiguous()
