@@ -18,6 +18,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
+both_Stiff_DR = True
+
+
 # takes a tensor of real ages and bins them into age categories
 # output is a tensor with binned age values
 def bin_age(age_real: torch.Tensor):
@@ -192,14 +195,27 @@ class MREData(torch.utils.data.Dataset):
         sex = sex.replace('m', 'M')
         sex = sex.to_numpy()
 
-        if modality == 'stiffness':
+
+
+        # THIS HAS SAME SIGMA AND MU, SO NEED TO GET SEPARATE VALUES AND THEN DO SEPERATE NORMALISATIONS!!!!!!! 
+        if both_Stiff_DR == True:
             _, mu_stiff, sigma_stiff = normalize_mean_0_std_1(stiffness, default_value=0, mu_nonzero=None,
                                                               sigma_nonzero=None)
-            [self.mu, self.sigma] = mu_stiff, sigma_stiff
+            [self.mu_stiffness, self.sigma_stiffness] = mu_stiff, sigma_stiff
 
-        elif modality == 'dr':
             _, mu_dr, sigma_dr = normalize_mean_0_std_1(dr, default_value=0, mu_nonzero=None, sigma_nonzero=None)
-            [self.mu, self.sigma] = mu_dr, sigma_dr
+            [self.mu_dr, self.sigma_dr] = mu_dr, sigma_dr
+
+        else:
+
+            if modality == 'stiffness':
+                _, mu_stiff, sigma_stiff = normalize_mean_0_std_1(stiffness, default_value=0, mu_nonzero=None,
+                                                                sigma_nonzero=None)
+                [self.mu, self.sigma] = mu_stiff, sigma_stiff
+
+            elif modality == 'dr':
+                _, mu_dr, sigma_dr = normalize_mean_0_std_1(dr, default_value=0, mu_nonzero=None, sigma_nonzero=None)
+                [self.mu, self.sigma] = mu_dr, sigma_dr
 
         kfold = KFold(n_splits=5, shuffle=True, random_state=42)
 
@@ -233,35 +249,80 @@ class MREData(torch.utils.data.Dataset):
                                                                          random_state=42)
 
         # THIS IS TO TRAIN-TEST SPLIT (ONLY 60 TEST SAMPLES)
-            
+        default_value = 0
+
         if train:
+            if both_Stiff_DR == True:
+                self.x = []
             self.y = age_train
             self.sex = sex_train
             self.site = study_train
             self.imbalance = imbalance_train
             # self.MRE_coverage = MRE_coverage_train
 
-            if modality == 'stiffness':
-                self.x = stiffness_train
-            elif modality == 'dr':
-                self.x = dr_train
-            elif modality == 'T1':
-                self.x = T1_train
+            if both_Stiff_DR == True:
+                x_stiff = stiffness_train
+                x_dr = dr_train
+
+                x_stiff, _, _ = normalize_mean_0_std_1(x_stiff,
+                                        default_value=default_value,
+                                        mu_nonzero=self.mu_stiffness,
+                                        sigma_nonzero=self.sigma_stiffness)
+                
+
+                x_dr, _, _ = normalize_mean_0_std_1(x_dr,
+                                        default_value=default_value,
+                                        mu_nonzero=self.mu_dr,
+                                        sigma_nonzero=self.sigma_dr)
+
+                self.x.append(x_stiff)
+                self.x.append(x_dr)
+                self.x = np.stack(self.x, axis=1)  # shape: [N, 2, D, H, W]
+            else:
+                if modality == 'stiffness':
+                    self.x = stiffness_train
+                elif modality == 'dr':
+                    self.x = dr_train
+                elif modality == 'T1':
+                    self.x = T1_train
 
         else:
+            if both_Stiff_DR == True:
+                self.x = []
             self.y = age_test
             self.sex = sex_test
             self.site = study_test
             self.imbalance = imbalance_test
             # self.MRE_coverage = MRE_coverage_test
 
-            if modality == 'stiffness':
-                self.x = stiffness_test
-            elif modality == 'dr':
-                self.x = dr_test
-            elif modality == 'T1':
-                self.x = T1_test
 
+            if both_Stiff_DR == True:
+                x_stiff = stiffness_test
+                x_dr = dr_test
+
+                x_stiff, _, _ = normalize_mean_0_std_1(x_stiff,
+                        default_value=default_value,
+                        mu_nonzero=self.mu_stiffness,
+                        sigma_nonzero=self.sigma_stiffness)
+                
+
+                x_dr, _, _ = normalize_mean_0_std_1(x_dr,
+                                        default_value=default_value,
+                                        mu_nonzero=self.mu_dr,
+                                        sigma_nonzero=self.sigma_dr)
+
+
+                self.x.append(x_stiff)
+                self.x.append(x_dr)
+                self.x = np.stack(self.x, axis=1)  # shape: [N, 2, D, H, W]
+
+            else:
+                if modality == 'stiffness':
+                    self.x = stiffness_train
+                elif modality == 'dr':
+                    self.x = dr_train
+                elif modality == 'T1':
+                    self.x = T1_train
 
         # THIS IS TO HAVE SAME TRAIN AND TEST - risky as overfitting
             
@@ -299,20 +360,23 @@ class MREData(torch.utils.data.Dataset):
         self.T = transform
 
     def norm(self):
-
-        default_value = 0
-
-        if self.modality == 'T1':
-            self.x = norm_whole_batch(self.x, 'mean_std', default_value)
-
-        elif self.modality == 'dr' or self.modality == 'stiffness':
-            self.x, _, _ = normalize_mean_0_std_1(self.x,
-                                                  default_value=default_value,
-                                                  mu_nonzero=self.mu,
-                                                  sigma_nonzero=self.sigma)
-
+        if both_Stiff_DR == True:
+            carry_on = True
         else:
-            raise ValueError('Invalid modality')
+            default_value = 0
+
+            if self.modality == 'T1':
+                self.x = norm_whole_batch(self.x, 'mean_std', default_value)
+
+            # NEED TO UPDATE THIS!!!!!!!
+            elif self.modality == 'dr' or self.modality == 'stiffness':
+                self.x, _, _ = normalize_mean_0_std_1(self.x,
+                                                    default_value=default_value,
+                                                    mu_nonzero=self.mu,
+                                                    sigma_nonzero=self.sigma)
+
+            else:
+                raise ValueError('Invalid modality')
 
     def __len__(self):
         return len(self.y)

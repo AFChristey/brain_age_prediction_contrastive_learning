@@ -50,9 +50,9 @@ from sklearn.feature_selection import mutual_info_classif
 
 
 
-which_data_type = 'OpenBHB' 
+which_data_type = 'MRE' 
 # which_data_type = 'MRE' 
-is_sweeping = False
+is_sweeping = True
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -873,8 +873,11 @@ def training(seed=0):
         config = wandb.config
         # opts.trial = config.trial
 
-        opts.lambda_mmd = config.lambda_mmd
-        # opts.lr = config.lr
+        # opts.lambda_mmd = config.lambda_mmd
+
+        opts.weight_decay = config.weight_decay
+        opts.noise_std = config.noise_std
+        opts.lr = config.lr
         # opts.weight_decay = config.weight_decay
         
 
@@ -1134,32 +1137,22 @@ if __name__ == '__main__':
         sweep_config = {
             'method': 'random',
             # "name": "classification_tuning_dynamic_negative_classloss_noGRL_part2",
-            "name": "tuning_of_mmd_RnC_OpenBHB_1.0",
+            # "name": "tuning_of_mmd_RnC_OpenBHB_1.0",
+            "name": "tuning_of_basic_RnC_MRE",
             'metric': {
                 'name': 'train/mae', #'mae_train'
                 'goal': 'minimize'
             },
             "parameters": {
-            # "batch_size": {"values": [32, 64]},
-            # "lr": {"values": [1e-4, 1e-2, 1e-5, 1e-3]},
-            # "weight_decay": {"values": [1e-6, 1e-2, 1e-4]},
-            # # "temp": {"values": [0.05, 0.1, 0.2]},
-            # # "method": {"values": ["supcon", "yaware"]},
-            # # "optimizer": {"values": ["adam", "sgd"]},
-            # # "momentum": {"values": [0, 0.9, 1.0]},
-            # # "sigma": {"values": [1, 2]},
+
+            "lr": {"values": [1e-4, 5e-4, 5e-3, 1e-5, 1e-3]},
+            "weight_decay": {"values": [1e-6, 1e-2, 1e-4, 1e-5, 1e-3]},
+            "noise_std": {"values": [0, 0.01, 0.05, 0.1]},
+                
+
+            # Loss terms:
             # "lambda_adv": {"values": [5e-6, 1e-5, 5e-5, 1e-4]},
-            # # "lr_decay_step": {"values": [5, 10, 15]},
-            # # "lr_decay_rate": {"values": [0.5, 0.7, 0.9]},
-            # # "beta1": {"values": [0.8, 0.9, 0.95]},
-            # # "beta2": {"values": [0.99, 0.999, 0.9999]}    
-            # # "noise_std": {"values": [0, 0.01, 0.05, 0.1]},
-            # # "kernel": {"values": ["gaussian", "rbf"]},
-            # # "lr_decay_rate": {"values": [0.1, 0.9]},
-            # # "grl_layer": {"values": [1, 0]},
-            # "lambda_val": {"values": [0.0005, 0.005, 0.05, 0.5, 5, 50]}
-            # "trial": {"values": [0,1,2,3,4]},
-            "lambda_mmd": {"values": [1e-6, 1e-4, 1e-5, 1e-2, 1e-1, 1e-3, 10, 100]},
+            # "lambda_mmd": {"values": [1e-6, 1e-4, 1e-5, 1e-2, 1e-1, 1e-3, 10, 100]},
 
             # lambda_mmd
 
