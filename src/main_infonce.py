@@ -1110,7 +1110,8 @@ def training(seed=0):
     # writer.add_scalar("test/score", challenge_metric, epoch)
     # print("Challenge score", challenge_metric)
 
-    visualise_umap(test_loader, model, opts)
+    if is_sweeping == False:
+        visualise_umap(test_loader, model, opts)
 
 
     end_time = time.time()  # End the timer
@@ -1138,7 +1139,7 @@ if __name__ == '__main__':
             'method': 'random',
             # "name": "classification_tuning_dynamic_negative_classloss_noGRL_part2",
             # "name": "tuning_of_mmd_RnC_OpenBHB_1.0",
-            "name": "tuning_of_basic_RnC_MRE",
+            "name": "tuning_of_basic_dynamic_MRE",
             'metric': {
                 'name': 'train/mae', #'mae_train'
                 'goal': 'minimize'

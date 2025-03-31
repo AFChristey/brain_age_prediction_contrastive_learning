@@ -101,7 +101,7 @@ class ResNet(nn.Module):
     Note: only a last FC layer is added on top of the "encoder" backbone.
     """
     # def __init__(self, block, layers, in_channels=1,
-    def __init__(self, block, layers, in_channels=1,
+    def __init__(self, block, layers, in_channels=2,
                  zero_init_residual=False, groups=1, width_per_group=64, replace_stride_with_dilation=None,
                  norm_layer=None, initial_kernel_size=7):
         super(ResNet, self).__init__()
