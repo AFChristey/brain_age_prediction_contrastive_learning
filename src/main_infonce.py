@@ -448,16 +448,22 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
         # if which_data_type == 'MREData':
         
+        print('THIS IS SHAPE OF IMAGES BEFORE SQUEEZING')
+        print(images[0].shape)
+        
         # CHANGED
         images = images.squeeze()
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
         # if which_data_type == 'MREData':
 
+
+
+
         if opts.modality == "OpenBHB":
             images = images.unsqueeze(1)  # Add channel dimension at index 1
 
-        # print('THIS IS SHAPE OF IMAGES AFTER SQUEEZING')
-        # print(images[0].shape)
+        print('THIS IS SHAPE OF IMAGES AFTER SQUEEZING')
+        print(images[0].shape)
 
         warmup_learning_rate(opts, epoch, idx, len(train_loader), optimizer)
 
