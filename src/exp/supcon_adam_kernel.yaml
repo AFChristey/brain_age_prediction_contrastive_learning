@@ -30,6 +30,6 @@ feature_sim: l2
 lambda_val: 0
 lambda_adv: 0
 grl_layer: 0
-confound_loss: basic
+confound_loss: classification
 lambda_mmd: 0
-modality: OpenBHB
+modality: MRE
