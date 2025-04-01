@@ -100,8 +100,7 @@ class ResNet(nn.Module):
     "encoder", outputting a latent vector of size 512 (independent of input size).
     Note: only a last FC layer is added on top of the "encoder" backbone.
     """
-    # def __init__(self, block, layers, in_channels=1,
-    def __init__(self, block, layers, in_channels=2,
+    def __init__(self, block, layers, in_channels=1,
                  zero_init_residual=False, groups=1, width_per_group=64, replace_stride_with_dilation=None,
                  norm_layer=None, initial_kernel_size=7):
         super(ResNet, self).__init__()
@@ -354,10 +353,13 @@ class GradientReversalLayer(nn.Module):
 
 class SupConResNet(nn.Module):
     """Encoder + Projection Head + Site Classifier with GRL"""
-    def __init__(self, name='resnet50', head='mlp', feat_dim=128, num_sites=6, grl_layer=0, lambda_val=1.0):
+    def __init__(self, name='resnet50', head='mlp', feat_dim=128, num_sites=6, grl_layer=0, lambda_val=1.0, modality="OpenBHB"):
         super().__init__()
         model_fun, dim_in = model_dict[name]
-        self.encoder = model_fun()  # Backbone
+        if modality == "OpenBHB":
+            self.encoder = model_fun()
+        else:
+            self.encoder = model_fun(in_channels=2)
         
         # Projection head for contrastive learning
         if head == 'linear':

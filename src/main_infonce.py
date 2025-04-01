@@ -257,10 +257,10 @@ def load_data(opts):
 def load_model(opts):
     if 'resnet' in opts.model:
         if opts.modality == "OpenBHB":
-            model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val)
+            model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val, modality=opts.modality)
             # model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70)
         else:
-            model = models.SupConResNet(opts.model, feat_dim=128, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val)
+            model = models.SupConResNet(opts.model, feat_dim=128, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val, modality=opts.modality)
             # model = models.SupConResNet(opts.model, feat_dim=128)
     elif 'alexnet' in opts.model:
         model = models.SupConAlexNet(feat_dim=128)
