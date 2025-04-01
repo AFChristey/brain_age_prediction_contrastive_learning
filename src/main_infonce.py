@@ -1144,11 +1144,13 @@ def training(seed=0):
 if __name__ == '__main__':
 
     if is_sweeping == True:
+        opts = parse_arguments()
         sweep_config = {
             'method': 'random',
             # "name": "classification_tuning_dynamic_negative_classloss_noGRL_part2",
             # "name": "tuning_of_mmd_RnC_OpenBHB_1.0",
-            "name": "tuning_of_basic_RnC_OpenBHB",
+            # "name": f"tuning_of_basic_dynamic_OpenBHB",
+            "name": f"tuning_of_{opts.confound_loss}_{opts.loss_choice}_{opts.modality}",
             'metric': {
                 'name': 'train/mae', #'mae_train'
                 'goal': 'minimize'
