@@ -31,4 +31,4 @@ lambda_adv: 0
 grl_layer: 0
 confound_loss: mmd
 lambda_mmd: 0
-modality: MRE
+modality: OpenBHB
