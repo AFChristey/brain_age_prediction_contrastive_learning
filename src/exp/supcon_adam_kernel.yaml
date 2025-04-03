@@ -2,24 +2,25 @@ program: main_infonce.py
 data_dir: /scratch/data-registry/medical/openbhb
 save_dir:  /scratch/output/brain-age-mri
 model: resnet18
+# change back to 300
 epochs: 50
 batch_size: 32
-lr: 5e-4
+lr: 1e-4
 lr_decay: step
-lr_decay_rate: 0.1
+lr_decay_rate: 0.9
 lr_decay_step: 10
 optimizer: adam
 momentum: 0.9
-weight_decay: 5e-4
+weight_decay: 1e-6
 train_all: 1
 method: expw
 kernel: rbf
-sigma: 1
+sigma: 2
 trial: 0
 tf: noise
 noise_std: 0.1
 path: cluster
-loss_choice: RnC
+loss_choice: dynamic
 NN_nb_step_size: 0
 end_NN_nb: 14
 NN_nb_selection: manhattan
@@ -31,4 +32,4 @@ lambda_adv: 0
 grl_layer: 0
 confound_loss: mmd
 lambda_mmd: 0
-modality: MRE
+modality: OpenBHB
