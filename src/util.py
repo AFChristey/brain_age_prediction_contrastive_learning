@@ -492,9 +492,11 @@ def gather_site_feats(model, dataloader, opts):
         site_labels.append(metadata[1])
         # print(site_labels.shape)
         # print(site_labels)
-    
+    site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
+
     if opts.modality == "OpenBHB":
         site_labels = site_labels - 1
+
     # return torch.cat(features, 0).cpu().numpy(), torch.cat(site_labels, 0).cpu().numpy()
     return torch.cat(features, 0).cpu().numpy(), np.concatenate(site_labels)
 
