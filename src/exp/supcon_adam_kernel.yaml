@@ -18,7 +18,7 @@ kernel: rbf
 sigma: 2
 trial: 0
 tf: noise
-noise_std: 0.1
+noise_std: 0
 path: cluster
 loss_choice: dynamic
 NN_nb_step_size: 0
