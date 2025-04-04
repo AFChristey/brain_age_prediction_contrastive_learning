@@ -867,7 +867,7 @@ def training(seed=0):
 
     opts = parse_arguments()
 
-
+    print(opts.wandb_name)
     wandb.init(
     project=opts.wandb_name,
     entity="afc53-university-of-cambridge",
