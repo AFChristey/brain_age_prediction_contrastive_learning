@@ -5,13 +5,13 @@ model: resnet18
 # change back to 300
 epochs: 50
 batch_size: 32
-lr: 1e-5
+lr: 1e-4
 lr_decay: step
 lr_decay_rate: 0.9
 lr_decay_step: 10
 optimizer: adam
 momentum: 0.9
-weight_decay: 1e-2
+weight_decay: 1e-5
 train_all: 1
 method: expw
 kernel: rbf
@@ -28,8 +28,8 @@ temp_RNC: 2
 label_diff: l1
 feature_sim: l2
 lambda_val: 0
-lambda_adv: 1e-3
+lambda_adv: 0
 grl_layer: 0
-confound_loss: clasification
-lambda_mmd: 0
-modality: MRE
+confound_loss: mmd
+lambda_mmd: 1e-4
+modality: OpenBHB
