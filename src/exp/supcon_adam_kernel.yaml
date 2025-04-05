@@ -17,7 +17,7 @@ kernel: rbf
 sigma: 1
 trial: 0
 tf: noise
-noise_std: 1e-2
+noise_std: 0
 path: cluster
 loss_choice: RnC
 NN_nb_step_size: 0
@@ -31,4 +31,4 @@ lambda_adv: 5e-4
 grl_layer: 0
 confound_loss: classification
 lambda_mmd: 0
-modality: MRE
+modality: OpenBHB
