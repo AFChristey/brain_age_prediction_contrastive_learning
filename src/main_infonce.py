@@ -52,7 +52,7 @@ from sklearn.feature_selection import mutual_info_classif
 
 # which_data_type = 'MRE' 
 # which_data_type = 'MRE' 
-is_sweeping = False
+is_sweeping = True
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -114,7 +114,7 @@ def parse_arguments():
     parser.add_argument('--lambda_mmd', type=float, help='Weight for MMD loss', default=0)
     parser.add_argument('--grl_layer', type=float, help='turn on or off grl layer', default=0)
     parser.add_argument('--lambda_val', type=float, help='strength of grl layer', default=0)
-    parser.add_argument('--confound_loss', type=str, help='loss chosen for removing confound effect', choices=['basic', 'classification', 'mmd', 'class+mmd'], default='basic')
+    parser.add_argument('--confound_loss', type=str, help='loss chosen for removing confound effect', choices=['basic', 'classification', 'mmd', 'class+mmd', 'classificationGRL'], default='basic')
 
 
 
@@ -573,6 +573,9 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             # # Total loss = Contrastive Loss + Classification Loss
             if opts.confound_loss == "classification":
                 total_loss = running_loss - opts.lambda_adv * class_loss
+
+            if opts.confound_loss == "classificationGRL":
+                total_loss = running_loss - opts.lambda_adv * class_loss
                 # total_loss = class_loss
             elif opts.confound_loss == "basic":
                 total_loss =  running_loss
@@ -890,7 +893,7 @@ def training(seed=0):
         opts.noise_std = config.noise_std
         opts.lr = config.lr
         opts.lambda_mmd = config.lambda_mmd
-        # opts.lambda_adv = config.lambda_adv
+        opts.lambda_adv = config.lambda_adv
         
 
 
@@ -1167,6 +1170,7 @@ if __name__ == '__main__':
 
             # Loss terms:
             "lambda_adv": {"values": [5e-6, 1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3]},
+            # "lambda_adv": {"values": [5e-6, 1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3]},
             "lambda_mmd": {"values": [1e-6, 5e-5, 5e-4, 5e-3, 5e-2, 5e-1, 1e-4, 1e-5, 1e-2, 1e-1, 1e-3, 10, 100]},
 
             # lambda_mmd
