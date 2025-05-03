@@ -33,4 +33,4 @@ confound_loss: mmd
 lambda_mmd: 0
 lambda_coral: 0
 lambda_hsic: 0
-modality: OpenBHB
+modality: MRE
