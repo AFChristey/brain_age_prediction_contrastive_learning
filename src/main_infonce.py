@@ -52,7 +52,7 @@ from sklearn.feature_selection import mutual_info_classif
 
 # which_data_type = 'MRE' 
 # which_data_type = 'MRE' 
-is_sweeping = False
+is_sweeping = True
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -114,7 +114,10 @@ def parse_arguments():
     parser.add_argument('--lambda_mmd', type=float, help='Weight for MMD loss', default=0)
     parser.add_argument('--grl_layer', type=float, help='turn on or off grl layer', default=0)
     parser.add_argument('--lambda_val', type=float, help='strength of grl layer', default=0)
-    parser.add_argument('--confound_loss', type=str, help='loss chosen for removing confound effect', choices=['basic', 'classification', 'mmd', 'class+mmd', 'classificationGRL'], default='basic')
+    parser.add_argument('--confound_loss', type=str, help='loss chosen for removing confound effect', choices=['basic', 'classification', 'mmd', 'class+mmd', 'classificationGRL', 'coral', 'hsic'], default='basic')
+    parser.add_argument('--lambda_coral', type=float, help='Weight for Coral loss', default=0)
+    parser.add_argument('--lambda_hsic', type=float, help='Weight for HSIC loss', default=0)
+
 
 
 
@@ -344,14 +347,13 @@ def load_optimizer(model, opts):
 def mmd(X, Y):
     bandwidth_range=[0.2, 0.5, 0.9, 1.3]
 
-    XX, YY, XY = 0, 0, 0  # Initialize the kernel sums
+    XX, YY, XY = 0, 0, 0 
 
     for gamma in bandwidth_range:
         XX += torch.exp(-gamma * torch.cdist(X, X, p=2).pow(2))
         YY += torch.exp(-gamma * torch.cdist(Y, Y, p=2).pow(2))
         XY += torch.exp(-gamma * torch.cdist(X, Y, p=2).pow(2))
 
-    # Normalize by number of kernels (optional, keeps values comparable)
     XX /= len(bandwidth_range)
     YY /= len(bandwidth_range)
     XY /= len(bandwidth_range)
@@ -379,6 +381,62 @@ def mmd_calculator(opts, projected, site_labels):
     return mmd_value
 
 
+def coral(X, Y):
+    """
+    CORAL loss between features X and Y from two domains (e.g., sites).
+    """
+    d = X.size(1)
+
+    # Center the features
+    X_c = X - X.mean(dim=0, keepdim=True)
+    Y_c = Y - Y.mean(dim=0, keepdim=True)
+
+    # Compute covariance matrices
+    cov_X = X_c.T @ X_c / (X.size(0) - 1)
+    cov_Y = Y_c.T @ Y_c / (Y.size(0) - 1)
+
+    # Frobenius norm between covariance matrices
+    loss = torch.mean((cov_X - cov_Y) ** 2)
+
+    return loss / (4 * d * d)
+
+def coral_calculator(opts, projected, site_labels):
+    """
+    Computes average CORAL loss across all unique site/domain pairs.
+    """
+    unique_sites = torch.unique(site_labels)
+    coral_values = {}
+
+    for site_A, site_B in itertools.combinations(unique_sites, 2):
+        features_A = projected[site_labels == site_A]
+        features_B = projected[site_labels == site_B]
+
+        if features_A.shape[0] > 1 and features_B.shape[0] > 1:
+            coral_score = coral(features_A, features_B)
+            coral_values[(site_A.item(), site_B.item())] = coral_score.item()
+
+    coral_value = np.mean(list(coral_values.values())) if coral_values else 0
+    return coral_value
+
+
+
+def hsic_calculator(X, Y, sigma=1.0):
+    """Compute empirical HSIC with RBF kernels."""
+    def rbf_kernel(x, sigma):
+        dist = torch.cdist(x, x).pow(2)
+        return torch.exp(-dist / (2 * sigma**2))
+
+    n = X.size(0)
+    H = torch.eye(n, device=X.device) - (1. / n) * torch.ones(n, n, device=X.device)
+
+    K = rbf_kernel(X, sigma)
+    L = rbf_kernel(Y, sigma)
+
+    HKH = H @ K @ H
+    HLH = H @ L @ H
+
+    hsic = torch.trace(HKH @ HLH) / ((n - 1) ** 2)
+    return hsic
 
 def train(train_loader, model, infonce, optimizer, opts, epoch):
     # lambda_adv = 0.35  # Weight for adversarial loss
@@ -447,7 +505,10 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
         # site_labels = site_labels.repeat_interleave(opts.n_views)
 
         # if which_data_type == 'MREData':
-        
+            
+        if opts.modality == "OpenBHB":
+            site_labels = site_labels - 1
+
         # print('THIS IS SHAPE OF IMAGES BEFORE SQUEEZING')
         # print(images[0].shape)
 
@@ -512,17 +573,21 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             projected = torch.cat([f.unsqueeze(1) for f in projected], dim=1)
             site_pred = torch.cat([f.unsqueeze(1) for f in site_pred], dim=1)
 
+            mmd_loss = 0
+            coral_loss = 0
+            hsic_loss = 0
 
             # Should probably not have this? LOOK ABOVE
             site_pred = site_pred.mean(dim=1) 
             projected_mmd = projected.mean(dim=1) 
+            if opts.confound_loss == "mmd" or opts.confound_loss == "class+mmd":
+                mmd_loss = mmd_calculator(opts, projected_mmd, site_labels)
+            elif opts.confound_loss == "coral":
+                coral_loss = coral_calculator(opts, projected_mmd, site_labels)
+            elif opts.confound_loss == "hsic":
+                hsic_loss = hsic_calculator(projected_mmd, site_labels)
 
 
-            mmd_loss = mmd_calculator(opts, projected_mmd, site_labels)
-
-
-            if opts.modality == "OpenBHB":
-                site_labels = site_labels - 1
 
             class_loss = criterion_cls(site_pred, site_labels)
 
@@ -585,7 +650,12 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
             elif opts.confound_loss == "class+mmd":
                 total_loss = running_loss + opts.lambda_mmd * mmd_loss - opts.lambda_adv * class_loss
 
-        # Do I backpropagate total, or just separately?
+            elif opts.confound_loss == "coral":
+                total_loss = running_loss + opts.lambda_coral * coral_loss
+
+            elif opts.confound_loss == "hsic":
+                total_loss = running_loss + opts.lambda_hsic * hsic_loss
+
 
         optimizer.zero_grad()
         if scaler is None:
@@ -622,7 +692,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
                   f"ETA {datetime.timedelta(seconds=eta)}\t"
                   f"loss {loss.avg:.3f}\t")
     
-    return loss.avg, class_loss, mmd_loss, batch_time.avg, data_time.avg
+    return loss.avg, class_loss, mmd_loss, coral_loss, hsic_loss, batch_time.avg, data_time.avg
 
 
 
@@ -744,7 +814,8 @@ def visualise_umap(test_loader, model, opts, epoch=0):
     print(f"Labels shape: {labels.shape}")
     print(f"Metadata shape: {metadata.shape}")
 
-    metadata = metadata - 1
+    if opts.modality == "OpenBHB":
+        metadata = metadata - 1
 
 
     sil_score = silhouette_score(features, metadata)
@@ -894,7 +965,7 @@ def training(seed=0):
         opts.lr = config.lr
         # opts.lambda_mmd = config.lambda_mmd
         opts.lambda_adv = config.lambda_adv
-        opts.lambda_val = config.lambda_val
+        # opts.lambda_val = config.lambda_val
         
 
 
@@ -1043,7 +1114,7 @@ def training(seed=0):
 
         t1 = time.time()
         # Changed
-        loss_train, class_loss_train, mmd_loss_train, batch_time, data_time = train(train_loader, model, infonce, optimizer, opts, epoch)
+        loss_train, class_loss_train, mmd_loss_train, coral_loss_train, hsic_loss_train, batch_time, data_time = train(train_loader, model, infonce, optimizer, opts, epoch)
         t2 = time.time()
         wandb.log({"train/loss": loss_train, "lr": optimizer.param_groups[0]['lr'], "BT": batch_time, "DT": data_time,
             "epoch": epoch})
@@ -1053,6 +1124,14 @@ def training(seed=0):
         
         wandb.log({"train/mmd_loss": mmd_loss_train, "lr": optimizer.param_groups[0]['lr'], "BT": batch_time, "DT": data_time,
             "epoch": epoch})
+        
+        wandb.log({"train/coral_loss": coral_loss_train, "lr": optimizer.param_groups[0]['lr'], "BT": batch_time, "DT": data_time,
+            "epoch": epoch})
+        
+        wandb.log({"train/hsic_loss": hsic_loss_train, "lr": optimizer.param_groups[0]['lr'], "BT": batch_time, "DT": data_time,
+            "epoch": epoch})
+        
+        
         
         # writer.add_scalar("train/loss", loss_train, epoch)
 
@@ -1153,28 +1232,27 @@ if __name__ == '__main__':
     if is_sweeping == True:
         opts = parse_arguments()
         sweep_config = {
-            'method': 'random',
+            'method': 'bayes',
             # "name": "classification_tuning_dynamic_negative_classloss_noGRL_part2",
             # "name": "tuning_of_mmd_RnC_OpenBHB_1.0",
             # "name": f"tuning_of_basic_dynamic_OpenBHB",
-            "name": f"tuning_of_{opts.confound_loss}_{opts.loss_choice}_{opts.modality}",
+            "name": f"part2_tuning_of_{opts.confound_loss}_{opts.loss_choice}_{opts.modality}",
             'metric': {
                 'name': 'train/mae', #'mae_train'
                 'goal': 'minimize'
             },
             "parameters": {
 
-            "lr": {"values": [1e-4, 5e-4, 5e-3, 1e-5, 1e-3]},
-            "weight_decay": {"values": [1e-6, 1e-2, 1e-4, 1e-5, 1e-3]},
+            "lr": {"values": [1e-5, 5e-5, 1e-4, 5e-4, 1e-3]},
+            # "weight_decay": {"values": [1e-6, 1e-2, 1e-4, 1e-5, 1e-3]},
+            "weight_decay": {"values": [1e-5, 5e-5, 1e-4, 5e-4, 1e-3]},
             "noise_std": {"values": [0, 0.01, 0.05, 0.1]},
                 
 
             # Loss terms:
-            "lambda_adv": {"values": [5e-6, 1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1]},
-            "lambda_val": {"values": [5e-6, 1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1]},
-            # "lambda_mmd": {"values": [1e-6, 5e-5, 5e-4, 5e-3, 5e-2, 5e-1, 1e-4, 1e-5, 1e-2, 1e-1, 1e-3, 10, 100]},
-
-            # lambda_mmd
+            "lambda_adv": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
+            # "lambda_val": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
+            # "lambda_mmd": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
 
         },
         }

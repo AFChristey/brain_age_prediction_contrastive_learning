@@ -294,7 +294,12 @@ def get_transforms(opts):
 
     elif opts.tf == 'noise':
         aug = transforms.Compose([
+            # ADDED UNSQUEEZE AND CUTOUT!!!
+            # unsqueeze_np,
+            # Cutout(patch_size=[1, 32, 32, 32], probability=0.5),
             to_tensor,
+            # ADDED SQUEEZE
+            # squeeze,
             AddGaussianNoiseTensor(mean=0., std=opts.noise_std),
         ])
 

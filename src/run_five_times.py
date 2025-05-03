@@ -25,7 +25,7 @@ def create_yaml(base_config_path):
 
     id = 'NEW' + confound_loss + '_' + modality + '_' + loss_choice
 
-    wandb_name = f"5times_{loss_choice}_{modality}_{confound_loss}"
+    wandb_name = f"part2_5times_{loss_choice}_{modality}_{confound_loss}"
 
     # Path for a unique YAML file for the sweep
     unique_yaml_path = f"{base_config_path}_{id}.yaml"
