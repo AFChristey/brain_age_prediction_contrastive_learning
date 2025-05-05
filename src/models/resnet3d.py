@@ -417,3 +417,73 @@ class SiteClassifier(nn.Module):
     
 
 
+
+
+# class ConditionalPrivateEncoder(nn.Module):
+#     def __init__(self, input_channels, num_sites, feature_dim):
+#         super().__init__()
+#         self.shared_conv = nn.Sequential(
+#             nn.Conv3d(input_channels, 32, kernel_size=3, padding=1),
+#             nn.ReLU(),
+#             nn.MaxPool3d(2),
+#             nn.Conv3d(32, 64, kernel_size=3, padding=1),
+#             nn.ReLU(),
+#             nn.AdaptiveAvgPool3d(1)
+#         )
+#         self.site_embeddings = nn.Embedding(num_sites, 16)  # learnable site embeddings
+#         self.fc = nn.Linear(64 + 16, feature_dim)
+
+#     def forward(self, x, site_id):
+#         x = self.shared_conv(x).view(x.size(0), -1)
+#         s = self.site_embeddings(site_id)
+#         x = torch.cat([x, s], dim=1)
+#         return self.fc(x)
+
+
+# class Decoder(nn.Module):
+#     def __init__(self, latent_dim=256, output_shape=(1, 64, 64, 64)):
+#         super(Decoder, self).__init__()
+#         self.output_shape = output_shape  # (C, D, H, W)
+#         self.fc = nn.Linear(latent_dim, 256)
+
+#         self.decoder = nn.Sequential(
+#             nn.ConvTranspose3d(16, 32, kernel_size=3, stride=2),
+#             nn.ReLU(True),
+#             nn.ConvTranspose3d(32, 16, kernel_size=3, stride=2),
+#             nn.ReLU(True),
+#             nn.ConvTranspose3d(16, output_shape[0], kernel_size=3, stride=2),
+#             nn.Sigmoid(),  # for reconstruction
+#         )
+
+#     def forward(self, z):
+#         # z: [B, latent_dim] → reshape to [B, C, D, H, W] (e.g. [B, 16, 4, 4, 4])
+#         x = self.fc(z)
+#         x = x.view(-1, 16, 4, 4, 4)
+#         x = self.decoder(x)
+#         return x
+    
+
+
+# class DSNModel(nn.Module):
+#     def __init__(self, shared_encoder, private_encoders, decoder):
+#         super().__init__()
+#         self.shared_encoder = shared_encoder
+#         self.private_encoders = nn.ModuleDict(private_encoders)  # site → encoder
+#         self.decoder = decoder
+
+#     def forward(self, x, site_id, recon=False):
+#         shared_feat = self.shared_encoder(x)
+#         private_feat = self.private_encoders[str(site_id)](x)
+
+#         features = shared_feat + private_feat
+
+#         output = {
+#             'features': features,
+#             'shared': shared_feat,
+#             'private': private_feat
+#         }
+
+#         if recon:
+#             output['reconstruction'] = self.decoder(shared_feat + private_feat)
+
+#         return output

@@ -114,7 +114,7 @@ def parse_arguments():
     parser.add_argument('--lambda_mmd', type=float, help='Weight for MMD loss', default=0)
     parser.add_argument('--grl_layer', type=float, help='turn on or off grl layer', default=0)
     parser.add_argument('--lambda_val', type=float, help='strength of grl layer', default=0)
-    parser.add_argument('--confound_loss', type=str, help='loss chosen for removing confound effect', choices=['basic', 'classification', 'mmd', 'class+mmd', 'classificationGRL', 'coral', 'hsic'], default='basic')
+    parser.add_argument('--confound_loss', type=str, help='loss chosen for removing confound effect', choices=['basic', 'classification', 'mmd', 'class+mmd', 'classificationGRL', 'coral', 'hsic', 'dsn'], default='basic')
     parser.add_argument('--lambda_coral', type=float, help='Weight for Coral loss', default=0)
     parser.add_argument('--lambda_hsic', type=float, help='Weight for HSIC loss', default=0)
 
@@ -260,10 +260,17 @@ def load_data(opts):
 def load_model(opts):
     if 'resnet' in opts.model:
         if opts.modality == "OpenBHB":
-            model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val, modality=opts.modality)
+            if opts.confound_loss == "dsn":
+                model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val, modality=opts.modality)
+                # model = models.
+            else:
+                model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val, modality=opts.modality)
             # model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70)
         else:
-            model = models.SupConResNet(opts.model, feat_dim=128, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val, modality=opts.modality)
+            if opts.confound_loss == "dsn":
+                model = models.SupConResNet(opts.model, feat_dim=128, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val, modality=opts.modality)
+            else:
+                model = models.SupConResNet(opts.model, feat_dim=128, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val, modality=opts.modality)
             # model = models.SupConResNet(opts.model, feat_dim=128)
     elif 'alexnet' in opts.model:
         model = models.SupConAlexNet(feat_dim=128)
@@ -449,6 +456,8 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
     scaler = torch.cuda.amp.GradScaler() if opts.amp else None
     model.train()
+    # private_encoder.train()
+    # reconstruction_decoder.train()
 
     t1 = time.time()
     # print(train_loader)
@@ -965,7 +974,7 @@ def training(seed=0):
         opts.lr = config.lr
         # opts.lambda_mmd = config.lambda_mmd
         opts.lambda_adv = config.lambda_adv
-        # opts.lambda_val = config.lambda_val
+        opts.lambda_val = config.lambda_val
         
 
 
@@ -1251,7 +1260,7 @@ if __name__ == '__main__':
 
             # Loss terms:
             "lambda_adv": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
-            # "lambda_val": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
+            "lambda_val": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
             # "lambda_mmd": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
 
         },
