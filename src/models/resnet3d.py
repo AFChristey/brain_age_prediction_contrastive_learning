@@ -419,71 +419,79 @@ class SiteClassifier(nn.Module):
 
 
 
-# class ConditionalPrivateEncoder(nn.Module):
-#     def __init__(self, input_channels, num_sites, feature_dim):
-#         super().__init__()
-#         self.shared_conv = nn.Sequential(
-#             nn.Conv3d(input_channels, 32, kernel_size=3, padding=1),
-#             nn.ReLU(),
-#             nn.MaxPool3d(2),
-#             nn.Conv3d(32, 64, kernel_size=3, padding=1),
-#             nn.ReLU(),
-#             nn.AdaptiveAvgPool3d(1)
-#         )
-#         self.site_embeddings = nn.Embedding(num_sites, 16)  # learnable site embeddings
-#         self.fc = nn.Linear(64 + 16, feature_dim)
+class ConditionalPrivateEncoder(nn.Module):
+    def __init__(self, input_channels, num_sites, feature_dim):
+        super().__init__()
+        self.shared_conv = nn.Sequential(
+            nn.Conv3d(input_channels, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool3d(2),
+            nn.Conv3d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool3d(1)
+        )
+        self.site_embeddings = nn.Embedding(num_sites, 16)  # learnable site embeddings
+        self.fc = nn.Linear(64 + 16, feature_dim)
 
-#     def forward(self, x, site_id):
-#         x = self.shared_conv(x).view(x.size(0), -1)
-#         s = self.site_embeddings(site_id)
-#         x = torch.cat([x, s], dim=1)
-#         return self.fc(x)
+    def forward(self, x, site_id):
+        x = self.shared_conv(x).view(x.size(0), -1)
+        s = self.site_embeddings(site_id)
+        x = torch.cat([x, s], dim=1)
+        return self.fc(x)
 
 
-# class Decoder(nn.Module):
-#     def __init__(self, latent_dim=256, output_shape=(1, 64, 64, 64)):
-#         super(Decoder, self).__init__()
-#         self.output_shape = output_shape  # (C, D, H, W)
-#         self.fc = nn.Linear(latent_dim, 256)
 
-#         self.decoder = nn.Sequential(
-#             nn.ConvTranspose3d(16, 32, kernel_size=3, stride=2),
-#             nn.ReLU(True),
-#             nn.ConvTranspose3d(32, 16, kernel_size=3, stride=2),
-#             nn.ReLU(True),
-#             nn.ConvTranspose3d(16, output_shape[0], kernel_size=3, stride=2),
-#             nn.Sigmoid(),  # for reconstruction
-#         )
+class ReconstructionNet(nn.Module):
+    def __init__(self, z_dim=64):
+        super().__init__()
+        self.init_dims = (128, 12, 14, 12)
+        init_flat_dim = torch.tensor(self.init_dims).prod().item()
 
-#     def forward(self, z):
-#         # z: [B, latent_dim] → reshape to [B, C, D, H, W] (e.g. [B, 16, 4, 4, 4])
-#         x = self.fc(z)
-#         x = x.view(-1, 16, 4, 4, 4)
-#         x = self.decoder(x)
-#         return x
+        self.fc = nn.Linear(z_dim, init_flat_dim)
+
+        self.decoder = nn.Sequential(
+            nn.BatchNorm3d(128),
+            nn.ReLU(inplace=True),
+
+            nn.ConvTranspose3d(128, 64, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm3d(64),
+            nn.ReLU(inplace=True),
+
+            nn.ConvTranspose3d(64, 32, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm3d(32),
+            nn.ReLU(inplace=True),
+
+            nn.ConvTranspose3d(32, 1, kernel_size=4, stride=2, padding=1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, z):
+        x = self.fc(z)
+        x = x.view(-1, *self.init_dims)
+        x = self.decoder(x)
+        x = x[:, :, :91, :109, :91]
+        return x
+
+
     
+    
+class DSN(nn.Module):
+    def __init__(self, modality="OpenBHB"):
+        super().__init__()
+        if modality == "OpenBHB":
+            self.shared_encoder = SupConResNet('resnet18', feat_dim=128, num_sites=70, modality=modality)
+            num_sites = 70
+        else:
+            self.shared_encoder = SupConResNet('resnet18', feat_dim=128, modality=modality)
+            num_sites = 6
 
 
-# class DSNModel(nn.Module):
-#     def __init__(self, shared_encoder, private_encoders, decoder):
-#         super().__init__()
-#         self.shared_encoder = shared_encoder
-#         self.private_encoders = nn.ModuleDict(private_encoders)  # site → encoder
-#         self.decoder = decoder
+        self.private_encoder = ConditionalPrivateEncoder(input_channels=1, num_sites=num_sites, feature_dim=64)
+        self.reconstructor = ReconstructionNet(z_dim=64 + 128)  # 64 private + 128 shared
 
-#     def forward(self, x, site_id, recon=False):
-#         shared_feat = self.shared_encoder(x)
-#         private_feat = self.private_encoders[str(site_id)](x)
-
-#         features = shared_feat + private_feat
-
-#         output = {
-#             'features': features,
-#             'shared': shared_feat,
-#             'private': private_feat
-#         }
-
-#         if recon:
-#             output['reconstruction'] = self.decoder(shared_feat + private_feat)
-
-#         return output
+    def forward(self, x, site_labels):
+        shared_features = self.shared_encoder(x)
+        private_features = self.private_encoder(x, site_labels)
+        combined_features = torch.cat([private_features, shared_features], dim=1)
+        recon = self.reconstructor(combined_features)
+        return shared_features, private_features, recon

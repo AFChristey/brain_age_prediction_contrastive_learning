@@ -28,8 +28,8 @@ label_diff: l1
 feature_sim: l2
 lambda_val: 0
 lambda_adv: 0
-grl_layer: 1
-confound_loss: classificationGRL
+grl_layer: 0
+confound_loss: class+mmd
 lambda_mmd: 0
 lambda_coral: 0
 lambda_hsic: 0

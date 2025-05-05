@@ -261,14 +261,14 @@ def load_model(opts):
     if 'resnet' in opts.model:
         if opts.modality == "OpenBHB":
             if opts.confound_loss == "dsn":
-                model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val, modality=opts.modality)
-                # model = models.
+                # model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val, modality=opts.modality)
+                model = models.DSN(modality=opts.modality)
             else:
                 model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val, modality=opts.modality)
             # model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70)
         else:
             if opts.confound_loss == "dsn":
-                model = models.SupConResNet(opts.model, feat_dim=128, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val, modality=opts.modality)
+                model = models.DSN(modality=opts.modality)           
             else:
                 model = models.SupConResNet(opts.model, feat_dim=128, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val, modality=opts.modality)
             # model = models.SupConResNet(opts.model, feat_dim=128)
@@ -548,8 +548,10 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             images = images.contiguous()
 
-
-            projected, site_pred = model(images, classify=True)
+            if opts.confound_loss == "dsn":
+                shared_features, private_features, recon = model(images, site_labels)
+            else:
+                projected, site_pred = model(images, classify=True)
 
 
             print("Projected (mean, std):", projected.mean().item(), projected.std().item())
@@ -972,9 +974,9 @@ def training(seed=0):
         opts.weight_decay = config.weight_decay
         opts.noise_std = config.noise_std
         opts.lr = config.lr
-        # opts.lambda_mmd = config.lambda_mmd
+        opts.lambda_mmd = config.lambda_mmd
         opts.lambda_adv = config.lambda_adv
-        opts.lambda_val = config.lambda_val
+        # opts.lambda_val = config.lambda_val
         
 
 
@@ -1260,8 +1262,8 @@ if __name__ == '__main__':
 
             # Loss terms:
             "lambda_adv": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
-            "lambda_val": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
-            # "lambda_mmd": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
+            # "lambda_val": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
+            "lambda_mmd": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
 
         },
         }
