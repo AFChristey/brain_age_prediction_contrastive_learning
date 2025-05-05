@@ -963,8 +963,8 @@ def training(seed=0):
         opts.weight_decay = config.weight_decay
         opts.noise_std = config.noise_std
         opts.lr = config.lr
-        opts.lambda_mmd = config.lambda_mmd
-        # opts.lambda_adv = config.lambda_adv
+        # opts.lambda_mmd = config.lambda_mmd
+        opts.lambda_adv = config.lambda_adv
         # opts.lambda_val = config.lambda_val
         
 
@@ -1250,9 +1250,9 @@ if __name__ == '__main__':
                 
 
             # Loss terms:
-            # "lambda_adv": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
+            "lambda_adv": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
             # "lambda_val": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
-            "lambda_mmd": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
+            # "lambda_mmd": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
 
         },
         }
