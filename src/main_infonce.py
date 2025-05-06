@@ -52,7 +52,7 @@ from sklearn.feature_selection import mutual_info_classif
 
 # which_data_type = 'MRE' 
 # which_data_type = 'MRE' 
-is_sweeping = False
+is_sweeping = True
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -651,7 +651,7 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
                 total_loss = running_loss - opts.lambda_adv * class_loss
 
             if opts.confound_loss == "classificationGRL":
-                total_loss = running_loss - opts.lambda_adv * class_loss
+                total_loss = running_loss + opts.lambda_adv * class_loss
                 # total_loss = class_loss
             elif opts.confound_loss == "basic":
                 total_loss =  running_loss
@@ -974,9 +974,9 @@ def training(seed=0):
         opts.weight_decay = config.weight_decay
         opts.noise_std = config.noise_std
         opts.lr = config.lr
-        opts.lambda_mmd = config.lambda_mmd
-        # opts.lambda_adv = config.lambda_adv
-        # opts.lambda_val = config.lambda_val
+        # opts.lambda_mmd = config.lambda_mmd
+        opts.lambda_adv = config.lambda_adv
+        opts.lambda_val = config.lambda_val
         
 
 
@@ -1261,9 +1261,9 @@ if __name__ == '__main__':
                 
 
             # Loss terms:
-            # "lambda_adv": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
-            # "lambda_val": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
-            "lambda_mmd": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
+            "lambda_adv": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
+            "lambda_val": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
+            # "lambda_mmd": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
 
         },
         }
