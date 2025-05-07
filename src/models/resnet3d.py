@@ -476,13 +476,13 @@ class ReconstructionNet(nn.Module):
     
     
 class DSN(nn.Module):
-    def __init__(self, modality="OpenBHB"):
+    def __init__(self, modality="OpenBHB", grl_layer=0):
         super().__init__()
         if modality == "OpenBHB":
-            self.shared_encoder = SupConResNet('resnet18', feat_dim=128, num_sites=70, modality=modality)
+            self.shared_encoder = SupConResNet('resnet18', feat_dim=128, num_sites=70, modality=modality, grl_layer=grl_layer)
             num_sites = 70
         else:
-            self.shared_encoder = SupConResNet('resnet18', feat_dim=128, modality=modality)
+            self.shared_encoder = SupConResNet('resnet18', feat_dim=128, modality=modality, grl_layer=grl_layer)
             num_sites = 6
 
 
@@ -490,8 +490,13 @@ class DSN(nn.Module):
         self.reconstructor = ReconstructionNet(z_dim=64 + 128)  # 64 private + 128 shared
 
     def forward(self, x, site_labels):
-        shared_features = self.shared_encoder(x)
+        shared_features, site_pred = self.shared_encoder(x, classify=True)
         private_features = self.private_encoder(x, site_labels)
         combined_features = torch.cat([private_features, shared_features], dim=1)
         recon = self.reconstructor(combined_features)
-        return shared_features, private_features, recon
+        return shared_features, site_pred, private_features, recon
+    
+    def features(self, x):
+        """Extracts encoder features"""
+        return self.shared_encoder.features(x)
+    

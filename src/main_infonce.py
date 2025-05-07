@@ -52,7 +52,7 @@ from sklearn.feature_selection import mutual_info_classif
 
 # which_data_type = 'MRE' 
 # which_data_type = 'MRE' 
-is_sweeping = True
+is_sweeping = False
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -117,6 +117,9 @@ def parse_arguments():
     parser.add_argument('--confound_loss', type=str, help='loss chosen for removing confound effect', choices=['basic', 'classification', 'mmd', 'class+mmd', 'classificationGRL', 'coral', 'hsic', 'dsn'], default='basic')
     parser.add_argument('--lambda_coral', type=float, help='Weight for Coral loss', default=0)
     parser.add_argument('--lambda_hsic', type=float, help='Weight for HSIC loss', default=0)
+    parser.add_argument('--lambda_recon', type=float, help='Weight for reconstruction loss', default=0)
+    parser.add_argument('--lambda_diff', type=float, help='Weight for difference loss', default=0)
+
 
 
 
@@ -262,7 +265,7 @@ def load_model(opts):
         if opts.modality == "OpenBHB":
             if opts.confound_loss == "dsn":
                 # model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val, modality=opts.modality)
-                model = models.DSN(modality=opts.modality)
+                model = models.DSN(modality=opts.modality, grl_layer=opts.grl_layer)
             else:
                 model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70, grl_layer=opts.grl_layer, lambda_val=opts.lambda_val, modality=opts.modality)
             # model = models.SupConResNet(opts.model, feat_dim=128, num_sites=70)
@@ -706,6 +709,276 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
     return loss.avg, class_loss, mmd_loss, coral_loss, hsic_loss, batch_time.avg, data_time.avg
 
 
+def difference_loss(shared, private):
+    shared = F.normalize(shared, dim=1)
+    private = F.normalize(private, dim=1)
+    return torch.mean((shared * private).sum(dim=1)**2)
+
+
+
+def train_dsn(train_loader, model, infonce, optimizer, opts, epoch):
+    # lambda_adv = 0.35  # Weight for adversarial loss
+    # lambda_adv = 0  # Weight for adversarial loss
+
+    # lambda_adv = min(1.0, 0.1 * epoch)  # Increase over time
+    loss = AverageMeter()
+    batch_time = AverageMeter()
+    data_time = AverageMeter()
+
+    scaler = torch.cuda.amp.GradScaler() if opts.amp else None
+    model.train()
+    # private_encoder.train()
+    # reconstruction_decoder.train()
+
+    t1 = time.time()
+    # print(train_loader)
+    # print()
+
+    # Cross-entropy loss for classification
+    criterion_cls = nn.CrossEntropyLoss()
+
+
+    for idx, (images, labels, metadata) in enumerate(train_loader):
+
+        # print('THIS IS SHAPE OF IMAGES')
+        # print(images[0].shape)
+        # print(metadata)
+        # [1,91,109,91]
+        # print('hi')
+        data_time.update(time.time() - t1)
+        # print(images[0])
+
+
+
+        
+        # Ensure site_labels is a list of site names
+        site_labels = list(metadata[1])  # Convert tuple to list if necessary
+        # print("EXAMPLE site labvels:", site_labels[:10])
+        site_labels = [int(label) for label in site_labels]
+
+        # Convert site labels (strings) to numeric indices
+        # label_encoder = LabelEncoder()
+        # site_labels = label_encoder.fit_transform(site_labels)  # Converts strings to integers
+
+        if opts.path == "local":
+            device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+
+            # images = torch.cat(images, dim=0).to(opts.device)
+            # print(images.shape)
+            images = torch.cat(images, dim=0).to(device)
+            # print(images.shape)
+
+            bsz = labels.shape[0]
+            labels = labels.float().to(device)
+
+            # Convert to torch tensor
+            site_labels = torch.tensor(site_labels, dtype=torch.long, device=device)
+        else:
+            # images = torch.cat(images, dim=0).to(opts.device)
+            images = torch.cat(images, dim=0).to(opts.device)
+            bsz = labels.shape[0]
+            labels = labels.float().to(opts.device)
+
+            # Convert to torch tensor
+            site_labels = torch.tensor(site_labels, dtype=torch.long, device=opts.device)
+        # print(site_labels)
+        # site_labels = site_labels.repeat_interleave(opts.n_views)
+
+        # if which_data_type == 'MREData':
+            
+        if opts.modality == "OpenBHB":
+            site_labels = site_labels - 1
+
+        # print('THIS IS SHAPE OF IMAGES BEFORE SQUEEZING')
+        # print(images[0].shape)
+
+        # CHANGED
+        images = images.squeeze()
+        # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ADDED THIS -=-==-=-=-=-=-=-=-=-=-=-=-=-=-==-
+        # if which_data_type == 'MREData':
+
+
+
+
+        if opts.modality == "OpenBHB":
+            images = images.unsqueeze(1)  # Add channel dimension at index 1
+
+        # print('THIS IS SHAPE OF IMAGES AFTER SQUEEZING')
+        # print(images[0].shape)
+
+        warmup_learning_rate(opts, epoch, idx, len(train_loader), optimizer)
+
+        with torch.cuda.amp.autocast(scaler is not None):
+            # print("GNRGIRNGRIGNRIGRGNRGINGRIGNRGNRIGRIGNRGIRGRGNRGRIN")            
+            # print(images.shape)
+
+
+            # projected = model(images, classifier=True)
+
+            # CHANGE BACK TO UNCOMMENTED
+
+            images = images.contiguous()
+
+            shared_features, site_pred, private_features, recon = model(images, site_labels)
+
+
+            # print("Projected (mean, std):", projected.mean().item(), projected.std().item())
+
+
+            # print(site_pred.shape)
+            # Outputs: torch.Size([64, 6])
+            
+
+            # site_labels_MMD = site_labels.repeat(opts.n_views)
+
+            # # CHANGE BACK 
+
+            # # Could do class_loss here, but would need to double the site_labels shape (either doube like 1,1,2,2,3,3 or 1,2,3,1,2,3?)
+            # site_labels = site_labels.repeat(opts.n_views)
+
+            # if which_data_type == "OpenBHB":
+            #     site_labels = site_labels - 1
+
+            # class_loss = criterion_cls(site_pred, site_labels)
+
+            # # END OF CHANGE BACK
+
+            # if opts.confound_loss == "mmd":
+            # else:
+            #     mmd_loss = 0
+
+            site_pred = torch.split(site_pred, [bsz]*opts.n_views, dim=0)
+            projected = torch.split(shared_features, [bsz]*opts.n_views, dim=0)
+            projected = torch.cat([f.unsqueeze(1) for f in projected], dim=1)
+            site_pred = torch.cat([f.unsqueeze(1) for f in site_pred], dim=1)
+
+            mmd_loss = 0
+            coral_loss = 0
+            hsic_loss = 0
+            # class_loss = 0
+
+            # Should probably not have this? LOOK ABOVE
+            site_pred = site_pred.mean(dim=1) 
+            # projected_mmd = projected.mean(dim=1) 
+            # if opts.confound_loss == "mmd" or opts.confound_loss == "class+mmd":
+            #     mmd_loss = mmd_calculator(opts, projected_mmd, site_labels)
+            # elif opts.confound_loss == "coral":
+            #     coral_loss = coral_calculator(opts, projected_mmd, site_labels)
+            # elif opts.confound_loss == "hsic":
+            #     hsic_loss = hsic_calculator(projected_mmd, site_labels)
+
+
+
+            class_loss = criterion_cls(site_pred, site_labels)
+
+
+
+            # print(site_pred.shape)
+            # Outputs: torch.Size([32, 2, 6])
+
+            if opts.loss_choice == "supcon" or opts.loss_choice == "RnC":
+                if opts.path == "local":
+                    running_loss = infonce(projected, labels.to(device).float())
+                else:
+                    running_loss = infonce(projected, labels.to(opts.device).float())
+
+            elif opts.loss_choice == "dynamic":
+                if opts.path == "local":
+                    if opts.NN_nb_step_size > 0:
+                        running_loss = infonce(features=projected,
+                                            labels=labels.to(device),
+                                            epoch=epoch)
+
+                    else:
+                        running_loss = infonce(features=projected,
+                                            labels=labels.to(device))
+                else:
+                    if opts.NN_nb_step_size > 0:
+                        running_loss = infonce(features=projected,
+                                            labels=labels.to(opts.device),
+                                            epoch=epoch)
+
+                    else:
+                        running_loss = infonce(features=projected,
+                                            labels=labels.to(opts.device))
+
+
+            # print(site_labels)
+            # Compute classification loss
+
+
+
+            # OUTPUTTING ACCURACY
+            # predicted_sites = site_pred.argmax(dim=1)  # Get predicted class indices
+            # site_accuracy = (predicted_sites == site_labels).float().mean().item()  # Compute accuracy
+            # print(f"Batch {idx}: Site Classifier Accuracy = {site_accuracy:.4f}")
+
+
+            print("This is class loss:", class_loss)
+
+            # # # Total loss = Contrastive Loss + Classification Loss
+            # if opts.confound_loss == "classification":
+            #     total_loss = running_loss - opts.lambda_adv * class_loss
+
+            # if opts.confound_loss == "classificationGRL":
+            #     total_loss = running_loss + opts.lambda_adv * class_loss
+            #     # total_loss = class_loss
+            # elif opts.confound_loss == "basic":
+            #     total_loss =  running_loss
+            # elif opts.confound_loss == "mmd":
+            #     total_loss = running_loss + opts.lambda_mmd * mmd_loss
+
+            # elif opts.confound_loss == "class+mmd":
+            #     total_loss = running_loss + opts.lambda_mmd * mmd_loss - opts.lambda_adv * class_loss
+
+            # elif opts.confound_loss == "coral":
+            #     total_loss = running_loss + opts.lambda_coral * coral_loss
+
+            # elif opts.confound_loss == "hsic":
+            #     total_loss = running_loss + opts.lambda_hsic * hsic_loss
+            
+            recon_loss = F.mse_loss(recon, images)
+            diff_loss = difference_loss(shared_features, private_features)
+
+            total_loss = running_loss + opts.lambda_adv * class_loss + opts.lambda_recon * recon_loss + opts.lambda_diff * diff_loss
+
+        optimizer.zero_grad()
+        if scaler is None:
+            total_loss.backward()
+            if opts.clip_grad:
+                nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+            optimizer.step()
+        else:
+            scaler.scale(total_loss).backward()
+            if opts.clip_grad:
+                scaler.unscale_(optimizer)
+                nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+            scaler.step(optimizer)
+            scaler.update()
+
+        # for name, param in model.named_parameters():
+        #     if "classifier" in name:
+        #         print(f"{name} gradient norm: {param.grad.norm().item()}")
+                
+        loss.update(total_loss.item(), bsz)
+        batch_time.update(time.time() - t1)
+        t1 = time.time()
+        eta = batch_time.avg * (len(train_loader) - idx)
+
+
+        print(f"Train: [{epoch}][{idx + 1}/{len(train_loader)}]:\t"
+                f"BT {batch_time.avg:.3f}\t"
+                f"ETA {datetime.timedelta(seconds=eta)}\t"
+                f"loss {loss.avg:.3f}\t")
+
+        if (idx + 1) % opts.print_freq == 0:
+            print(f"Train: [{epoch}][{idx + 1}/{len(train_loader)}]:\t"
+                  f"BT {batch_time.avg:.3f}\t"
+                  f"ETA {datetime.timedelta(seconds=eta)}\t"
+                  f"loss {loss.avg:.3f}\t")
+    
+    return loss.avg, class_loss, mmd_loss, coral_loss, hsic_loss, batch_time.avg, data_time.avg
+
 
 
 def extract_features_for_umap(test_loader, model, opts, key, max_features=64):
@@ -1125,7 +1398,10 @@ def training(seed=0):
 
         t1 = time.time()
         # Changed
-        loss_train, class_loss_train, mmd_loss_train, coral_loss_train, hsic_loss_train, batch_time, data_time = train(train_loader, model, infonce, optimizer, opts, epoch)
+        if opts.confound_loss == "dsn":
+            loss_train, class_loss_train, mmd_loss_train, coral_loss_train, hsic_loss_train, batch_time, data_time = train_dsn(train_loader, model, infonce, optimizer, opts, epoch)
+        else:
+            loss_train, class_loss_train, mmd_loss_train, coral_loss_train, hsic_loss_train, batch_time, data_time = train(train_loader, model, infonce, optimizer, opts, epoch)
         t2 = time.time()
         wandb.log({"train/loss": loss_train, "lr": optimizer.param_groups[0]['lr'], "BT": batch_time, "DT": data_time,
             "epoch": epoch})
