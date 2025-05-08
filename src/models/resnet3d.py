@@ -129,7 +129,9 @@ class ResNet(nn.Module):
         self.conv1 = nn.Conv3d(in_channels, self.inplanes, kernel_size=initial_kernel_size, stride=initial_stride, padding=padding, bias=False)
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
+        # CHANGE BACK
         self.maxpool = nn.MaxPool3d(kernel_size=3, stride=2, padding=1)
+        # self.maxpool = nn.Conv3d(self.inplanes, self.inplanes, kernel_size=3, stride=2, padding=1, groups=self.inplanes, bias=False)
 
         channels = [64, 128, 256, 512]
 
@@ -425,7 +427,10 @@ class ConditionalPrivateEncoder(nn.Module):
         self.shared_conv = nn.Sequential(
             nn.Conv3d(input_channels, 32, kernel_size=3, padding=1),
             nn.ReLU(),
+            # CHANGE THIS
             nn.MaxPool3d(2),
+            # nn.Conv3d(32, 32, kernel_size=2, stride=2, groups=32, bias=False),
+            
             nn.Conv3d(32, 64, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.AdaptiveAvgPool3d(1)

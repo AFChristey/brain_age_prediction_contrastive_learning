@@ -186,9 +186,11 @@ class MREData(torch.utils.data.Dataset):
         # Stores the root path where the data is located as an instance variable self.root. 
         # This will be used to locate the files later
 
-
+        # print("reading data")
         (stiffness, dr, T1, age, sex, study,
          id, imbalance_percentages) = load_samples(path=path)
+        
+        # print("finished reading data")
 
         sex = pd.Series(sex)
         sex = sex.replace('f', 'F')
@@ -535,6 +537,18 @@ def load_samples(path):
     counts = np.bincount(inverse)
     total_count = age_all_healthy.shape[0]
     imbalance_percentages = counts[inverse] / total_count
+
+
+
+    if path == 'local':
+        stiffness_all_healthy = stiffness_all_healthy[:10]
+        dr_all_healthy = dr_all_healthy[:10]
+        T1_all_healthy = T1_all_healthy[:10]
+        age_all_healthy = age_all_healthy[:10]
+        sex_all_healthy = sex_all_healthy[:10]
+        study_all_healthy = study_all_healthy[:10]
+        id_all_healthy = id_all_healthy[:10]
+        imbalance_percentages = imbalance_percentages[:10]
 
     return (
         stiffness_all_healthy, dr_all_healthy, T1_all_healthy, age_all_healthy, sex_all_healthy, study_all_healthy,

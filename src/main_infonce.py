@@ -52,7 +52,7 @@ from sklearn.feature_selection import mutual_info_classif
 
 # which_data_type = 'MRE' 
 # which_data_type = 'MRE' 
-is_sweeping = True
+is_sweeping = False
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -1423,12 +1423,13 @@ def training(seed=0):
         # writer.add_scalar("BT", batch_time, epoch)
         # writer.add_scalar("DT", data_time, epoch)
         print(f"epoch {epoch}, total time {t2-start_time:.2f}, epoch time {t2-t1:.3f} loss {loss_train:.4f}")
-        mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
-        wandb.log({"train/mae": mae_train, "test/mae": mae_test, "epoch": epoch})
+        if opts.path == "cluster":
+            mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
+            wandb.log({"train/mae": mae_train, "test/mae": mae_test, "epoch": epoch})
 
-
-        ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
-        wandb.log({"train/ba": ba_train, "test/ba": ba_test, "epoch": epoch})
+        if opts.path == "cluster":
+            ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
+            wandb.log({"train/ba": ba_train, "test/ba": ba_test, "epoch": epoch})
 
         # if epoch % 5 == 0:
         #     ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
@@ -1464,33 +1465,33 @@ def training(seed=0):
     
     # visualise_umap(test_loader, model, opts, opts.epochs)
 
-    
-    mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
-    # writer.add_scalar("train/mae", mae_train, epoch)
-    # writer.add_scalar("test/mae_int", mae_int, epoch)
-    # writer.add_scalar("test/mae_ext", mae_ext, epoch)
-    print("Age MAE:", mae_train, mae_test)
+    if opts.path == "cluster":
+        mae_train, mae_test = compute_age_mae(model, train_loader_score, test_loader, opts)
+        # writer.add_scalar("train/mae", mae_train, epoch)
+        # writer.add_scalar("test/mae_int", mae_int, epoch)
+        # writer.add_scalar("test/mae_ext", mae_ext, epoch)
+        print("Age MAE:", mae_train, mae_test)
 
-    wandb.log({"train/mae": mae_train, "test/mae": mae_test, "epoch": opts.epochs})
-    wandb.log({'mae_train': mae_train})
-    wandb.log({'mae_test': mae_test})
+        wandb.log({"train/mae": mae_train, "test/mae": mae_test, "epoch": opts.epochs})
+        wandb.log({'mae_train': mae_train})
+        wandb.log({'mae_test': mae_test})
 
-    ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
+        ba_train, ba_test = compute_site_ba(model, train_loader_score, test_loader, opts)
 
-    wandb.log({"train/ba": ba_train, "test/ba": ba_test, "epoch": opts.epochs})
-    wandb.log({'ba_train': ba_train})
-    wandb.log({'ba_test': ba_test})
-    # writer.add_scalar("train/site_ba", ba_train, epoch)
-    # writer.add_scalar("test/ba_int", ba_int, epoch)
-    # writer.add_scalar("test/ba_ext", ba_ext, epoch)
-    print("Site BA:", ba_train, ba_test)
-    
-    # challenge_metric = ba_int**0.3 * mae_ext
-    # writer.add_scalar("test/score", challenge_metric, epoch)
-    # print("Challenge score", challenge_metric)
+        wandb.log({"train/ba": ba_train, "test/ba": ba_test, "epoch": opts.epochs})
+        wandb.log({'ba_train': ba_train})
+        wandb.log({'ba_test': ba_test})
+        # writer.add_scalar("train/site_ba", ba_train, epoch)
+        # writer.add_scalar("test/ba_int", ba_int, epoch)
+        # writer.add_scalar("test/ba_ext", ba_ext, epoch)
+        print("Site BA:", ba_train, ba_test)
+        
+        # challenge_metric = ba_int**0.3 * mae_ext
+        # writer.add_scalar("test/score", challenge_metric, epoch)
+        # print("Challenge score", challenge_metric)
 
-    if is_sweeping == False:
-        visualise_umap(test_loader, model, opts)
+        if is_sweeping == False:
+            visualise_umap(test_loader, model, opts)
 
 
     end_time = time.time()  # End the timer
