@@ -4,20 +4,20 @@ save_dir:  /scratch/output/brain-age-mri
 model: resnet18
 epochs: 50
 batch_size: 32
-lr: 1e-4
+lr: 5e-5
 lr_decay: step
 lr_decay_rate: 0.1
 lr_decay_step: 10
 optimizer: adam
 momentum: 0.9
-weight_decay: 5e-5
+weight_decay: 5e-4
 train_all: 1
 method: expw
 kernel: rbf
 sigma: 1
 trial: 0
 tf: noise
-noise_std: 5e-2
+noise_std: 1e-1
 path: cluster
 loss_choice: RnC
 NN_nb_step_size: 0
@@ -33,7 +33,7 @@ confound_loss: classification
 lambda_mmd: 0
 lambda_coral: 0
 lambda_hsic: 0
-modality: MRE
+modality: OpenBHB
 
 
 

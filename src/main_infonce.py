@@ -551,10 +551,8 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             images = images.contiguous()
 
-            if opts.confound_loss == "dsn":
-                shared_features, private_features, recon = model(images, site_labels)
-            else:
-                projected, site_pred = model(images, classify=True)
+
+            projected, site_pred = model(images, classify=True)
 
 
             print("Projected (mean, std):", projected.mean().item(), projected.std().item())
@@ -649,12 +647,11 @@ def train(train_loader, model, infonce, optimizer, opts, epoch):
 
             print("This is class loss:", class_loss)
 
-            # # Total loss = Contrastive Loss + Classification Loss
             if opts.confound_loss == "classification":
                 total_loss = running_loss - opts.lambda_adv * class_loss
-
             if opts.confound_loss == "classificationGRL":
                 total_loss = running_loss + opts.lambda_adv * class_loss
+
                 # total_loss = class_loss
             elif opts.confound_loss == "basic":
                 total_loss =  running_loss
