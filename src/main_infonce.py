@@ -52,7 +52,7 @@ from sklearn.feature_selection import mutual_info_classif
 
 # which_data_type = 'MRE' 
 # which_data_type = 'MRE' 
-is_sweeping = False
+is_sweeping = True
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -65,7 +65,7 @@ def parse_arguments():
     # Misc
     parser.add_argument('--device', type=str, help='torch device', default='cuda')
     parser.add_argument('--print_freq', type=int, help='print frequency', default=10)
-    parser.add_argument('--trial', type=int, help='random seed / trial id', default=0)
+    parser.add_argument('--trial', type=int, help='random seed / trial id', default=1)
     parser.add_argument('--save_dir', type=str, help='output dir', default='output')
     parser.add_argument('--save_freq', type=int, help='save frequency', default=10)
     parser.add_argument('--data_dir', type=str, help='path of data dir', default='/data')
@@ -1246,7 +1246,7 @@ def training(seed=0):
         opts.lr = config.lr
         # opts.lambda_mmd = config.lambda_mmd
         opts.lambda_adv = config.lambda_adv
-        opts.lambda_val = config.lambda_val
+        # opts.lambda_val = config.lambda_val
         
 
 
@@ -1535,7 +1535,7 @@ if __name__ == '__main__':
 
             # Loss terms:
             "lambda_adv": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
-            "lambda_val": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
+            # "lambda_val": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
             # "lambda_mmd": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
 
         },
