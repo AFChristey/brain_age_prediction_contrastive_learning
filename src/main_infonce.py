@@ -1247,7 +1247,8 @@ def training(seed=0):
         # opts.lambda_mmd = config.lambda_mmd
         # opts.lambda_adv = config.lambda_adv
         # opts.lambda_val = config.lambda_val
-        opts.lambda_coral = config.lambda_coral
+        # opts.lambda_coral = config.lambda_coral
+        opts.lambda_hsic = config.lambda_hsic
         
 
 
@@ -1539,7 +1540,8 @@ if __name__ == '__main__':
             # "lambda_adv": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
             # "lambda_val": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
             # "lambda_mmd": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
-            "lambda_coral": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
+            # "lambda_coral": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
+            "lambda_hsic": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
 
         },
         }
