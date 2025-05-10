@@ -50,7 +50,7 @@ lr_decay_rate: 0.9
 lr_decay_step: 10
 optimizer: adam
 momentum: 0.9
-weight_decay: 1e-3
+weight_decay: 5e-4
 train_all: 1
 method: expw
 kernel: rbf
@@ -73,4 +73,4 @@ confound_loss: classification
 lambda_mmd: 0
 lambda_coral: 0
 lambda_hsic: 0
-modality: MRE
+modality: OpenBHB
