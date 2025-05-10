@@ -27,10 +27,10 @@ temp_RNC: 2
 label_diff: l1
 feature_sim: l2
 lambda_val: 0
-lambda_adv: 1e-2
+lambda_adv: 0
 grl_layer: 0
-confound_loss: class+mmd
-lambda_mmd: 5e-2
+confound_loss: coral
+lambda_mmd: 0
 lambda_coral: 0
 lambda_hsic: 0
 modality: OpenBHB

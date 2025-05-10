@@ -52,7 +52,7 @@ from sklearn.feature_selection import mutual_info_classif
 
 # which_data_type = 'MRE' 
 # which_data_type = 'MRE' 
-is_sweeping = False
+is_sweeping = True
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -1245,8 +1245,9 @@ def training(seed=0):
         opts.noise_std = config.noise_std
         opts.lr = config.lr
         # opts.lambda_mmd = config.lambda_mmd
-        opts.lambda_adv = config.lambda_adv
+        # opts.lambda_adv = config.lambda_adv
         # opts.lambda_val = config.lambda_val
+        opts.lambda_coral = config.lambda_coral
         
 
 
@@ -1535,9 +1536,10 @@ if __name__ == '__main__':
                 
 
             # Loss terms:
-            "lambda_adv": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
+            # "lambda_adv": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
             # "lambda_val": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
             # "lambda_mmd": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
+            "lambda_coral": {"values": [1e-2, 5e-2, 1e-1, 5e-1, 1]},
 
         },
         }
