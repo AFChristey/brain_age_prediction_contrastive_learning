@@ -431,10 +431,13 @@ def coral_calculator(opts, projected, site_labels):
 
 
 def hsic_calculator(X, Y, sigma=1.0):
-    """Compute empirical HSIC with RBF kernels."""
     def rbf_kernel(x, sigma):
         dist = torch.cdist(x, x).pow(2)
         return torch.exp(-dist / (2 * sigma**2))
+
+    # One-hot encode site labels
+    if Y.dim() == 1:
+        Y = F.one_hot(Y).float()
 
     n = X.size(0)
     H = torch.eye(n, device=X.device) - (1. / n) * torch.ones(n, n, device=X.device)
@@ -447,6 +450,8 @@ def hsic_calculator(X, Y, sigma=1.0):
 
     hsic = torch.trace(HKH @ HLH) / ((n - 1) ** 2)
     return hsic
+
+
 
 def train(train_loader, model, infonce, optimizer, opts, epoch):
     # lambda_adv = 0.35  # Weight for adversarial loss
