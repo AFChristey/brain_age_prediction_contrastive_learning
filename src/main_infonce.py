@@ -52,7 +52,7 @@ from sklearn.feature_selection import mutual_info_classif
 
 # which_data_type = 'MRE' 
 # which_data_type = 'MRE' 
-is_sweeping = True
+is_sweeping = False
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
@@ -65,7 +65,7 @@ def parse_arguments():
     # Misc
     parser.add_argument('--device', type=str, help='torch device', default='cuda')
     parser.add_argument('--print_freq', type=int, help='print frequency', default=10)
-    parser.add_argument('--trial', type=int, help='random seed / trial id', default=1)
+    parser.add_argument('--trial', type=int, help='random seed / trial id', default=0)
     parser.add_argument('--save_dir', type=str, help='output dir', default='output')
     parser.add_argument('--save_freq', type=int, help='save frequency', default=10)
     parser.add_argument('--data_dir', type=str, help='path of data dir', default='/data')
