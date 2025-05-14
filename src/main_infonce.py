@@ -52,7 +52,7 @@ from sklearn.feature_selection import mutual_info_classif
 
 # which_data_type = 'MRE' 
 # which_data_type = 'MRE' 
-is_sweeping = False
+is_sweeping = True
 
 # import os
 # os.environ["WANDB_MODE"] = "disabled"
