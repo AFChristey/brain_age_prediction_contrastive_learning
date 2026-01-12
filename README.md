@@ -1,4 +1,4 @@
-# Contrastive learning for regression in multi-site brain age prediction
+# Addressing Confounding Variables in Brain Age Prediction Through Domain-Invariant Contrastive Learning Approaches
 
 
 This repository explores domain adaptation for reducing scanner site confounding in contrastive learning–based brain age prediction. Using MRI and MRE data, multiple confound removal methods are evaluated with both embedding-level metrics and downstream age prediction. Results reveal a trade-off between confound mitigation and predictive performance, emphasizing the need for multi-metric evaluation.
