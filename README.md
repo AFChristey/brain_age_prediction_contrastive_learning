@@ -1,3 +1,8 @@
+<p align="right">
+  <img src="assets/cambridge.png" width="200">
+</p>
+
+
 # Addressing Confounding Variables in Brain Age Prediction Through Domain-Invariant Contrastive Learning Approaches
 
 
