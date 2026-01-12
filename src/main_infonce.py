@@ -347,13 +347,6 @@ def load_optimizer(model, opts):
     return optimizer
 
 
-# def mmd(X, Y, gamma=1.0):
-#     # def mmd_rbf(X, Y, gamma=1.0):
-#     XX = torch.exp(-gamma * torch.cdist(X, X, p=2).pow(2))
-#     YY = torch.exp(-gamma * torch.cdist(Y, Y, p=2).pow(2))
-#     XY = torch.exp(-gamma * torch.cdist(X, Y, p=2).pow(2))
-#     return XX.mean() + YY.mean() - 2 * XY.mean()
-
 def mmd(X, Y):
     bandwidth_range=[0.2, 0.5, 0.9, 1.3]
 
@@ -410,6 +403,7 @@ def coral(X, Y):
 
     return loss / (4 * d * d)
 
+
 def coral_calculator(opts, projected, site_labels):
     """
     Computes average CORAL loss across all unique site/domain pairs.
@@ -427,7 +421,6 @@ def coral_calculator(opts, projected, site_labels):
 
     coral_value = np.mean(list(coral_values.values())) if coral_values else 0
     return coral_value
-
 
 
 def hsic_calculator(X, Y, sigma=1.0):
@@ -450,7 +443,6 @@ def hsic_calculator(X, Y, sigma=1.0):
 
     hsic = torch.trace(HKH @ HLH) / ((n - 1) ** 2)
     return hsic
-
 
 
 def train(train_loader, model, infonce, optimizer, opts, epoch):
